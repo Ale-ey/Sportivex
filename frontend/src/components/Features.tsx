@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Activity,
   Shield,
@@ -6,36 +6,21 @@ import {
   Zap,
   ArrowRight,
   Box,
-  Truck,
   Code,
   CheckCircle,
   Rocket,
-  Factory,
   Microchip,
   Handshake,
-  RefreshCcw,
   MessageSquare,
   Building,
   Cpu,
   Layers,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
-} from "@/components/ui/carousel";
-import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 
 const Features = () => {
-  const featuresRef = useRef<HTMLDivElement>(null);
   const [hoveredFeature, setHoveredFeature] = useState<number | null>(null);
-  const [progressValue, setProgressValue] = useState(0);
-  const [currentSprint, setCurrentSprint] = useState(1);
-  const totalSprints = 3;
 
   const features = [
     {
@@ -89,6 +74,9 @@ const Features = () => {
       });
     }
   };
+
+  // Progress value state for potential progress bar animation
+  const [, setProgressValue] = useState(0);
 
   // Animate progress bar on component mount
   useEffect(() => {

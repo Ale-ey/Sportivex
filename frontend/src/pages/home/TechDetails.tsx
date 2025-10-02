@@ -2,14 +2,13 @@ import { ArrowLeft, ArrowRight, FileText, Code, Cpu } from "lucide-react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
 import ProductPlatform from "@/components/ProductPlatform";
-import { useIsMobile } from "@/hooks/use-mobile";
+
 import { Card, CardContent } from "@/components/ui/card";
 import { useState, useEffect } from "react";
 import PageLayout from "@/components/PageLayout";
 
 const TechDetails = () => {
-  const isMobile = useIsMobile();
-  const [progressValue, setProgressValue] = useState(0);
+  const [, setProgressValue] = useState(0);
 
   // Animate progress bar on component mount
   useEffect(() => {

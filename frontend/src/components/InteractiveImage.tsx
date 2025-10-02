@@ -55,9 +55,6 @@ const InteractiveImage = ({ src, alt, className }: InteractiveImageProps) => {
 
   // Display instruction toast on mount
   useEffect(() => {
-    const message = isMobile
-      ? "Tap to zoom and drag with your finger to explore"
-      : "Click to zoom and drag to explore the image";
 
     // toast(message, {
     //   duration: 4000,

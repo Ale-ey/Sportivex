@@ -1,14 +1,7 @@
 import {
   ArrowLeft,
   CheckCircle,
-  Clock,
-  FileSearch,
-  Settings,
-  Cpu,
-  Code,
-  Truck,
-  BarChart,
-  Check,
+     Check,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useState, useRef, useEffect } from "react";
@@ -136,50 +129,6 @@ const DevelopmentProcess = () => {
     setTimeout(handleScroll, 100);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
-  const developmentSteps = [
-    {
-      icon: <FileSearch className="h-6 w-6" />,
-      title: "1. Discovery & Requirements",
-      description:
-        "We begin by understanding your needs, market opportunities, and technical requirements to establish clear project parameters and goals.",
-    },
-    {
-      icon: <Settings className="h-6 w-6" />,
-      title: "2. Concept & Design",
-      description:
-        "Our experts craft initial designs and technical specifications, ensuring alignment with your brand identity and user experience goals.",
-    },
-    {
-      icon: <Cpu className="h-6 w-6" />,
-      title: "3. Hardware Development",
-      description:
-        "We select, design, and integrate sensor components, creating optimized hardware solutions that balance performance and efficiency.",
-    },
-    {
-      icon: <Code className="h-6 w-6" />,
-      title: "4. Software Development",
-      description:
-        "Our development team builds robust firmware, apps, and cloud platforms tailored to your product's unique requirements and user needs.",
-    },
-    {
-      icon: <CheckCircle className="h-6 w-6" />,
-      title: "5. Testing & Iteration",
-      description:
-        "Rigorous testing protocols ensure reliability, durability, and optimal performance across all conditions and use cases.",
-    },
-    {
-      icon: <Truck className="h-6 w-6" />,
-      title: "6. Production & Deployment",
-      description:
-        "We support the transition from prototype to manufacturing, ensuring quality standards and seamless deployment.",
-    },
-    {
-      icon: <BarChart className="h-6 w-6" />,
-      title: "7. Continuous Improvement",
-      description:
-        "Post-launch analytics and feedback loops drive ongoing improvements, updates, and potential new features.",
-    },
-  ];
   return (
     <PageLayout>
       <section className="pt-24 pb-16">
@@ -218,7 +167,7 @@ const DevelopmentProcess = () => {
                   {processes.map((process, index) => (
                     <div
                       key={process.id}
-                      ref={(el) => (processSectionsRef.current[index] = el)}
+                      ref={(el) => { processSectionsRef.current[index] = el; }}
                       className={cn(
                         "relative flex flex-col md:flex-row md:items-center gap-6",
                         index % 2 === 0

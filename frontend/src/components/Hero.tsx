@@ -50,17 +50,23 @@ const Hero = () => {
             loop
             muted
             playsInline
-            preload="metadata"
-            className={`w-full h-full object-cover opacity-70 grayscale `}
-            poster="/lovable-uploads/4bfa0d71-3ed2-4693-90b6-35142468907f.png"
+            preload="auto"
+            poster="https://res.cloudinary.com/dcsrmdeiq/video/upload/so_0/Swim_ydjzfv.jpg"
+            className="w-full h-full object-cover opacity-70 grayscale"
           >
-            <source src="https://player.cloudinary.com/embed/?cloud_name=dcsrmdeiq&public_id=Swim_ydjzfv&profile=cld-default" type="video/mp4" />
-
-            {/* Fallback image if video fails to load */}
+            <source
+              src="https://res.cloudinary.com/dcsrmdeiq/video/upload/f_auto,q_auto/Swim_ydjzfv.mp4"
+              type="video/mp4"
+            />
+            <source
+              src="https://res.cloudinary.com/dcsrmdeiq/video/upload/f_auto,q_auto/Swim_ydjzfv.webm"
+              type="video/webm"
+            />
+            {/* Fallback image */}
             <img
-              src="/lovable-uploads/4bfa0d71-3ed2-4693-90b6-35142468907f.png"
+              src="https://res.cloudinary.com/dcsrmdeiq/video/upload/so_0/Swim_ydjzfv.jpg"
               alt="WRLDS Technologies Connected People"
-              className={`w-full h-full object-cover opacity-70 grayscale`}
+              className="w-full h-full object-cover opacity-70 grayscale"
             />
           </video>
           <div className="absolute inset-0 bg-gradient-to-b from-black/70 via-black/60 to-white"></div>

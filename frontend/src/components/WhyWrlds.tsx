@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, useInView } from "framer-motion";
 import {
-  Layers,
+  
   BarChart,
   AlertTriangle,
   Clock4,
@@ -9,10 +9,7 @@ import {
   Zap,
   Sparkles,
   ArrowRight,
-  Award,
-  Target,
-  Shield,
-  ChartBar,
+ 
 } from "lucide-react";
 import { Link } from "react-router-dom";
 
