@@ -1,9 +1,9 @@
 import PageLayout from "@/components/PageLayout";
 import Hero from "@/components/Hero";
-import Features from "@/components/Features";
 import Projects from "@/components/Projects";
 import WhyWrlds from "@/components/WhyWrlds";
 import BlogPreview from "@/components/BlogPreview";
+import SportsNavigation from "@/components/SportsNavigation";
 import SEO from "@/components/SEO";
 import { useEffect } from "react";
 
@@ -20,21 +20,24 @@ const Index = () => {
   return (
     <PageLayout>
       <SEO
-        title="Sportivex"
-        description="Sportivex: 7+ years transforming product visions into market-ready connected solutions. Hardware, software, and manufacturing expertise."
+        title="NUST University Sports Management"
+        description="Comprehensive sports management platform for NUST University. Manage competitions, training, gym, horse riding, swimming, squash, bowling, badminton and more."
         imageUrl="/lovable-uploads/526dc38a-25fa-40d4-b520-425b23ae0464.png"
         keywords={[
-          "IoT development",
-          "connected product development",
-          "hardware software integration",
-          "smart product partner",
-          "end-to-end IoT solutions",
-          "rapid prototyping",
-          "product development",
+          "NUST University",
+          "sports management",
+          "university sports",
+          "sports competitions",
+          "gym management",
+          "swimming pool",
+          "badminton",
+          "squash",
+          "bowling",
+          "horse riding",
         ]}
       />
       <Hero />
-      <Features />
+      <SportsNavigation />
       <WhyWrlds />
       <Projects />
       <BlogPreview />
