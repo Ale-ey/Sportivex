@@ -8,6 +8,7 @@ import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
 import { Eye, EyeOff, Lock, ArrowLeft, CheckCircle } from 'lucide-react';
+import setNewBg from "../../assets/BG/setNewBg.jpg";
 
 const setNewPasswordSchema = z.object({
   password: z.string().min(6, 'Password must be at least 6 characters'),
@@ -56,7 +57,7 @@ const SetNewPassword: React.FC = () => {
       <div 
         className="min-h-screen flex items-center justify-center p-4 relative"
         style={{
-          backgroundImage: 'url(/setNewBg.jpg)',
+          backgroundImage: `url(${setNewBg})`,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           backgroundRepeat: 'no-repeat'

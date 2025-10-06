@@ -8,7 +8,7 @@ import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
 import { Mail, ArrowLeft, CheckCircle } from 'lucide-react';
-
+import forgotBg from "../../assets/BG/forgotBg.jpg";
 const forgotPasswordSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
 });
@@ -47,7 +47,7 @@ const ForgotPassword: React.FC = () => {
       <div 
         className="min-h-screen flex items-center justify-center p-4 relative"
         style={{
-          backgroundImage: 'url(/forgotBg.jpg)',
+          backgroundImage: `url(${forgotBg})`,
           backgroundSize: 'cover',
           backgroundPosition: 'center',
           backgroundRepeat: 'no-repeat'
@@ -85,7 +85,7 @@ const ForgotPassword: React.FC = () => {
     <div 
       className="min-h-screen flex items-center justify-center p-4 relative"
       style={{
-        backgroundImage: 'url(/forgotBg.jpg)',
+        backgroundImage: `url(${forgotBg})`,
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat'
