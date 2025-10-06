@@ -27,15 +27,8 @@ const Hero = () => {
       },
     },
   };
-  const scrollToContact = (e: React.MouseEvent) => {
-    e.preventDefault();
-    const contactSection = document.getElementById("contact");
-    if (contactSection) {
-      contactSection.scrollIntoView({
-        behavior: "smooth",
-      });
-    }
-  };
+
+  
   return (
     <motion.div
       className="relative w-full"

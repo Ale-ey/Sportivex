@@ -6,9 +6,9 @@ import {
   Dumbbell,
   Target,
   Zap,
-  Activity,
+  
   TrendingUp,
-  Circle,
+  
   Trophy,
   Bike,
   Footprints,

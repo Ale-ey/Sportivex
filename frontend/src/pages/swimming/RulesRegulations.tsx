@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
-import { Button } from '../../components/ui/button';
+
 import { Badge } from '../../components/ui/badge';
 import { 
   Shield, 
@@ -8,13 +8,13 @@ import {
   Users, 
   Clock,
   Droplets,
-  Sun,
-  Wind,
-  Search,
-  Filter,
+  
+
+
   BookOpen,
   CheckCircle,
-  XCircle
+  XCircle,
+  Search
 } from 'lucide-react';
 
 interface Rule {

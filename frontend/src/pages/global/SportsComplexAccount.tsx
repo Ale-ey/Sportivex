@@ -9,11 +9,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../..
 import { Textarea } from '../../components/ui/textarea';
 import { 
   Building, 
-  MapPin, 
+   
   Phone, 
-  Mail, 
+   
   Users, 
-  Calendar,
+  
   CheckCircle,
   ArrowLeft
 } from 'lucide-react';

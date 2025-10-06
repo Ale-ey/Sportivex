@@ -12,7 +12,7 @@ import {
   Calendar, 
   User, 
   Clock,
-  CheckCircle,
+
   AlertCircle,
   Info,
   Shield

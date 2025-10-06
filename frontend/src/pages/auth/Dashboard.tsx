@@ -1,13 +1,13 @@
-import React, { useState } from 'react';
+
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
 import { Button } from '../../components/ui/button';
 import { 
-  User, 
+  
   Calendar, 
   Waves, 
   ShoppingCart, 
-  Settings, 
+  
   LogOut,
   Bell,
   CreditCard,
@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 
 const Dashboard: React.FC = () => {
-  const [activeTab, setActiveTab] = useState('overview');
+  // const [activeTab, setActiveTab] = useState('overview');
 
   const handleLogout = () => {
     // Implement logout logic

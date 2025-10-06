@@ -10,10 +10,10 @@ import { Textarea } from '../../components/ui/textarea';
 import { 
   Waves, 
   User, 
-  Phone, 
-  Mail, 
+ 
+   
   Calendar,
-  Clock,
+  
   Shield,
   CheckCircle,
   ArrowLeft

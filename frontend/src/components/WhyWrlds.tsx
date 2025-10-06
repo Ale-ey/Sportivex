@@ -2,18 +2,16 @@ import { useState, useEffect, useRef } from "react";
 import { motion, useInView } from "framer-motion";
 import {
   Users,
-  Calendar,
+  
   CreditCard,
   Bell,
-  BarChart,
+  
   Shield,
-  Clock4,
-  Rocket,
-  Zap,
-  Sparkles,
+  
+  
   ArrowRight,
   Activity,
-  Trophy,
+  
   Settings
 } from "lucide-react";
 import { Link } from "react-router-dom";

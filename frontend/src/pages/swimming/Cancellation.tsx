@@ -11,10 +11,10 @@ import {
   AlertTriangle, 
   Calendar, 
   User, 
-  Mail, 
-  Phone,
+ 
+ 
   CheckCircle,
-  Clock,
+ 
   XCircle,
   Info
 } from 'lucide-react';
@@ -41,7 +41,7 @@ const Cancellation: React.FC = () => {
     handleSubmit,
     formState: { errors },
     watch,
-    setValue
+    
   } = useForm<CancellationFormData>({
     resolver: zodResolver(cancellationSchema),
   });
