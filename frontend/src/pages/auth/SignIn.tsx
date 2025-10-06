@@ -8,7 +8,6 @@ import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
 import { Eye, EyeOff, Mail, Lock, ArrowLeft } from 'lucide-react';
-import gymBg from '/gymBg.png';
 
 const signInSchema = z.object({
   email: z.string().email('Please enter a valid email address'),
@@ -57,7 +56,7 @@ const SignIn: React.FC = () => {
     <div 
       className="min-h-screen flex items-center justify-center p-4 relative"
       style={{
-        backgroundImage: `url(${gymBg})`,
+        backgroundImage: 'url(/gymBg.png)',
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat'
