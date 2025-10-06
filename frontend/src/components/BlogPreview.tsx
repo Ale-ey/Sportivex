@@ -17,21 +17,20 @@ const BlogPreview = () => {
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 md:mb-12">
           <div>
             <div className="flex items-center gap-2 mb-3">
-              <Newspaper size={20} className="text-black" />
-              <span className="text-black font-medium">Our Blog</span>
+              <Newspaper size={20} className="text-[#1e40af]" />
+              <span className="text-[#1e40af] font-medium">NUST Sports News</span>
             </div>
-            <h2 className="text-3xl md:text-4xl font-bold mb-4 text-black">
+            <h2 className="text-3xl md:text-4xl font-bold mb-4 text-[#1e40af]">
               Latest Updates
             </h2>
             <p className="text-gray-800 max-w-xl">
-              Explore our latest insights on connected product development, IoT
-              innovation, and industry trends.
+              Stay updated with the latest news, events, and achievements from NUST University's sports programs and our comprehensive sports management platform.
             </p>
           </div>
           <Link to="/blog" className="mt-4 md:mt-0">
             <Button
               variant="outline"
-              className="group border-black text-black hover:bg-black hover:text-white"
+              className="group border-[#1e40af] text-[#1e40af] hover:bg-[#1e40af] hover:text-white"
             >
               View All Posts
               <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
