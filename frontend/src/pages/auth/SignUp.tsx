@@ -8,7 +8,6 @@ import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
 import { Eye, EyeOff, Mail, Lock, User, Phone, ArrowLeft } from 'lucide-react';
-import signUpBg from '/signUpBg.jpg';
 
 const signUpSchema = z.object({
   firstName: z.string().min(2, 'First name must be at least 2 characters'),
@@ -57,7 +56,7 @@ const SignUp: React.FC = () => {
     <div 
       className="min-h-screen flex items-center justify-center p-4 relative"
       style={{
-        backgroundImage: `url(${signUpBg})`,
+        backgroundImage: 'url(/signUpBg.jpg)',
         backgroundSize: 'cover',
         backgroundPosition: 'center',
         backgroundRepeat: 'no-repeat'
