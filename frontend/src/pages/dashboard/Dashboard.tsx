@@ -25,11 +25,17 @@ import {
   Award,
   Heart,
   Play,
-  
-  
 } from "lucide-react";
-import { Avatar, AvatarImage, AvatarFallback } from "../../components/ui/avatar";
-import { Popover, PopoverTrigger, PopoverContent } from "../../components/ui/popover";
+import {
+  Avatar,
+  AvatarImage,
+  AvatarFallback,
+} from "../../components/ui/avatar";
+import {
+  Popover,
+  PopoverTrigger,
+  PopoverContent,
+} from "../../components/ui/popover";
 
 const Dashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState("home");
@@ -42,7 +48,7 @@ const Dashboard: React.FC = () => {
     { id: "sports", label: "Sports", icon: Activity },
     { id: "leagues", label: "Leagues", icon: Trophy },
     { id: "training", label: "Training", icon: Target },
-  { id: "ai-chat", label: "AI Chat", icon: MessageCircle },
+    { id: "ai-chat", label: "AI Chat", icon: MessageCircle },
   ];
 
   // Athlete progress stats
@@ -51,28 +57,28 @@ const Dashboard: React.FC = () => {
       title: "Workouts This Week",
       value: "8",
       icon: Dumbbell,
-      color: "text-green-400",
+      color: "bg-[#0077B6]",
       change: "+2",
     },
     {
       title: "Calories Burned",
       value: "2,450",
       icon: Heart,
-      color: "text-red-400",
+      color: "bg-[#0096C7]",
       change: "+15%",
     },
     {
       title: "Training Hours",
       value: "12.5",
       icon: Clock,
-      color: "text-blue-400",
+      color: "bg-[#023E8A]",
       change: "+3.2h",
     },
     {
       title: "Achievements",
       value: "5",
       icon: Award,
-      color: "text-yellow-400",
+      color: "bg-[#00B4D8]",
       change: "+1",
     },
   ];
@@ -82,7 +88,7 @@ const Dashboard: React.FC = () => {
     {
       name: "Swimming",
       icon: Waves,
-      color: "bg-blue-500",
+      color: "bg-[#00B4D8]",
       image: "/swiming.jpg",
       progress: 85,
       sessions: 12,
@@ -91,7 +97,7 @@ const Dashboard: React.FC = () => {
     {
       name: "Gym Training",
       icon: Dumbbell,
-      color: "bg-green-500",
+      color: "bg-[#0077B6]",
       image: "/gym.jpg",
       progress: 92,
       sessions: 8,
@@ -100,7 +106,7 @@ const Dashboard: React.FC = () => {
     {
       name: "Horse Riding",
       icon: Activity,
-      color: "bg-indigo-500",
+      color: "bg-[#023E8A]",
       image: undefined,
       progress: 68,
       sessions: 4,
@@ -109,7 +115,7 @@ const Dashboard: React.FC = () => {
     {
       name: "Badminton",
       icon: Activity,
-      color: "bg-orange-500",
+      color: "bg-[#0096C7]",
       image: "/badminton.jpg",
       progress: 78,
       sessions: 6,
@@ -118,7 +124,7 @@ const Dashboard: React.FC = () => {
     {
       name: "Tennis",
       icon: Trophy,
-      color: "bg-red-500",
+      color: "bg-[#0077B6]",
       image: undefined,
       progress: 45,
       sessions: 3,
@@ -127,7 +133,7 @@ const Dashboard: React.FC = () => {
     {
       name: "Basketball",
       icon: Target,
-      color: "bg-purple-500",
+      color: "bg-[#023E8A]",
       image: undefined,
       progress: 73,
       sessions: 5,
@@ -472,10 +478,17 @@ const Dashboard: React.FC = () => {
                 >
                   <div
                     className="absolute inset-0 bg-cover bg-center"
-                    style={sport.image ? { backgroundImage: `url(${sport.image})` } : { backgroundColor: '#1f2937' }}
+                    style={
+                      sport.image
+                        ? { backgroundImage: `url(${sport.image})` }
+                        : { backgroundColor: "#1f2937" }
+                    }
                     aria-hidden
                   />
-                  <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" aria-hidden />
+                  <div
+                    className="absolute inset-0 bg-black/40 backdrop-blur-sm"
+                    aria-hidden
+                  />
                   <CardContent className="relative p-6 h-full flex flex-col justify-between">
                     <div className="flex items-center justify-between mb-4">
                       <div className="flex items-center space-x-3">
@@ -505,7 +518,9 @@ const Dashboard: React.FC = () => {
                     </div>
                     <div className="flex justify-between items-center text-sm text-gray-200/80">
                       <span>{sport.sessions} sessions</span>
-                      <span className="text-gray-200/60">{sport.lastSession}</span>
+                      <span className="text-gray-200/60">
+                        {sport.lastSession}
+                      </span>
                     </div>
                   </CardContent>
                 </Card>
@@ -641,8 +656,12 @@ const Dashboard: React.FC = () => {
                             </div>
                             <div className="w-full bg-gray-700 rounded-full h-2">
                               <div
-                                className="bg-green-500 h-2 rounded-full"
-                                style={{ width: `${program.progress}%` }}
+                                className="h-2 rounded-full"
+                                style={{
+                                  width: `${program.progress}%`,
+                                  background:
+                                    "linear-gradient(90deg,#0077B6,#00B4D8)",
+                                }}
                               ></div>
                             </div>
                           </div>
@@ -696,9 +715,17 @@ const Dashboard: React.FC = () => {
         return (
           <div className="space-y-6">
             <div className="h-[calc(100vh-9rem)] rounded-lg overflow-hidden shadow-lg">
-              <div className="h-full bg-gradient-to-br from-purple-900 via-purple-800 to-indigo-900 p-6 flex flex-col">
+              <div
+                className="h-full p-6 flex flex-col"
+                style={{
+                  background:
+                    "linear-gradient(180deg, #023E8A 0%, #0077B6 50%, #00B4D8 100%)",
+                }}
+              >
                 <div className="text-center mb-4">
-                  <h2 className="text-2xl font-semibold text-white">AI Assistant</h2>
+                  <h2 className="text-2xl font-semibold text-white">
+                    AI Assistant
+                  </h2>
                 </div>
 
                 <div className="flex-1 overflow-y-auto p-2 space-y-4">
@@ -709,8 +736,8 @@ const Dashboard: React.FC = () => {
                     </div>
                     <div className="max-w-2xl bg-white/8 border border-white/6 rounded-lg p-4 text-white text-sm shadow-sm">
                       <p>
-                        Hello! I can help with training plans, technique tips, or
-                        nutrition. What would you like to discuss today?
+                        Hello! I can help with training plans, technique tips,
+                        or nutrition. What would you like to discuss today?
                       </p>
                     </div>
                   </div>
@@ -718,7 +745,9 @@ const Dashboard: React.FC = () => {
                   {/* User reply */}
                   <div className="flex items-start justify-end space-x-3">
                     <div className="max-w-2xl bg-white/12 rounded-lg p-3 text-white text-sm shadow-sm text-right">
-                      <p>Where are some good places to get pad thai in Toronto?</p>
+                      <p>
+                        Where are some good places to get pad thai in Toronto?
+                      </p>
                     </div>
                     <div className="w-8 h-8 bg-white/10 rounded-full flex items-center justify-center">
                       <Users className="w-4 h-4 text-white/90" />
@@ -733,7 +762,8 @@ const Dashboard: React.FC = () => {
                     <div className="max-w-3xl bg-white/8 border border-white/6 rounded-lg p-4 text-white text-sm shadow-sm">
                       <ol className="list-decimal ml-5 space-y-2">
                         <li>
-                          Pai Northern Thai Kitchen - authentic northern Thai flavors.
+                          Pai Northern Thai Kitchen - authentic northern Thai
+                          flavors.
                         </li>
                         <li>
                           Sabai Sabai Kitchen and Bar - traditional Thai dishes.
@@ -752,7 +782,9 @@ const Dashboard: React.FC = () => {
                       className="flex-1 bg-transparent placeholder-white/60 text-white text-sm px-3 py-2 focus:outline-none"
                       placeholder="Ask me anything..."
                     />
-                    <Button className="bg-indigo-600 hover:bg-indigo-500 text-white px-4 py-2 rounded-full">Send</Button>
+                    <Button className="bg-[#0077B6] hover:bg-[#0096C7] text-white px-4 py-2 rounded-full">
+                      Send
+                    </Button>
                   </div>
                 </div>
               </div>
@@ -900,11 +932,19 @@ const Dashboard: React.FC = () => {
                     onClick={() => setActiveTab(tab.id)}
                     className={`flex items-center space-x-2 px-4 py-2 rounded-full text-sm font-medium transition-all cursor-pointer ${
                       activeTab === tab.id
-                        ? "bg-gradient-to-r from-green-500 to-lime-500 text-black shadow-md"
+                        ? "text-white shadow-md"
                         : "text-gray-300 hover:text-white hover:bg-gray-700/60"
                     }`}
+                    style={
+                      activeTab === tab.id
+                        ? {
+                            background:
+                              "linear-gradient(90deg, #0077B6 0%, #00B4D8 100%)",
+                          }
+                        : undefined
+                    }
                   >
-                    <tab.icon className="w-4 h-4" />
+                    <tab.icon className="w-4 h-4 text-white" />
                     <span>{tab.label}</span>
                   </button>
                 ))}
@@ -918,7 +958,9 @@ const Dashboard: React.FC = () => {
               </button>
               <button className="p-2 rounded-md bg-gray-800 hover:bg-gray-700 text-gray-300 relative">
                 <Bell className="w-4 h-4" />
-                <span className="absolute -top-1 -right-1 inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-semibold bg-red-600 text-white rounded-full">3</span>
+                <span className="absolute -top-1 -right-1 inline-flex items-center justify-center px-1.5 py-0.5 text-xs font-semibold bg-red-600 text-white rounded-full">
+                  3
+                </span>
               </button>
               <button className="p-2 rounded-md bg-gray-800 hover:bg-gray-700 text-gray-300">
                 <CreditCard className="w-4 h-4" />
@@ -935,11 +977,19 @@ const Dashboard: React.FC = () => {
                   </PopoverTrigger>
                   <PopoverContent className="w-48">
                     <div className="space-y-2">
-                      <button className="w-full text-left px-3 py-2 rounded-md hover:bg-gray-700">Profile</button>
-                      <button className="w-full text-left px-3 py-2 rounded-md hover:bg-gray-700">Settings</button>
-                      <button className="w-full text-left px-3 py-2 rounded-md hover:bg-gray-700">Billing</button>
+                      <button className="w-full text-left px-3 py-2 rounded-md hover:bg-gray-700">
+                        Profile
+                      </button>
+                      <button className="w-full text-left px-3 py-2 rounded-md hover:bg-gray-700">
+                        Settings
+                      </button>
+                      <button className="w-full text-left px-3 py-2 rounded-md hover:bg-gray-700">
+                        Billing
+                      </button>
                       <div className="border-t border-gray-700" />
-                      <button className="w-full text-left px-3 py-2 rounded-md hover:bg-red-700 text-red-400">Logout</button>
+                      <button className="w-full text-left px-3 py-2 rounded-md hover:bg-red-700 text-red-400">
+                        Logout
+                      </button>
                     </div>
                   </PopoverContent>
                 </Popover>
