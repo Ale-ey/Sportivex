@@ -28,8 +28,8 @@ const BlogPostCard = ({
             className="bg-cover bg-center"
             style={{ backgroundImage: `url('${imageUrl}')` }}
           >
-            <div className="w-full h-full bg-black/20 flex items-center justify-center">
-              <span className="px-3 py-1 bg-white/10 backdrop-blur-sm rounded-full text-sm font-medium text-white inline-block">
+            <div className="w-full h-full bg-[#1e40af]/20 flex items-center justify-center">
+              <span className="px-3 py-1 bg-white/20 backdrop-blur-sm rounded-full text-sm font-medium text-white inline-block">
                 {category}
               </span>
             </div>
@@ -38,7 +38,7 @@ const BlogPostCard = ({
             <p className="text-gray-500 text-sm mb-2">{date}</p>
             <h3 className="text-xl font-bold mb-2 line-clamp-2">{title}</h3>
             <p className="text-gray-700 mb-4 line-clamp-3">{excerpt}</p>
-            <Button variant="outline" className="group mt-auto">
+            <Button className="bg-[#1e40af] hover:bg-blue-900 text-white group mt-auto">
               Read more
               <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
             </Button>

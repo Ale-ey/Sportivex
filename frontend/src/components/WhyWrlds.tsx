@@ -1,15 +1,18 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, useInView } from "framer-motion";
 import {
+  Users,
   
-  BarChart,
-  AlertTriangle,
-  Clock4,
-  Rocket,
-  Zap,
-  Sparkles,
+  CreditCard,
+  Bell,
+  
+  Shield,
+  
+  
   ArrowRight,
- 
+  Activity,
+  
+  Settings
 } from "lucide-react";
 import { Link } from "react-router-dom";
 
@@ -109,16 +112,16 @@ const WhyWrlds = () => {
         >
           <motion.h2
             variants={itemVariants}
-            className="text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-3"
+            className="text-3xl md:text-4xl lg:text-5xl font-bold text-[#1e40af] mb-3"
           >
-            Why WRLDS?
+            Why Sportivex?
           </motion.h2>
           <motion.p
             variants={itemVariants}
             className="text-gray-600 text-lg max-w-3xl mx-auto"
           >
-            In an industry where complexity leads to failure, we bring
-            simplicity and expertise to ensure your success
+            A smart connection system for athletes with convenient registration, 
+            event news, billing, and comprehensive sports complex management
           </motion.p>
         </motion.div>
 
@@ -134,49 +137,49 @@ const WhyWrlds = () => {
         >
           <motion.div
             variants={itemVariants}
-            className="bg-gray-100 p-6 rounded-xl border border-gray-200 text-center hover:bg-gray-200 transition-all"
+            className="bg-gradient-to-br from-[#1e40af]/10 to-[#1e40af]/5 p-6 rounded-xl border border-[#1e40af]/20 text-center hover:shadow-lg transition-all"
           >
-            <div className="w-16 h-16 rounded-full bg-gray-200 flex items-center justify-center mx-auto mb-4">
-              <BarChart className="w-8 h-8 text-gray-700" />
+            <div className="w-16 h-16 rounded-full bg-[#1e40af] flex items-center justify-center mx-auto mb-4">
+              <Users className="w-8 h-8 text-white" />
             </div>
-            <h3 className="text-gray-900 text-2xl lg:text-3xl font-bold mb-3">
-              <AnimatedCounter end={7} suffix="+" /> Years
+            <h3 className="text-[#1e40af] text-2xl lg:text-3xl font-bold mb-3">
+              <AnimatedCounter end={500} suffix="+" /> Athletes
             </h3>
             <p className="text-gray-700">
-              Building connected products across industries with multiple
-              successful launches generating revenue
+              Active athletes using our smart connection system for registration, 
+              event updates, and billing management
             </p>
           </motion.div>
 
           <motion.div
             variants={itemVariants}
-            className="bg-gray-100 p-6 rounded-xl border border-gray-200 text-center hover:bg-gray-200 transition-all"
+            className="bg-gradient-to-br from-[#1e40af]/10 to-[#1e40af]/5 p-6 rounded-xl border border-[#1e40af]/20 text-center hover:shadow-lg transition-all"
           >
-            <div className="w-16 h-16 rounded-full bg-gray-200 flex items-center justify-center mx-auto mb-4">
-              <AlertTriangle className="w-8 h-8 text-gray-700" />
+            <div className="w-16 h-16 rounded-full bg-[#1e40af] flex items-center justify-center mx-auto mb-4">
+              <Activity className="w-8 h-8 text-white" />
             </div>
-            <h3 className="text-gray-900 text-2xl lg:text-3xl font-bold mb-3">
-              <AnimatedCounter end={60} suffix="%" />
+            <h3 className="text-[#1e40af] text-2xl lg:text-3xl font-bold mb-3">
+              <AnimatedCounter end={11} suffix="" /> Sports
             </h3>
             <p className="text-gray-700">
-              of IoT projects stall at the proof-of-concept stage due to
-              fragmented expertise and poor coordination
+              Comprehensive sports modules including swimming, gym, badminton, 
+              horse riding, wall climbing, and more
             </p>
           </motion.div>
 
           <motion.div
             variants={itemVariants}
-            className="bg-gray-100 p-6 rounded-xl border border-gray-200 text-center hover:bg-gray-200 transition-all"
+            className="bg-gradient-to-br from-[#1e40af]/10 to-[#1e40af]/5 p-6 rounded-xl border border-[#1e40af]/20 text-center hover:shadow-lg transition-all"
           >
-            <div className="w-16 h-16 rounded-full bg-gray-200 flex items-center justify-center mx-auto mb-4">
-              <Clock4 className="w-8 h-8 text-gray-700" />
+            <div className="w-16 h-16 rounded-full bg-[#1e40af] flex items-center justify-center mx-auto mb-4">
+              <Shield className="w-8 h-8 text-white" />
             </div>
-            <h3 className="text-gray-900 text-2xl lg:text-3xl font-bold mb-3">
-              <AnimatedCounter end={80} suffix="%" />
+            <h3 className="text-[#1e40af] text-2xl lg:text-3xl font-bold mb-3">
+              <AnimatedCounter end={100} suffix="%" />
             </h3>
             <p className="text-gray-700">
-              Increase in time-to-market for IoT products over the past four
-              years, creating costly delays
+              Digital management coverage for all sports complex operations 
+              including bookings, payments, and event coordination
             </p>
           </motion.div>
         </motion.div>
@@ -192,12 +195,12 @@ const WhyWrlds = () => {
           variants={containerVariants}
         >
           <motion.div variants={itemVariants} className="text-center mb-8">
-            <h3 className="text-2xl md:text-3xl font-bold text-gray-900 mb-3">
-              What WRLDS Does for You
+            <h3 className="text-2xl md:text-3xl font-bold text-[#1e40af] mb-3">
+              What Sportivex Gives You
             </h3>
             <p className="text-gray-600 max-w-2xl mx-auto">
-              We transform your ideas into market-ready solutions with tangible
-              benefits for your business
+              A comprehensive smart connection system for athletes with convenient 
+              registration, event news, billing, and complete sports complex management
             </p>
           </motion.div>
 
@@ -207,19 +210,19 @@ const WhyWrlds = () => {
           >
             <motion.div
               variants={itemVariants}
-              className="bg-gradient-to-r from-gray-50 to-gray-100 p-6 rounded-xl border border-gray-200 hover:shadow-lg transition-all"
+              className="bg-gradient-to-r from-[#1e40af]/10 to-[#1e40af]/5 p-6 rounded-xl border border-[#1e40af]/20 hover:shadow-lg transition-all"
             >
               <div className="flex items-start">
-                <div className="bg-gray-200 rounded-full p-3 mr-4">
-                  <BarChart className="w-6 h-6 text-gray-700" />
+                <div className="bg-[#1e40af] rounded-full p-3 mr-4">
+                  <Users className="w-6 h-6 text-white" />
                 </div>
                 <div>
-                  <h4 className="text-xl font-bold text-gray-900 mb-2">
-                    New Revenue Products
+                  <h4 className="text-xl font-bold text-[#1e40af] mb-2">
+                    Smart Registration System
                   </h4>
                   <p className="text-gray-700">
-                    Create high-margin, sensor-enabled products for new revenue
-                    streams.
+                    Easy athlete registration with automated membership management 
+                    and profile tracking across all sports modules.
                   </p>
                 </div>
               </div>
@@ -227,19 +230,19 @@ const WhyWrlds = () => {
 
             <motion.div
               variants={itemVariants}
-              className="bg-gradient-to-r from-gray-50 to-gray-100 p-6 rounded-xl border border-gray-200 hover:shadow-lg transition-all"
+              className="bg-gradient-to-r from-[#1e40af]/10 to-[#1e40af]/5 p-6 rounded-xl border border-[#1e40af]/20 hover:shadow-lg transition-all"
             >
               <div className="flex items-start">
-                <div className="bg-gray-200 rounded-full p-3 mr-4">
-                  <Sparkles className="w-6 h-6 text-gray-700" />
+                <div className="bg-[#1e40af] rounded-full p-3 mr-4">
+                  <Bell className="w-6 h-6 text-white" />
                 </div>
                 <div>
-                  <h4 className="text-xl font-bold text-gray-900 mb-2">
-                    Innovation That Attracts
+                  <h4 className="text-xl font-bold text-[#1e40af] mb-2">
+                    Event News & Updates
                   </h4>
                   <p className="text-gray-700">
-                    Break through to dream clients with tech that makes you
-                    stand out.
+                    Real-time notifications about competitions, training sessions, 
+                    and important announcements for all athletes.
                   </p>
                 </div>
               </div>
@@ -247,19 +250,19 @@ const WhyWrlds = () => {
 
             <motion.div
               variants={itemVariants}
-              className="bg-gradient-to-r from-gray-50 to-gray-100 p-6 rounded-xl border border-gray-200 hover:shadow-lg transition-all"
+              className="bg-gradient-to-r from-[#1e40af]/10 to-[#1e40af]/5 p-6 rounded-xl border border-[#1e40af]/20 hover:shadow-lg transition-all"
             >
               <div className="flex items-start">
-                <div className="bg-gray-200 rounded-full p-3 mr-4">
-                  <Zap className="w-6 h-6 text-gray-700" />
+                <div className="bg-[#1e40af] rounded-full p-3 mr-4">
+                  <CreditCard className="w-6 h-6 text-white" />
                 </div>
                 <div>
-                  <h4 className="text-xl font-bold text-gray-900 mb-2">
-                    Comfort-Zone Development
+                  <h4 className="text-xl font-bold text-[#1e40af] mb-2">
+                    Automated Billing
                   </h4>
                   <p className="text-gray-700">
-                    We develop frontier tech while you stay in your comfort
-                    zone.
+                    Seamless payment processing with automated invoicing, 
+                    subscription management, and financial tracking.
                   </p>
                 </div>
               </div>
@@ -267,19 +270,19 @@ const WhyWrlds = () => {
 
             <motion.div
               variants={itemVariants}
-              className="bg-gradient-to-r from-gray-50 to-gray-100 p-6 rounded-xl border border-gray-200 hover:shadow-lg transition-all"
+              className="bg-gradient-to-r from-[#1e40af]/10 to-[#1e40af]/5 p-6 rounded-xl border border-[#1e40af]/20 hover:shadow-lg transition-all"
             >
               <div className="flex items-start">
-                <div className="bg-gray-200 rounded-full p-3 mr-4">
-                  <Rocket className="w-6 h-6 text-gray-700" />
+                <div className="bg-[#1e40af] rounded-full p-3 mr-4">
+                  <Settings className="w-6 h-6 text-white" />
                 </div>
                 <div>
-                  <h4 className="text-xl font-bold text-gray-900 mb-2">
-                    Brand-Building Leaps
+                  <h4 className="text-xl font-bold text-[#1e40af] mb-2">
+                    Complete Sports Complex Management
                   </h4>
                   <p className="text-gray-700">
-                    We enable hardware/software leaps that define your brand's
-                    future.
+                    Comprehensive online management system for facilities, 
+                    equipment, staff coordination, and operational efficiency.
                   </p>
                 </div>
               </div>
@@ -288,11 +291,11 @@ const WhyWrlds = () => {
 
           <motion.div variants={itemVariants} className="text-center mt-10">
             <Link
-              to="/development-process"
+              to="/sports"
               onClick={() => window.scrollTo(0, 0)}
-              className="inline-flex items-center px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-all group"
+              className="inline-flex items-center px-6 py-3 bg-[#1e40af] text-white rounded-lg hover:bg-blue-900 transition-all group"
             >
-              Learn more about our structured development process
+              Explore our sports management modules
               <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
             </Link>
           </motion.div>

@@ -42,6 +42,7 @@ function App() {
     <>
       <BrowserRouter>
         <Routes>
+          {/* Home routes */}
           <Route path="/" element={<Index />} />
           <Route path="/projects/firecat" element={<FireCatProject />} />
           <Route
@@ -67,20 +68,14 @@ function App() {
           <Route path="/dashboard" element={<Dashboard />} />
 
           {/* Global routes */}
-          <Route
-            path="/global/sports-complex"
-            element={<SportsComplexAccount />}
-          />
+          <Route path="/global/sports-complex" element={<SportsComplexAccount />} />
 
           {/* Sports routes */}
           <Route path="/sports/events" element={<Events />} />
           <Route path="/gym" element={<Gym />} />
 
           {/* Swimming routes */}
-          <Route
-            path="/swimming/registration"
-            element={<SwimmingRegistration />}
-          />
+          <Route path="/swimming/registration" element={<SwimmingRegistration />} />
           <Route path="/swimming/time-tracking" element={<TimeTracking />} />
           <Route path="/swimming/invoice" element={<Invoice />} />
           <Route path="/swimming/cancellation" element={<Cancellation />} />
