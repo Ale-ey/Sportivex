@@ -47,7 +47,7 @@ const Navbar = () => {
     <motion.nav
       className={cn(
         "fixed top-0 left-0 right-0 z-50 transition-all duration-300 w-full",
-        isScrolled ? "bg-white shadow-sm" : "bg-transparent backdrop-blur-none"
+        isScrolled ? "bg-white shadow-sm border-b border-gray-200" : "bg-transparent backdrop-blur-none"
       )}
       initial={{
         opacity: 1,
@@ -65,7 +65,7 @@ const Navbar = () => {
               <span
                 className={cn(
                   "text-2xl font-bold transition-colors duration-300",
-                  isScrolled ? "text-black" : "text-white"
+                  isScrolled ? "text-[#1e40af]" : "text-white"
                 )}
               >
                 Sportivex
@@ -83,8 +83,8 @@ const Navbar = () => {
                       className={cn(
                         navigationMenuTriggerStyle(),
                         isScrolled
-                          ? "text-gray-700 hover:text-gray-900"
-                          : "text-gray-100 hover:text-white bg-transparent hover:bg-gray-800"
+                          ? "text-[#1e40af] hover:text-blue-600"
+                          : "text-gray-200 hover:text-white bg-transparent hover:bg-white/20"
                       )}
                     >
                       Home
@@ -98,8 +98,8 @@ const Navbar = () => {
                       className={cn(
                         navigationMenuTriggerStyle(),
                         isScrolled
-                          ? "text-gray-700 hover:text-gray-900"
-                          : "text-gray-100 hover:text-white bg-transparent hover:bg-gray-800"
+                          ? "text-[#1e40af] hover:text-blue-600"
+                          : "text-gray-200 hover:text-white bg-transparent hover:bg-white/20"
                       )}
                     >
                       About Us
@@ -111,21 +111,21 @@ const Navbar = () => {
                   <NavigationMenuTrigger
                     className={cn(
                       isScrolled
-                        ? "text-gray-700 hover:text-gray-900"
-                        : "text-gray-100 hover:text-white bg-transparent hover:bg-gray-800"
+                        ? "text-[#1e40af] hover:text-blue-600"
+                        : "text-gray-200 hover:text-white bg-transparent hover:bg-white/20"
                     )}
                   >
                     Customer Cases
                   </NavigationMenuTrigger>
                   <NavigationMenuContent>
-                    <ul className="grid gap-3 p-4 w-[400px]">
+                    <ul className="grid gap-3 p-4 w-[400px] bg-white border border-gray-200">
                       <li>
                         <Link
                           to="/projects/firecat"
-                          className="block p-3 space-y-1 rounded-md hover:bg-gray-100"
+                          className="block p-3 space-y-1 rounded-md hover:bg-gray-50 transition-colors"
                         >
-                          <div className="font-medium">6th SENSE Safety</div>
-                          <p className="text-sm text-gray-500">
+                          <div className="font-medium text-[#1e40af]">6th SENSE Safety</div>
+                          <p className="text-sm text-gray-600">
                             IoT sensors for firefighter protection
                           </p>
                         </Link>
@@ -133,10 +133,10 @@ const Navbar = () => {
                       <li>
                         <Link
                           to="/projects/sport-retail"
-                          className="block p-3 space-y-1 rounded-md hover:bg-gray-100"
+                          className="block p-3 space-y-1 rounded-md hover:bg-gray-50 transition-colors"
                         >
-                          <div className="font-medium">Better Hockey</div>
-                          <p className="text-sm text-gray-500">
+                          <div className="font-medium text-[#1e40af]">Better Hockey</div>
+                          <p className="text-sm text-gray-600">
                             Connected sports equipment development
                           </p>
                         </Link>
@@ -144,10 +144,10 @@ const Navbar = () => {
                       <li>
                         <Link
                           to="/projects/workwear"
-                          className="block p-3 space-y-1 rounded-md hover:bg-gray-100"
+                          className="block p-3 space-y-1 rounded-md hover:bg-gray-50 transition-colors"
                         >
-                          <div className="font-medium">Industrial Workwear</div>
-                          <p className="text-sm text-gray-500">
+                          <div className="font-medium text-[#1e40af]">Industrial Workwear</div>
+                          <p className="text-sm text-gray-600">
                             Smart PPE for extreme environments
                           </p>
                         </Link>
@@ -155,10 +155,10 @@ const Navbar = () => {
                       <li>
                         <Link
                           to="/projects/hockey"
-                          className="block p-3 space-y-1 rounded-md hover:bg-gray-100"
+                          className="block p-3 space-y-1 rounded-md hover:bg-gray-50 transition-colors"
                         >
-                          <div className="font-medium">AirHive Tracking</div>
-                          <p className="text-sm text-gray-500">
+                          <div className="font-medium text-[#1e40af]">AirHive Tracking</div>
+                          <p className="text-sm text-gray-600">
                             Smart equipment for Berg Trampolines
                           </p>
                         </Link>
@@ -166,12 +166,12 @@ const Navbar = () => {
                       <li>
                         <Link
                           to="/projects/pet-tracker"
-                          className="block p-3 space-y-1 rounded-md hover:bg-gray-100"
+                          className="block p-3 space-y-1 rounded-md hover:bg-gray-50 transition-colors"
                         >
-                          <div className="font-medium">
+                          <div className="font-medium text-[#1e40af]">
                             Pet Activity Monitoring
                           </div>
-                          <p className="text-sm text-gray-500">
+                          <p className="text-sm text-gray-600">
                             IoT solutions for pet health tracking
                           </p>
                         </Link>
@@ -184,21 +184,21 @@ const Navbar = () => {
                   <NavigationMenuTrigger
                     className={cn(
                       isScrolled
-                        ? "text-gray-700 hover:text-gray-900"
-                        : "text-gray-100 hover:text-white bg-transparent hover:bg-gray-800"
+                        ? "text-[#1e40af] hover:text-blue-600"
+                        : "text-gray-200 hover:text-white bg-transparent hover:bg-white/20"
                     )}
                   >
                     Learn More
                   </NavigationMenuTrigger>
                   <NavigationMenuContent>
-                    <ul className="grid gap-3 p-4 w-[400px]">
+                    <ul className="grid gap-3 p-4 w-[400px] bg-white border border-gray-200">
                       <li>
                         <Link
                           to="/tech-details"
-                          className="block p-3 space-y-1 rounded-md hover:bg-gray-100"
+                          className="block p-3 space-y-1 rounded-md hover:bg-gray-50 transition-colors"
                         >
-                          <div className="font-medium">Technology Platform</div>
-                          <p className="text-sm text-gray-500">
+                          <div className="font-medium text-[#1e40af]">Technology Platform</div>
+                          <p className="text-sm text-gray-600">
                             Our IoT development platform and capabilities
                           </p>
                         </Link>
@@ -206,10 +206,10 @@ const Navbar = () => {
                       <li>
                         <Link
                           to="/development-process"
-                          className="block p-3 space-y-1 rounded-md hover:bg-gray-100"
+                          className="block p-3 space-y-1 rounded-md hover:bg-gray-50 transition-colors"
                         >
-                          <div className="font-medium">Development Process</div>
-                          <p className="text-sm text-gray-500">
+                          <div className="font-medium text-[#1e40af]">Development Process</div>
+                          <p className="text-sm text-gray-600">
                             5-phase approach from idea to market
                           </p>
                         </Link>
@@ -225,8 +225,8 @@ const Navbar = () => {
                       className={cn(
                         navigationMenuTriggerStyle(),
                         isScrolled
-                          ? "text-gray-700 hover:text-gray-900"
-                          : "text-gray-100 hover:text-white bg-transparent hover:bg-gray-800"
+                          ? "text-[#1e40af] hover:text-blue-600"
+                          : "text-gray-200 hover:text-white bg-transparent hover:bg-white/20"
                       )}
                     >
                       News
@@ -240,8 +240,8 @@ const Navbar = () => {
                       className={cn(
                         navigationMenuTriggerStyle(),
                         isScrolled
-                          ? "text-gray-700 hover:text-gray-900"
-                          : "text-gray-100 hover:text-white bg-transparent hover:bg-gray-800"
+                          ? "text-[#1e40af] hover:text-blue-600"
+                          : "text-gray-200 hover:text-white bg-transparent hover:bg-white/20"
                       )}
                     >
                       Careers
@@ -255,8 +255,8 @@ const Navbar = () => {
                     className={cn(
                       "px-4 py-2 rounded-md transition-colors",
                       isScrolled
-                        ? "bg-gray-200 text-gray-700 hover:bg-gray-300"
-                        : "bg-gray-700 text-white hover:bg-gray-600"
+                        ? "bg-[#1e40af] text-white hover:bg-blue-900"
+                        : "bg-[#1e40af] text-white hover:bg-blue-900"
                     )}
                   >
                     Contact Us
@@ -272,7 +272,7 @@ const Navbar = () => {
               onClick={toggleMenu}
               className={cn(
                 "focus:outline-none",
-                isScrolled ? "text-gray-700" : "text-white"
+                isScrolled ? "text-[#1e40af]" : "text-white"
               )}
             >
               {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
@@ -291,16 +291,16 @@ const Navbar = () => {
         <div
           className={cn(
             "px-3 pt-2 pb-3 space-y-1 shadow-sm overflow-y-auto max-h-80",
-            isScrolled ? "bg-white" : "bg-black/90 backdrop-blur-sm"
+            isScrolled ? "bg-white border-t border-gray-200" : "bg-[#1e40af]/90 backdrop-blur-sm"
           )}
         >
           <Link
             to="/"
             className={cn(
-              "block px-3 py-1.5 rounded-md text-sm",
+              "block px-3 py-1.5 rounded-md text-sm transition-colors",
               isScrolled
-                ? "text-gray-700 hover:bg-gray-50"
-                : "text-gray-200 hover:bg-gray-900"
+                ? "text-[#1e40af] hover:bg-gray-50"
+                : "text-gray-200 hover:bg-white/20"
             )}
             onClick={() => {
               setIsMenuOpen(false);
@@ -313,10 +313,10 @@ const Navbar = () => {
           <Link
             to="/about"
             className={cn(
-              "block px-3 py-1.5 rounded-md text-sm",
+              "block px-3 py-1.5 rounded-md text-sm transition-colors",
               isScrolled
-                ? "text-gray-700 hover:bg-gray-50"
-                : "text-gray-200 hover:bg-gray-900"
+                ? "text-[#1e40af] hover:bg-gray-50"
+                : "text-gray-200 hover:bg-white/20"
             )}
             onClick={() => {
               setIsMenuOpen(false);
@@ -330,10 +330,10 @@ const Navbar = () => {
           <Link
             to="/projects/firecat"
             className={cn(
-              "block px-3 py-1.5 rounded-md text-sm",
+              "block px-3 py-1.5 rounded-md text-sm transition-colors",
               isScrolled
-                ? "text-gray-700 hover:bg-gray-50"
-                : "text-gray-200 hover:bg-gray-900"
+                ? "text-[#1e40af] hover:bg-gray-50"
+                : "text-gray-200 hover:bg-white/20"
             )}
             onClick={() => {
               setIsMenuOpen(false);
@@ -347,10 +347,10 @@ const Navbar = () => {
           <Link
             to="/tech-details"
             className={cn(
-              "block px-3 py-1.5 rounded-md text-sm",
+              "block px-3 py-1.5 rounded-md text-sm transition-colors",
               isScrolled
-                ? "text-gray-700 hover:bg-gray-50"
-                : "text-gray-200 hover:bg-gray-900"
+                ? "text-[#1e40af] hover:bg-gray-50"
+                : "text-gray-200 hover:bg-white/20"
             )}
             onClick={() => {
               setIsMenuOpen(false);
@@ -363,10 +363,10 @@ const Navbar = () => {
           <Link
             to="/blog"
             className={cn(
-              "block px-3 py-1.5 rounded-md text-sm",
+              "block px-3 py-1.5 rounded-md text-sm transition-colors",
               isScrolled
-                ? "text-gray-700 hover:bg-gray-50"
-                : "text-gray-200 hover:bg-gray-900"
+                ? "text-[#1e40af] hover:bg-gray-50"
+                : "text-gray-200 hover:bg-white/20"
             )}
             onClick={() => {
               setIsMenuOpen(false);
@@ -379,10 +379,10 @@ const Navbar = () => {
           <Link
             to="/careers"
             className={cn(
-              "block px-3 py-1.5 rounded-md text-sm",
+              "block px-3 py-1.5 rounded-md text-sm transition-colors",
               isScrolled
-                ? "text-gray-700 hover:bg-gray-50"
-                : "text-gray-200 hover:bg-gray-900"
+                ? "text-[#1e40af] hover:bg-gray-50"
+                : "text-gray-200 hover:bg-white/20"
             )}
             onClick={() => {
               setIsMenuOpen(false);
@@ -395,10 +395,10 @@ const Navbar = () => {
           <button
             onClick={() => scrollToSection("contact")}
             className={cn(
-              "block w-full text-left px-3 py-1.5 rounded-md text-sm",
+              "block w-full text-left px-3 py-1.5 rounded-md text-sm transition-colors",
               isScrolled
-                ? "text-gray-700 bg-gray-200 hover:bg-gray-300"
-                : "text-white bg-gray-700 hover:bg-gray-600"
+                ? "text-white bg-[#1e40af] hover:bg-blue-900"
+                : "text-white bg-[#1e40af] hover:bg-blue-900"
             )}
           >
             Contact Us

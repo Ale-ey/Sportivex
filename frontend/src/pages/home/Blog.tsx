@@ -17,32 +17,31 @@ const Blog = () => {
   return (
     <PageLayout>
       <SEO
-        title="WRLDS - News and insights about smart textile technology"
-        description="Stay updated with the latest news and insights about sensor-integrated textiles and smart technology from WRLDS Technologies."
+        title="NUST Sports News - Latest Updates and Achievements"
+        description="Stay updated with the latest news, events, and achievements from NUST University's sports programs and comprehensive sports management platform."
         imageUrl={
           featuredPost?.imageUrl ||
           "/lovable-uploads/6b0637e9-4a7b-40d0-b219-c8b7f879f93e.png"
         }
         keywords={[
-          "smart textiles",
-          "textile technology",
-          "industry news",
-          "sensor innovation",
-          "wearable tech",
-          "smart fabrics",
+          "NUST sports",
+          "university athletics",
+          "sports news",
+          "NUST achievements",
+          "sports management",
+          "university sports",
         ]}
         type="website"
       />
 
-      <div className="w-full pt-24 pb-12 bg-gradient-to-b from-black to-gray-900 text-white">
+      <div className="w-full pt-24 pb-12 bg-[#1e40af] text-white">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center">
             <h1 className="text-4xl md:text-5xl font-bold mb-4">
-              WRLDS News &amp; Insights
+              NUST Sports News
             </h1>
-            <p className="text-xl text-gray-300 mb-6">
-              The latest trends and news in sensor-integrated textiles and smart
-              technology
+            <p className="text-xl text-gray-200 mb-6">
+              Latest updates, achievements, and events from NUST University's sports programs
             </p>
           </div>
         </div>
@@ -66,8 +65,8 @@ const Blog = () => {
                       backgroundPosition: "center",
                     }}
                   >
-                    <div className="text-white text-center bg-black/30 backdrop-blur-sm p-4 rounded-lg">
-                      <span className="px-3 py-1 bg-white/10 rounded-full text-sm font-medium inline-block mb-4">
+                    <div className="text-white text-center bg-[#1e40af]/30 backdrop-blur-sm p-4 rounded-lg">
+                      <span className="px-3 py-1 bg-white/20 rounded-full text-sm font-medium inline-block mb-4">
                         Featured
                       </span>
                       <h3 className="text-2xl md:text-3xl font-bold">
@@ -80,7 +79,7 @@ const Blog = () => {
                       Published: {featuredPost.date}
                     </p>
                     <p className="text-gray-700 mb-6">{featuredPost.excerpt}</p>
-                    <Button variant="outline" className="group">
+                    <Button className="bg-[#1e40af] hover:bg-blue-900 text-white group">
                       Read more
                       <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
                     </Button>
