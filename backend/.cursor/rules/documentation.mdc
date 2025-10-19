@@ -1,0 +1,5 @@
+---
+alwaysApply: true
+---
+If you see any change in database schema update Documentation\SCHEMA.md 
+when you implement any module which creates API endpoint which Client Side will call, create the new .md file in Documentation/ and write the proper details about so FrontEnd dev and AI understands how backend working
