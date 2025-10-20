@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { ArrowRight, Newspaper } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import BlogPostCard from "@/components/BlogPostCard";
+import BlogPostCard from "@/components/landingPage/BlogPostCard";
 import { blogPosts } from "@/constant/data/blogPosts";
 import { ScrollArea } from "@/components/ui/scroll-area";
 
@@ -18,13 +18,17 @@ const BlogPreview = () => {
           <div>
             <div className="flex items-center gap-2 mb-3">
               <Newspaper size={20} className="text-[#1e40af]" />
-              <span className="text-[#1e40af] font-medium">NUST Sports News</span>
+              <span className="text-[#1e40af] font-medium">
+                NUST Sports News
+              </span>
             </div>
             <h2 className="text-3xl md:text-4xl font-bold mb-4 text-[#1e40af]">
               Latest Updates
             </h2>
             <p className="text-gray-800 max-w-xl">
-              Stay updated with the latest news, events, and achievements from NUST University's sports programs and our comprehensive sports management platform.
+              Stay updated with the latest news, events, and achievements from
+              NUST University's sports programs and our comprehensive sports
+              management platform.
             </p>
           </div>
           <Link to="/blog" className="mt-4 md:mt-0">

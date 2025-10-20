@@ -1,4 +1,4 @@
-import ProjectPageLayout from "@/components/ProjectPageLayout";
+import ProjectPageLayout from "@/components/landingPage/ProjectPageLayout";
 import {
   Thermometer,
   ShieldCheck,
