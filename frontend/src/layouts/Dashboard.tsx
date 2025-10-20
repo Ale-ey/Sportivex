@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { Outlet } from "react-router-dom";
 import { Activity, Trophy, MessageCircle, Home, Target } from "lucide-react";
-import DashboardHeader from "../../components/DashboardHeader";
+import DashboardHeader from "../components/DashboardHeader";
 
 const Dashboard: React.FC = () => {
   const items = useMemo(

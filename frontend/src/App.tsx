@@ -19,7 +19,7 @@ import SignIn from "./pages/auth/SignIn";
 import SignUp from "./pages/auth/SignUp";
 import ForgotPassword from "./pages/auth/ForgotPassword";
 import SetNewPassword from "./pages/auth/SetNewPassword";
-import Dashboard from "./pages/dashboard/Dashboard";
+import Dashboard from "./layouts/Dashboard";
 import HomeRoute from "./pages/dashboard/routes/HomeRoute";
 import SportsRoute from "./pages/dashboard/routes/SportsRoute";
 import LeaguesRoute from "./pages/dashboard/routes/LeaguesRoute";
