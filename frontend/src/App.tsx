@@ -19,7 +19,7 @@ import SignIn from "./pages/auth/SignIn";
 import SignUp from "./pages/auth/SignUp";
 import ForgotPassword from "./pages/auth/ForgotPassword";
 import SetNewPassword from "./pages/auth/SetNewPassword";
-import Dashboard from "./pages/auth/Dashboard";
+import Dashboard from "./pages/dashboard/Dashboard";
 
 // Global pages
 import SportsComplexAccount from "./pages/global/SportsComplexAccount";
