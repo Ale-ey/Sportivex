@@ -1,16 +1,17 @@
 @import "tailwindcss";
 @import "tw-animate-css";
-html, body {
-  overflow: auto; /* allow scrolling */
-  height: 100%;
-  scrollbar-width: none; /* Firefox */
-  -ms-overflow-style: none; /* IE, old Edge */
-}
 
-html::-webkit-scrollbar,
+/* html, body {
+  overflow: auto; 
+  height: 100%;
+  scrollbar-width: none; 
+  -ms-overflow-style: none;
+} */
+
+/* html::-webkit-scrollbar,
 body::-webkit-scrollbar {
-  display: none; /* Chrome, Safari, Opera */
-}
+  display: none;
+} */
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
