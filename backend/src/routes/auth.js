@@ -1,18 +1,20 @@
 import express from 'express';
 import authController from "../controllers/authController.js";
-import { authenticateSupabase } from "../middlewares/auth.js";
+import { authenticateToken } from "../middlewares/auth.js";
 
 const router = express.Router();
 
-// Public routes
+// Public routes (no authentication required)
 router.post('/register', authController.register);
 router.post('/login', authController.login);
 router.post('/request-password-reset', authController.requestPasswordReset);
-router.post('/refresh-token', authController.refreshToken);
+router.post('/reset-password', authController.resetPassword);
 
-// Protected routes
-router.post('/logout', authenticateSupabase, authController.logout);
-router.get('/profile', authenticateSupabase, authController.getProfile);
-router.put('/profile', authenticateSupabase, authController.updateProfile);
+// Protected routes (authentication required)
+router.post('/logout', authenticateToken, authController.logout);
+router.get('/profile', authenticateToken, authController.getProfile);
+router.put('/profile', authenticateToken, authController.updateProfile);
+router.post('/change-password', authenticateToken, authController.changePassword);
+router.post('/refresh-token', authenticateToken, authController.refreshToken);
 
 export default router;

@@ -73,14 +73,14 @@ const validateCmsId = (cmsId) => {
  * @returns {Object} - Validation result with isValid and message
  */
 const validateRole = (role) => {
-  const allowedRoles = ['student', 'alumni', 'faculty'];
+  const allowedRoles = ['ug' , 'pg' , 'alumni', 'faculty'];
   
   if (!role) {
     return { isValid: false, message: 'Role is required' };
   }
   
   if (!allowedRoles.includes(role.toLowerCase())) {
-    return { isValid: false, message: 'Role must be one of: student, alumni, faculty' };
+    return { isValid: false, message: 'Role must be one of: ug, pg, alumni, faculty' };
   }
   
   return { isValid: true, message: 'Role is valid' };

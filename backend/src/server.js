@@ -6,9 +6,11 @@ import dotenv from 'dotenv';
 
 // Import routes
 import authRoutes from "./routes/auth.js";
+// Global JWT validator
+import jwtValidator from "./middlewares/jwt_validator.js";
 
 // Import services
-import { insertDummyData, checkDummyDataExists } from "./services/dummyDataService.js";
+// import { insertDummyData, checkDummyDataExists } from "./services/dummyDataService.js";
 
 dotenv.config();
 
@@ -30,6 +32,9 @@ app.get('/health', (_req, res) => {
   });
 });
 
+// Global JWT validation (skips public routes defined inside the middleware)
+app.use(jwtValidator);
+
 // API routes
 app.use('/api/auth', authRoutes);
 
@@ -50,30 +55,30 @@ app.use((error, _req, res, _next) => {
   });
 });
 
-// Initialize dummy data on server startup
-const initializeDummyData = async () => {
-  try {
-    console.log('\n🔍 Checking for existing dummy data...');
+// // Initialize dummy data on server startup
+// const initializeDummyData = async () => {
+//   try {
+//     console.log('\n🔍 Checking for existing dummy data...');
     
-    const checkResult = await checkDummyDataExists();
+//     const checkResult = await checkDummyDataExists();
     
-    if (checkResult.success && checkResult.exists) {
-      console.log(`📊 Found ${checkResult.count} existing dummy users. Skipping insertion.`);
-      console.log('   Existing users:', checkResult.existingUsers.map(u => `${u.name} (${u.cms_id})`).join(', '));
-    } else {
-      console.log('📝 No dummy data found. Inserting dummy users...');
-      const insertResult = await insertDummyData();
+//     if (checkResult.success && checkResult.exists) {
+//       console.log(`📊 Found ${checkResult.count} existing dummy users. Skipping insertion.`);
+//       console.log('   Existing users:', checkResult.existingUsers.map(u => `${u.name} (${u.cms_id})`).join(', '));
+//     } else {
+//       console.log('📝 No dummy data found. Inserting dummy users...');
+//       const insertResult = await insertDummyData();
       
-      if (insertResult.success) {
-        console.log('✅ Dummy data initialization completed successfully!');
-      } else {
-        console.log('❌ Dummy data initialization failed:', insertResult.message);
-      }
-    }
-  } catch (error) {
-    console.error('❌ Error during dummy data initialization:', error);
-  }
-};
+//       if (insertResult.success) {
+//         console.log('✅ Dummy data initialization completed successfully!');
+//       } else {
+//         console.log('❌ Dummy data initialization failed:', insertResult.message);
+//       }
+//     }
+//   } catch (error) {
+//     console.error('❌ Error during dummy data initialization:', error);
+//   }
+// };
 
 app.listen(PORT, async () => {
   console.log(`🚀 Server is running on port ${PORT}`);
