@@ -1,8 +1,8 @@
 import { useParams } from "react-router-dom";
 import { blogPosts } from "@/constant/data/blogPosts";
 import PageLayout from "@/components/PageLayout";
-import SEO from "@/components/SEO";
-import EnhancedBlogContent from "@/components/EnhancedBlogContent";
+import SEO from "@/components/landingPage/SEO";
+import EnhancedBlogContent from "@/components/landingPage/EnhancedBlogContent";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Calendar, User } from "lucide-react";
 import { Link } from "react-router-dom";

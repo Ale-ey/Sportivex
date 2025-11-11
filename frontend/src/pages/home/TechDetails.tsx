@@ -1,7 +1,7 @@
 import { ArrowLeft, ArrowRight, FileText, Code, Cpu } from "lucide-react";
 import { Link } from "react-router-dom";
 import { motion } from "framer-motion";
-import ProductPlatform from "@/components/ProductPlatform";
+import ProductPlatform from "@/components/landingPage/ProductPlatform";
 
 import { Card, CardContent } from "@/components/ui/card";
 import { useState, useEffect } from "react";

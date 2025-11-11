@@ -9,9 +9,6 @@ import authRoutes from "./routes/auth.js";
 // Global JWT validator
 import jwtValidator from "./middlewares/jwt_validator.js";
 
-// Import services
-// import { insertDummyData, checkDummyDataExists } from "./services/dummyDataService.js";
-
 dotenv.config();
 
 const app = express();
@@ -80,13 +77,10 @@ app.use((error, _req, res, _next) => {
 //   }
 // };
 
-app.listen(PORT, async () => {
+app.listen(PORT, () => {
   console.log(`🚀 Server is running on port ${PORT}`);
   console.log(`📊 Health check: http://localhost:${PORT}/health`);
   console.log(`🔐 Auth endpoints: http://localhost:${PORT}/api/auth`);
-  
-  // Initialize dummy data after server starts
-  await initializeDummyData();
   
   console.log('\n🎉 Server startup completed!');
 });

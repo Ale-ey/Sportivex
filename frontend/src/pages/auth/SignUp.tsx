@@ -1,25 +1,33 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { Button } from '../../components/ui/button';
-import { Input } from '../../components/ui/input';
-import { Label } from '../../components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
-import { Eye, EyeOff, Mail, Lock, User, Phone, ArrowLeft } from 'lucide-react';
-import signUpBg from "../../assets/BG/signUpBg.jpg";
-const signUpSchema = z.object({
-  firstName: z.string().min(2, 'First name must be at least 2 characters'),
-  lastName: z.string().min(2, 'Last name must be at least 2 characters'),
-  email: z.string().email('Please enter a valid email address'),
-  phone: z.string().min(10, 'Please enter a valid phone number'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
-  confirmPassword: z.string(),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: "Passwords don't match",
-  path: ["confirmPassword"],
-});
+import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { Button } from "../../components/ui/button";
+import { Input } from "../../components/ui/input";
+import { Label } from "../../components/ui/label";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "../../components/ui/card";
+import { Eye, EyeOff, Mail, Lock, User, Phone, ArrowLeft } from "lucide-react";
+import signUpBg from "@/assets/WEBP/signUpBg.webp";
+const signUpSchema = z
+  .object({
+    firstName: z.string().min(2, "First name must be at least 2 characters"),
+    lastName: z.string().min(2, "Last name must be at least 2 characters"),
+    email: z.string().email("Please enter a valid email address"),
+    phone: z.string().min(10, "Please enter a valid phone number"),
+    password: z.string().min(6, "Password must be at least 6 characters"),
+    confirmPassword: z.string(),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords don't match",
+    path: ["confirmPassword"],
+  });
 
 type SignUpFormData = z.infer<typeof signUpSchema>;
 
@@ -41,30 +49,30 @@ const SignUp: React.FC = () => {
     setIsLoading(true);
     try {
       // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      console.log('Sign up data:', data);
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      console.log("Sign up data:", data);
       // Navigate to dashboard after successful registration
-      navigate('/dashboard');
+      navigate("/dashboard");
     } catch (error) {
-      console.error('Sign up error:', error);
+      console.error("Sign up error:", error);
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div 
+    <div
       className="min-h-screen flex items-center justify-center p-4 relative"
       style={{
         backgroundImage: `url(${signUpBg})`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundRepeat: 'no-repeat'
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundRepeat: "no-repeat",
       }}
     >
       {/* Overlay for better readability */}
       <div className="absolute inset-0 bg-black/10 bg-opacity-50"></div>
-      
+
       <div className="w-full max-w-md relative z-10">
         <div className="text-center mb-6">
           <h1 className="text-3xl font-bold text-white mb-2">Join Sportivex</h1>
@@ -90,11 +98,13 @@ const SignUp: React.FC = () => {
                       type="text"
                       placeholder="First name"
                       className="pl-10"
-                      {...register('firstName')}
+                      {...register("firstName")}
                     />
                   </div>
                   {errors.firstName && (
-                    <p className="text-sm text-red-600">{errors.firstName.message}</p>
+                    <p className="text-sm text-red-600">
+                      {errors.firstName.message}
+                    </p>
                   )}
                 </div>
 
@@ -107,11 +117,13 @@ const SignUp: React.FC = () => {
                       type="text"
                       placeholder="Last name"
                       className="pl-10"
-                      {...register('lastName')}
+                      {...register("lastName")}
                     />
                   </div>
                   {errors.lastName && (
-                    <p className="text-sm text-red-600">{errors.lastName.message}</p>
+                    <p className="text-sm text-red-600">
+                      {errors.lastName.message}
+                    </p>
                   )}
                 </div>
               </div>
@@ -125,7 +137,7 @@ const SignUp: React.FC = () => {
                     type="email"
                     placeholder="Enter your email"
                     className="pl-10"
-                    {...register('email')}
+                    {...register("email")}
                   />
                 </div>
                 {errors.email && (
@@ -142,7 +154,7 @@ const SignUp: React.FC = () => {
                     type="tel"
                     placeholder="Enter your phone number"
                     className="pl-10"
-                    {...register('phone')}
+                    {...register("phone")}
                   />
                 </div>
                 {errors.phone && (
@@ -156,10 +168,10 @@ const SignUp: React.FC = () => {
                   <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                   <Input
                     id="password"
-                    type={showPassword ? 'text' : 'password'}
+                    type={showPassword ? "text" : "password"}
                     placeholder="Create a password"
                     className="pl-10 pr-10"
-                    {...register('password')}
+                    {...register("password")}
                   />
                   <button
                     type="button"
@@ -170,7 +182,9 @@ const SignUp: React.FC = () => {
                   </button>
                 </div>
                 {errors.password && (
-                  <p className="text-sm text-red-600">{errors.password.message}</p>
+                  <p className="text-sm text-red-600">
+                    {errors.password.message}
+                  </p>
                 )}
               </div>
 
@@ -180,10 +194,10 @@ const SignUp: React.FC = () => {
                   <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                   <Input
                     id="confirmPassword"
-                    type={showConfirmPassword ? 'text' : 'password'}
+                    type={showConfirmPassword ? "text" : "password"}
                     placeholder="Confirm your password"
                     className="pl-10 pr-10"
-                    {...register('confirmPassword')}
+                    {...register("confirmPassword")}
                   />
                   <button
                     type="button"
@@ -194,30 +208,35 @@ const SignUp: React.FC = () => {
                   </button>
                 </div>
                 {errors.confirmPassword && (
-                  <p className="text-sm text-red-600">{errors.confirmPassword.message}</p>
+                  <p className="text-sm text-red-600">
+                    {errors.confirmPassword.message}
+                  </p>
                 )}
               </div>
 
               <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? 'Creating Account...' : 'Create Account'}
+                {isLoading ? "Creating Account..." : "Create Account"}
               </Button>
             </form>
 
             <div className="mt-6 text-center">
               <p className="text-sm text-gray-600">
-                Already have an account?{' '}
-                <Link to="/auth/signin" className="text-blue-600 hover:text-blue-800 font-medium">
+                Already have an account?{" "}
+                <Link
+                  to="/auth/signin"
+                  className="text-blue-600 hover:text-blue-800 font-medium"
+                >
                   Sign in
                 </Link>
               </p>
             </div>
           </CardContent>
         </Card>
-        
+
         {/* Back button positioned under the card */}
         <div className="mt-6 text-center">
-          <Link 
-            to="/" 
+          <Link
+            to="/"
             className="inline-flex items-center px-4 py-2 bg-white bg-opacity-20 hover:bg-opacity-30 text-black rounded-lg transition-all duration-200 backdrop-blur-sm border border-white border-opacity-20"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />

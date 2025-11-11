@@ -1,18 +1,24 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { Button } from '../../components/ui/button';
-import { Input } from '../../components/ui/input';
-import { Label } from '../../components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
-import { Eye, EyeOff, Mail, Lock, ArrowLeft } from 'lucide-react';
-import gymBg from "../../assets/BG/gymBg.png";
+import React, { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { Button } from "../../components/ui/button";
+import { Input } from "../../components/ui/input";
+import { Label } from "../../components/ui/label";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "../../components/ui/card";
+import { Eye, EyeOff, Mail, Lock, ArrowLeft } from "lucide-react";
+import gymBg from "@/assets/WEBP/gym.webp";
 
 const signInSchema = z.object({
-  email: z.string().email('Please enter a valid email address'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
+  email: z.string().email("Please enter a valid email address"),
+  password: z.string().min(6, "Password must be at least 6 characters"),
 });
 
 type SignInFormData = z.infer<typeof signInSchema>;
@@ -34,38 +40,38 @@ const SignIn: React.FC = () => {
     setIsLoading(true);
     try {
       // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      console.log('Sign in data:', data);
-      
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+      console.log("Sign in data:", data);
+
       // For demo purposes, accept any valid email format and password with 6+ characters
       // In a real app, this would make an API call to authenticate
       if (data.email && data.password.length >= 6) {
         // Navigate to dashboard after successful login
-        navigate('/dashboard');
+        navigate("/dashboard");
       } else {
-        alert('Invalid credentials. Please check your email and password.');
+        alert("Invalid credentials. Please check your email and password.");
       }
     } catch (error) {
-      console.error('Sign in error:', error);
-      alert('An error occurred during sign in. Please try again.');
+      console.error("Sign in error:", error);
+      alert("An error occurred during sign in. Please try again.");
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div 
+    <div
       className="min-h-screen flex items-center justify-center p-4 relative"
       style={{
-        backgroundImage:`url(${gymBg})`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundRepeat: 'no-repeat'
+        backgroundImage: `url(${gymBg})`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        backgroundRepeat: "no-repeat",
       }}
     >
       {/* Overlay for better readability */}
       <div className="absolute inset-0 bg-black/50 bg-opacity-70"></div>
-      
+
       <div className="w-full max-w-md relative z-10">
         <div className="text-center mb-6">
           <h1 className="text-3xl font-bold text-white mb-2">Welcome Back</h1>
@@ -90,7 +96,7 @@ const SignIn: React.FC = () => {
                     type="email"
                     placeholder="Enter your email"
                     className="pl-10"
-                    {...register('email')}
+                    {...register("email")}
                   />
                 </div>
                 {errors.email && (
@@ -104,10 +110,10 @@ const SignIn: React.FC = () => {
                   <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
                   <Input
                     id="password"
-                    type={showPassword ? 'text' : 'password'}
+                    type={showPassword ? "text" : "password"}
                     placeholder="Enter your password"
                     className="pl-10 pr-10"
-                    {...register('password')}
+                    {...register("password")}
                   />
                   <button
                     type="button"
@@ -118,7 +124,9 @@ const SignIn: React.FC = () => {
                   </button>
                 </div>
                 {errors.password && (
-                  <p className="text-sm text-red-600">{errors.password.message}</p>
+                  <p className="text-sm text-red-600">
+                    {errors.password.message}
+                  </p>
                 )}
               </div>
 
@@ -132,25 +140,28 @@ const SignIn: React.FC = () => {
               </div>
 
               <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? 'Signing in...' : 'Sign In'}
+                {isLoading ? "Signing in..." : "Sign In"}
               </Button>
             </form>
 
             <div className="mt-6 text-center">
               <p className="text-sm text-gray-600">
-                Don't have an account?{' '}
-                <Link to="/auth/signup" className="text-blue-600 hover:text-blue-800 font-medium">
+                Don't have an account?{" "}
+                <Link
+                  to="/auth/signup"
+                  className="text-blue-600 hover:text-blue-800 font-medium"
+                >
                   Sign up
                 </Link>
               </p>
             </div>
           </CardContent>
         </Card>
-        
+
         {/* Back button positioned under the card */}
         <div className="mt-6 text-center">
-          <Link 
-            to="/" 
+          <Link
+            to="/"
             className="inline-flex items-center px-4 py-2 bg-white bg-opacity-20 hover:bg-opacity-30 text-black rounded-lg transition-all duration-200 backdrop-blur-sm border border-white border-opacity-20"
           >
             <ArrowLeft className="w-4 h-4 mr-2" />
