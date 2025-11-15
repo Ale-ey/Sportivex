@@ -1,8 +1,7 @@
 import bcrypt from "bcryptjs";
-import { supabase } from "../config/supabase.js";
+import { supabaseAdmin } from "../config/supabase.js";
 import { generateToken } from "../config/auth.js";
 import { 
-  isNustian, 
   isValidEmailFormat, 
   validatePassword, 
   validateCmsId, 
@@ -11,7 +10,7 @@ import {
 } from "../utils/validation.js";
 
 /**
- * Register a new user with NUST email and additional information
+ * Register a new user with email and additional information
  */
 const register = async (req, res) => {
   try {
@@ -30,14 +29,6 @@ const register = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: 'Please provide a valid email address'
-      });
-    }
-
-    // Validate NUST email
-    if (!isNustian(email)) {
-      return res.status(400).json({
-        success: false,
-        message: 'Only NUST email addresses are allowed for registration'
       });
     }
 
@@ -75,11 +66,19 @@ const register = async (req, res) => {
     }
 
     // Check if user already exists with this email
-    const { data: existingUser } = await supabase
+    const { data: existingUser, error: userError } = await supabaseAdmin
       .from('users_metadata')
       .select('id')
       .eq('email', email.toLowerCase())
-      .single();
+      .maybeSingle();
+
+    if (userError) {
+      console.error('Error checking existing user:', userError);
+      return res.status(500).json({
+        success: false,
+        message: 'Error checking user existence'
+      });
+    }
 
     if (existingUser) {
       return res.status(400).json({
@@ -89,11 +88,19 @@ const register = async (req, res) => {
     }
 
     // Check if CMS ID already exists
-    const { data: existingCmsId } = await supabase
+    const { data: existingCmsId, error: cmsError } = await supabaseAdmin
       .from('users_metadata')
       .select('id')
       .eq('cms_id', parseInt(cmsId))
-      .single();
+      .maybeSingle();
+
+    if (cmsError) {
+      console.error('Error checking existing CMS ID:', cmsError);
+      return res.status(500).json({
+        success: false,
+        message: 'Error checking CMS ID existence'
+      });
+    }
 
     if (existingCmsId) {
       return res.status(400).json({
@@ -106,7 +113,7 @@ const register = async (req, res) => {
     const passwordHash = await bcrypt.hash(password, 10);
 
     // Insert user into users_metadata table
-    const { data: newUser, error: insertError } = await supabase
+    const { data: newUser, error: insertError } = await supabaseAdmin
       .from('users_metadata')
       .insert([
         {
@@ -141,7 +148,7 @@ const register = async (req, res) => {
 
     res.status(201).json({
       success: true,
-      message: 'User registered successfully. Please check your NUST email to confirm your account.',
+      message: 'User registered successfully. Please check your  email to confirm your account.',
       data: {
         user: {
           id: newUser.id,

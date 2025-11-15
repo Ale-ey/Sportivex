@@ -52,7 +52,7 @@ const validatePassword = (password) => {
 
 /**
  * Validate CMS ID format
- * @param {number} cmsId - CMS ID to validate
+ * @param {string|number} cmsId - CMS ID to validate
  * @returns {Object} - Validation result with isValid and message
  */
 const validateCmsId = (cmsId) => {
@@ -60,7 +60,11 @@ const validateCmsId = (cmsId) => {
     return { isValid: false, message: 'CMS ID is required' };
   }
   
-  if (!Number.isInteger(cmsId) || cmsId <= 0) {
+  // Convert to number if it's a string
+  const cmsIdNum = typeof cmsId === 'string' ? parseInt(cmsId, 10) : cmsId;
+  
+  // Check if it's a valid number and positive integer
+  if (isNaN(cmsIdNum) || !Number.isInteger(cmsIdNum) || cmsIdNum <= 0) {
     return { isValid: false, message: 'CMS ID must be a positive integer' };
   }
   
@@ -73,14 +77,15 @@ const validateCmsId = (cmsId) => {
  * @returns {Object} - Validation result with isValid and message
  */
 const validateRole = (role) => {
-  const allowedRoles = ['ug' , 'pg' , 'alumni', 'faculty'];
+  // Accept both old format (ug, pg, alumni, faculty) and new format (Student, Admin, Instructor)
+  const allowedRoles = ['ug', 'pg', 'alumni', 'faculty', 'student', 'admin', 'instructor'];
   
   if (!role) {
     return { isValid: false, message: 'Role is required' };
   }
   
   if (!allowedRoles.includes(role.toLowerCase())) {
-    return { isValid: false, message: 'Role must be one of: ug, pg, alumni, faculty' };
+    return { isValid: false, message: 'Role must be one of: Student, Admin, Instructor, ug, pg, alumni, faculty' };
   }
   
   return { isValid: true, message: 'Role is valid' };

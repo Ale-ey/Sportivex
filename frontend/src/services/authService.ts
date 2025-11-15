@@ -91,15 +91,41 @@ export const authService = {
    * Register a new user
    */
   register: async (data: RegisterRequest): Promise<RegisterResponse> => {
-    const response = await apiInvoker<RegisterResponse>(
+    // Transform fullName to name for backend compatibility
+    const payload = {
+      name: data.fullName,
+      email: data.email,
+      password: data.password,
+      cmsId: data.cmsId,
+      role: data.role,
+    };
+    
+    const response = await apiInvoker<any>(
       END_POINT.auth.register,
       "POST",
-      data
+      payload
     );
-    if (response.token) {
-      setToken(response.token);
+    
+    // Transform backend response to match frontend interface
+    // Backend returns: { success: true, message: '...', data: { user: { name: ... }, token: ... } }
+    // Frontend expects: { message: '...', user: { fullName: ... }, token: ... }
+    const backendData = response.data || response;
+    const transformedResponse: RegisterResponse = {
+      message: response.message || 'Registration successful',
+      user: {
+        id: backendData.user?.id || '',
+        fullName: backendData.user?.name || data.fullName,
+        email: backendData.user?.email || data.email,
+        cmsId: backendData.user?.cmsId || data.cmsId,
+        role: backendData.user?.role || data.role,
+      },
+      token: backendData.token || backendData.access_token || '',
+    };
+    
+    if (transformedResponse.token) {
+      setToken(transformedResponse.token);
     }
-    return response;
+    return transformedResponse;
   },
 
   /**

@@ -13,4 +13,4 @@ export const setToken = (token:string) => {
   
   export const removeToken = () => {
     localStorage.removeItem(localStorageVariables.access_token);
- };
+};
