@@ -1,12 +1,13 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
-/* html, body {
-  overflow: auto; 
+html, body {
+  font-family: "Roboto", sans-serif;
+  /* overflow: auto; 
   height: 100%;
   scrollbar-width: none; 
-  -ms-overflow-style: none;
-} */
+  -ms-overflow-style: none; */
+}
 
 /* html::-webkit-scrollbar,
 body::-webkit-scrollbar {

@@ -1,9 +1,9 @@
 import axios, { type AxiosInstance } from 'axios';
 
 const axiosInstance: AxiosInstance = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL ,
+  baseURL: import.meta.env.VITE_API_BASE_URL || "http://localhost:3000/api",
   timeout: 10000,
-  withCredentials:true
+  withCredentials: true,
 });
 
 axiosInstance.interceptors.request.use(
@@ -24,7 +24,7 @@ axiosInstance.interceptors.response.use(
   async (error) => {
     if (error.response && error.response.status === 403) {
       localStorage.clear();
-      window.location.href="/login"
+      window.location.href="/auth/signin"
     }
     return Promise.reject(error);
   }
