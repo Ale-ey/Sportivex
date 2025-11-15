@@ -29,13 +29,17 @@ import AccountRoute from "./pages/dashboard/routes/AccountRoute";
 import ProfileRoute from "./pages/dashboard/routes/ProfileRoute";
 import SettingsRoute from "./pages/dashboard/routes/SettingsRoute";
 import BillingRoute from "./pages/dashboard/routes/BillingRoute";
+import PublicRoute from "./routes/PulblicRoute";
+import PrivateRoute from "./routes/PrivateRoute";
 
 function App() {
   return (
     <>
       <BrowserRouter>
         <Routes>
+          <Route element={<PublicRoute/>}>
           {/* Home routes */}
+          <Route path="*" element={<NotFound />} />
           <Route path="/" element={<Index />} />
           <Route path="/projects/firecat" element={<FireCatProject />} />
           <Route
@@ -58,6 +62,8 @@ function App() {
           <Route path="/auth/signup" element={<SignUp />} />
           <Route path="/auth/forgot-password" element={<ForgotPassword />} />
           <Route path="/auth/set-new-password" element={<SetNewPassword />} />
+          </Route>
+          <Route element={<PrivateRoute/>}>
           <Route path="/dashboard" element={<Dashboard />}>
             <Route index element={<Navigate to="home" replace />} />
             <Route path="home" element={<HomeRoute />} />
@@ -70,8 +76,9 @@ function App() {
             <Route path="settings" element={<SettingsRoute />} />
             <Route path="billing" element={<BillingRoute />} />
           </Route>
+          </Route>
 
-          <Route path="*" element={<NotFound />} />
+          
         </Routes>
       </BrowserRouter>
     </>
