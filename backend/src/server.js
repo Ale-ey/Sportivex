@@ -6,6 +6,7 @@ import cors from "cors";
 import morgan from "morgan";
 
 import authRoutes from "./routes/auth.js";
+import swimmingRoutes from "./routes/swimming.js";
 
 
 const app = express();
@@ -57,15 +58,12 @@ app.get("/health", (_req, res) => {
   });
 });
 
-// -------------------
-// ROUTES
-// -------------------
-app.use("/api/auth", authRoutes);
+// API routes
+app.use('/api/auth', authRoutes);
+app.use('/api/swimming', swimmingRoutes);
 
-// -------------------
-// 404 HANDLER
-// -------------------
-app.use((req, res) => {
+// 404 handler
+app.use((_req, res) => {
   res.status(404).json({
     success: false,
     message: "Route not found",
@@ -99,10 +97,12 @@ app.use((err, req, res, next) => {
 
 // -------------------
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-  console.log(`Health check: http://localhost:${PORT}/health`);
-  console.log(`Auth endpoints: http://localhost:${PORT}/api/auth`);
-  console.log(`CORS enabled for: http://localhost:5173`);
+  console.log(`🚀 Server is running on port ${PORT}`);
+  console.log(`📊 Health check: http://localhost:${PORT}/health`);
+  console.log(`🔐 Auth endpoints: http://localhost:${PORT}/api/auth`);
+  console.log(`🏊 Swimming endpoints: http://localhost:${PORT}/api/swimming`);
+  
+  console.log('\n🎉 Server startup completed!');
 });
 
 export default app;
