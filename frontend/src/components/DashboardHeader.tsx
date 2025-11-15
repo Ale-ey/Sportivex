@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { NavLink, useNavigate } from "react-router-dom";
+import { NavLink } from "react-router-dom";
 
 import { Avatar, AvatarImage, AvatarFallback } from "./ui/avatar";
 import {
@@ -41,14 +41,14 @@ interface DashboardHeaderProps {
 const DashboardHeader: React.FC<DashboardHeaderProps> = ({ items }) => {
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
   const { logout, isLoading } = useLogout();
-  const navigate = useNavigate();
+ 
 
-  const handleLogout = async () => {
-    const result = await logout();
-    if (result.success) {
+  const handleLogout =  () => {
+     logout();
+   
       setShowLogoutDialog(false);
-      navigate("/auth/signin");
-    }
+   
+   
   };
 
   return (
