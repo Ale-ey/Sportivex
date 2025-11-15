@@ -12,44 +12,18 @@ import {
 } from "../../components/ui/card";
 import { Eye, EyeOff, Mail, Lock, User, Hash, ArrowLeft } from "lucide-react";
 import signUpBg from "@/assets/WEBP/signUpBg.webp";
-import { useSignUp } from "../../hooks/useSignUp";
-import { AxiosError } from "axios";
+import { useRegister } from "../../hooks/useAuth";
 
 const SignUp: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [apiError, setApiError] = useState<string | null>(null);
 
   const {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
-    onSubmit,
-  } = useSignUp();
-
-  const handleFormSubmit = async (data: any) => {
-    setApiError(null);
-    try {
-      await onSubmit(data);
-    } catch (error: unknown) {
-      if (error instanceof Error) {
-        setApiError(error.message);
-      } else if (error instanceof AxiosError) {
-        const data = error.response?.data;
-        if (Array.isArray(data)) {
-          setApiError(data[0]?.msg || "Signup failed. Please check your input.");
-        } else if (data?.error) {
-          setApiError(data.error);
-        } else if (data?.message) {
-          setApiError(data.message);
-        } else {
-          setApiError("Signup failed. Please try again.");
-        }
-      } else {
-        setApiError("Something went wrong.");
-      }
-    }
-  };
+    error: apiError,
+  } = useRegister();
 
   return (
     <div
@@ -78,7 +52,7 @@ const SignUp: React.FC = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-4">
               {apiError && (
                 <div className="p-3 text-sm text-red-600 bg-red-50 rounded-md">
                   {apiError}
@@ -146,9 +120,10 @@ const SignUp: React.FC = () => {
                   className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   <option value="">Select your role</option>
-                  <option value="Student">Student</option>
-                  <option value="Admin">Admin</option>
-                  <option value="Instructor">Instructor</option>
+                  <option value="UG Student">UG Student</option>
+                  <option value="PG Student">PG Student</option>
+                  <option value="Alumni">Alumni</option>
+                  <option value="Faculty">Faculty</option>
                 </select>
                 {errors.role && (
                   <p className="text-sm text-red-600">{errors.role.message}</p>

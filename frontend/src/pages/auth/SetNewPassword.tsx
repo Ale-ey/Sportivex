@@ -1,8 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
@@ -15,23 +12,11 @@ import {
 } from "../../components/ui/card";
 import { Eye, EyeOff, Lock, ArrowLeft, CheckCircle } from "lucide-react";
 import setNewBg from "../../assets/WEBP/horeseRiding.webp";
-
-const setNewPasswordSchema = z
-  .object({
-    password: z.string().min(6, "Password must be at least 6 characters"),
-    confirmPassword: z.string(),
-  })
-  .refine((data) => data.password === data.confirmPassword, {
-    message: "Passwords don't match",
-    path: ["confirmPassword"],
-  });
-
-type SetNewPasswordFormData = z.infer<typeof setNewPasswordSchema>;
+import { useResetPassword } from "../../hooks/useAuth";
 
 const SetNewPassword: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -40,23 +25,30 @@ const SetNewPassword: React.FC = () => {
   const {
     register,
     handleSubmit,
-    formState: { errors },
-  } = useForm<SetNewPasswordFormData>({
-    resolver: zodResolver(setNewPasswordSchema),
-  });
+    formState: { errors, isSubmitting },
+    error: apiError,
+    onSubmit: onSubmitHook,
+  } = useResetPassword();
 
-  const onSubmit = async (data: SetNewPasswordFormData) => {
-    setIsLoading(true);
-    try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      console.log("Set new password data:", data);
-      console.log("Token:", token);
+  useEffect(() => {
+    if (!token) {
+      // Redirect if no token provided
+      navigate("/auth/forgot-password");
+    }
+  }, [token, navigate]);
+
+  const handleFormSubmit = async (data: any) => {
+    if (!token) {
+      return;
+    }
+    // Call the hook's onSubmit with form data and token
+    const result = await onSubmitHook(data, token);
+    if (result?.success) {
       setIsSuccess(true);
-    } catch (error) {
-      console.error("Set new password error:", error);
-    } finally {
-      setIsLoading(false);
+      // Navigate to sign in after 2 seconds
+      setTimeout(() => {
+        navigate("/auth/signin");
+      }, 2000);
     }
   };
 
@@ -133,7 +125,17 @@ const SetNewPassword: React.FC = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4">
+              {apiError && (
+                <div className="p-3 text-sm text-red-600 bg-red-50 rounded-md">
+                  {apiError}
+                </div>
+              )}
+              {!token && (
+                <div className="p-3 text-sm text-red-600 bg-red-50 rounded-md">
+                  Invalid or missing reset token. Please request a new password reset.
+                </div>
+              )}
               <div className="space-y-2">
                 <Label htmlFor="password">New Password</Label>
                 <div className="relative">
@@ -186,8 +188,8 @@ const SetNewPassword: React.FC = () => {
                 )}
               </div>
 
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? "Updating Password..." : "Update Password"}
+              <Button type="submit" className="w-full" disabled={isSubmitting || !token}>
+                {isSubmitting ? "Updating Password..." : "Update Password"}
               </Button>
             </form>
 

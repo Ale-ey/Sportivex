@@ -1,8 +1,5 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
@@ -15,38 +12,29 @@ import {
 } from "../../components/ui/card";
 import { Mail, ArrowLeft, CheckCircle } from "lucide-react";
 import forgotBg from "../../assets/WEBP/forgotBg.webp";
-const forgotPasswordSchema = z.object({
-  email: z.string().email("Please enter a valid email address"),
-});
-
-type ForgotPasswordFormData = z.infer<typeof forgotPasswordSchema>;
+import { useRequestPasswordReset } from "../../hooks/useAuth";
 
 const ForgotPassword: React.FC = () => {
   const [isSubmitted, setIsSubmitted] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [wasSubmitting, setWasSubmitting] = useState(false);
   const navigate = useNavigate();
 
   const {
     register,
     handleSubmit,
-    formState: { errors },
-  } = useForm<ForgotPasswordFormData>({
-    resolver: zodResolver(forgotPasswordSchema),
-  });
+    formState: { errors, isSubmitting },
+    error: apiError,
+  } = useRequestPasswordReset();
 
-  const onSubmit = async (data: ForgotPasswordFormData) => {
-    setIsLoading(true);
-    try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      console.log("Forgot password data:", data);
+  // Track when submission completes successfully
+  useEffect(() => {
+    if (wasSubmitting && !isSubmitting && !apiError) {
       setIsSubmitted(true);
-    } catch (error) {
-      console.error("Forgot password error:", error);
-    } finally {
-      setIsLoading(false);
     }
-  };
+    if (isSubmitting) {
+      setWasSubmitting(true);
+    }
+  }, [isSubmitting, apiError, wasSubmitting]);
 
   if (isSubmitted) {
     return (
@@ -132,7 +120,12 @@ const ForgotPassword: React.FC = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {apiError && (
+                <div className="p-3 text-sm text-red-600 bg-red-50 rounded-md">
+                  {apiError}
+                </div>
+              )}
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <div className="relative">
@@ -150,8 +143,8 @@ const ForgotPassword: React.FC = () => {
                 )}
               </div>
 
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? "Sending..." : "Send Reset Link"}
+              <Button type="submit" className="w-full" disabled={isSubmitting}>
+                {isSubmitting ? "Sending..." : "Send Reset Link"}
               </Button>
             </form>
 

@@ -1,6 +1,8 @@
 import bcrypt from "bcryptjs";
+import crypto from "crypto";
 import { supabase, supabaseAdmin } from "../config/supabase.js";
 import { generateToken } from "../config/auth.js";
+import { sendEmail } from "../utils/email.js";
 import { 
   isValidEmailFormat, 
   validatePassword, 
@@ -262,27 +264,6 @@ const login = async (req, res) => {
   }
 };
 
-/**
- * Logout user (client-side token removal)
- */
-const logout = (_req, res) => {
-  try {
-    // With JWT, logout is handled client-side by removing the token
-    // Optionally, implement token blacklisting here for added security
-    
-    res.status(200).json({
-      success: true,
-      message: 'Logged out successfully. Please remove the token from client storage.'
-    });
-
-  } catch (error) {
-    console.error('Logout error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Internal server error during logout'
-    });
-  }
-};
 
 /**
  * Get current user profile
@@ -416,43 +397,58 @@ const requestPasswordReset = async (req, res) => {
     const { email } = req.body;
 
     if (!email) {
-      return res.status(400).json({
-        success: false,
-        message: 'Email is required'
-      });
+      return res.status(400).json({ success: false, message: "Email is required" });
     }
 
-    // Check if user exists
-    const { data: user, error } = await supabase
-      .from('users_metadata')
-      .select('id, email')
-      .eq('email', email.toLowerCase())
+    const { data: user } = await supabase
+      .from("users_metadata")
+      .select("id, email")
+      .eq("email", email.toLowerCase())
       .single();
 
-    // Always return success to prevent email enumeration attacks
-    // But only send email if user exists
-    if (user && !error) {
-      // TODO: Implement email sending service
-      // Generate a password reset token (separate from JWT)
-      // Store it in database with expiration
-      // Send email with reset link
-      console.log(`Password reset requested for user: ${user.email}`);
+    // Same behavior even if user does not exist
+    if (user) {
+      const token = crypto.randomBytes(40).toString("hex");
+      const expiresAt = new Date(Date.now() + 1000 * 60 * 15); // 15 min
+
+      await supabaseAdmin.from("password_reset_tokens").insert([
+        {
+          user_id: user.id,
+          token,
+          expires_at: expiresAt
+        }
+      ]);
+
+      const resetLink = `${process.env.FRONTEND_URL || "http://localhost:5173"}/auth/set-new-password?token=${token}`;
+
+      try {
+        await sendEmail(
+          user.email,
+          "Reset your password",
+          `<p>Click here to reset your password:</p>
+           <a href="${resetLink}">Reset Password</a>
+           <p>Or copy this link: ${resetLink}</p>
+           <p>This link will expire in 15 minutes.</p>`
+        );
+        console.log("Password reset email sent to:", user.email);
+      } catch (emailError) {
+        // Log error but don't fail the request
+        // Token is still created, user can use it if they know the link
+        console.error(" Failed to send password reset email:", emailError.message);
+        console.log("Password reset link (for manual sharing):", resetLink);
+      }
     }
 
-    res.status(200).json({
+    return res.status(200).json({
       success: true,
-      message: 'If an account with that email exists, a password reset link has been sent.'
+      message: "If an account exists, a password reset link has been sent."
     });
 
   } catch (error) {
-    console.error('Password reset request error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Internal server error'
-    });
+    console.error(error);
+    res.status(500).json({ success: false, message: "Internal server error" });
   }
 };
-
 /**
  * Reset password with token
  */
@@ -463,7 +459,7 @@ const resetPassword = async (req, res) => {
     if (!token || !newPassword) {
       return res.status(400).json({
         success: false,
-        message: 'Token and new password are required'
+        message: "Token and new password are required"
       });
     }
 
@@ -476,24 +472,45 @@ const resetPassword = async (req, res) => {
       });
     }
 
-    // TODO: Implement password reset token verification
-    // 1. Verify reset token from database
-    // 2. Check if token is not expired
-    // 3. Get user ID from token
-    // 4. Update password
-    // 5. Delete used token
+    // 1. Validate token
+    const { data: resetRecord } = await supabaseAdmin
+      .from("password_reset_tokens")
+      .select("id, user_id, expires_at, used")
+      .eq("token", token)
+      .maybeSingle();
 
-    res.status(200).json({
-      success: true,
-      message: 'Password reset functionality to be implemented with email service'
-    });
+    if (!resetRecord || resetRecord.used || new Date(resetRecord.expires_at) < new Date()) {
+      return res.status(400).json({ success: false, message: "Invalid or expired token" });
+    }
+
+    // 2. Hash new password
+    const newHash = await bcrypt.hash(newPassword, 10);
+
+    // 3. Update user password
+    const { error: updateError } = await supabaseAdmin
+      .from("users_metadata")
+      .update({ password_hash: newHash })
+      .eq("id", resetRecord.user_id);
+
+    if (updateError) {
+      console.error("Password update error:", updateError);
+      return res.status(500).json({
+        success: false,
+        message: "Failed to update password"
+      });
+    }
+
+    // 4. Mark token as used
+    await supabaseAdmin
+      .from("password_reset_tokens")
+      .update({ used: true })
+      .eq("id", resetRecord.id);
+
+    return res.status(200).json({ success: true, message: "Password reset successful" });
 
   } catch (error) {
-    console.error('Password reset error:', error);
-    res.status(500).json({
-      success: false,
-      message: 'Internal server error'
-    });
+    console.error("Reset password error:", error);
+    res.status(500).json({ success: false, message: "Server error" });
   }
 };
 
@@ -634,7 +651,6 @@ const refreshToken = async (req, res) => {
 export default {
   register,
   login,
-  logout,
   getProfile,
   updateProfile,
   requestPasswordReset,

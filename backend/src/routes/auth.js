@@ -11,7 +11,7 @@ router.post('/request-password-reset', authController.requestPasswordReset);
 router.post('/reset-password', authController.resetPassword);
 
 // Protected routes (authentication required)
-router.post('/logout', authenticateToken, authController.logout);
+
 router.get('/profile', authenticateToken, authController.getProfile);
 router.put('/profile', authenticateToken, authController.updateProfile);
 router.post('/change-password', authenticateToken, authController.changePassword);

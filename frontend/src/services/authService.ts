@@ -1,231 +1,173 @@
-import apiInvoker from "../lib/apiInvoker";
-import { END_POINT } from "../lib/apiURL";
-import { setToken, removeToken } from "../utils/localStorage";
+import { END_POINT } from '@/lib/apiURL';
+import apiInvoker from '@/lib/apiInvoker';
 
-// Type definitions
-export interface RegisterRequest {
-  fullName: string;
+export interface registerPayload {
+  name: string;
   email: string;
   password: string;
-  cmsId: string;
+  cmsId: number;
   role: string;
+  gender?: string;
 }
 
-export interface LoginRequest {
+export interface registerResponse {
+  success: boolean;
+  message: string;
+  data: {
+    user: {
+      id: string;
+      name: string;
+      cmsId: string;
+      role: string;
+      email: string;
+      emailConfirmed: boolean;
+      institution: string;
+    };
+    access_token: string;
+    token: string;
+    expires_in: string;
+  };
+}
+
+export const register = (payload: registerPayload) => {
+  return apiInvoker<registerResponse>(END_POINT.auth.register, "POST", payload);
+}
+
+export interface loginPayload {
   email: string;
   password: string;
 }
 
-export interface UpdateProfileRequest {
-  fullName?: string;
-  role?: string;
+export interface loginResponse {
+  success: boolean;
+  message: string;
+  data: {
+    user: {
+      id: string;
+      name: string;
+      cmsId: string;
+      role: string;
+      email: string;
+      emailConfirmed: boolean;
+      institution: string;
+    };
+    access_token: string;
+    token: string;
+    expires_in: string;
+  };
 }
 
-export interface ChangePasswordRequest {
-  oldPassword: string;
-  newPassword: string;
+export const login = (payload: loginPayload) => {
+  return apiInvoker<loginResponse>(END_POINT.auth.login, "POST", payload);
 }
 
-export interface RequestPasswordResetRequest {
-  email: string;
-}
-
-export interface ResetPasswordRequest {
-  email: string;
-  newPassword: string;
-}
+// Logout is handled client-side only - no backend call needed
 
 export interface User {
   id: string;
-  fullName: string;
-  email: string;
+  name: string;
   cmsId: string;
   role: string;
+  email: string;
+  institution?: string;
+  phone?: string;
+  dateOfBirth?: string;
+  address?: string;
+  profilePictureUrl?: string;
+  bio?: string;
+  emailConfirmed?: boolean;
+  registrationDate?: string;
 }
 
-export interface RegisterResponse {
+export interface profileResponse {
+  success: boolean;
+  data: {
+    user: User;
+  };
+}
+
+export const getProfile = () => {
+  return apiInvoker<profileResponse>(END_POINT.auth.profile, "GET");
+}
+
+export interface updateProfilePayload {
+  name?: string;
+  phone?: string;
+  dateOfBirth?: string;
+  address?: string;
+  profilePictureUrl?: string;
+  bio?: string;
+}
+
+export interface updateProfileResponse {
+  success: boolean;
+  data: {
+    user: User;
+  };
+}
+
+export const updateProfile = (payload: updateProfilePayload) => {
+  return apiInvoker<updateProfileResponse>(END_POINT.auth.updateProfile, "PUT", payload);
+}
+
+export interface changePasswordPayload {
+  currentPassword: string;
+  newPassword: string;
+}
+
+export interface changePasswordResponse {
+  success: boolean;
   message: string;
-  user: User;
+}
+
+export const changePassword = (payload: changePasswordPayload) => {
+  return apiInvoker<changePasswordResponse>(END_POINT.auth.changePassword, "POST", payload);
+}
+
+export interface requestPasswordResetPayload {
+  email: string;
+}
+
+export interface requestPasswordResetResponse {
+  success: boolean;
+  message: string;
+}
+
+export const requestPasswordReset = (payload: requestPasswordResetPayload) => {
+  return apiInvoker<requestPasswordResetResponse>(END_POINT.auth.requestPasswordReset, "POST", payload);
+}
+
+export interface resetPasswordPayload {
   token: string;
+  newPassword: string;
 }
 
-export interface LoginResponse {
-  message: string;
-  token: string;
-  user: User;
-}
-
-export interface ProfileResponse {
-  message: string;
-  user: User;
-}
-
-export interface UpdateProfileResponse {
+export interface resetPasswordResponse {
+  success: boolean;
   message: string;
 }
 
-export interface ChangePasswordResponse {
-  message: string;
+export const resetPassword = (payload: resetPasswordPayload) => {
+  return apiInvoker<resetPasswordResponse>(END_POINT.auth.resetPassword, "POST", payload);
 }
 
-export interface RequestPasswordResetResponse {
+export interface refreshTokenResponse {
+  success: boolean;
   message: string;
-}
-
-export interface ResetPasswordResponse {
-  message: string;
-}
-
-export interface RefreshTokenResponse {
-  message: string;
-  token: string;
-}
-
-export interface LogoutResponse {
-  message: string;
-}
-
-// Auth Service Functions
-export const authService = {
-  /**
-   * Register a new user
-   */
-  register: async (data: RegisterRequest): Promise<RegisterResponse> => {
-    // Transform fullName to name for backend compatibility
-    const payload = {
-      name: data.fullName,
-      email: data.email,
-      password: data.password,
-      cmsId: data.cmsId,
-      role: data.role,
+  data: {
+    user: {
+      id: string;
+      email: string;
+      role: string;
+      cmsId: string;
     };
-    
-    const response = await apiInvoker<any>(
-      END_POINT.auth.register,
-      "POST",
-      payload
-    );
-    
-    // Transform backend response to match frontend interface
-    // Backend returns: { success: true, message: '...', data: { user: { name: ... }, token: ... } }
-    // Frontend expects: { message: '...', user: { fullName: ... }, token: ... }
-    const backendData = response.data || response;
-    const transformedResponse: RegisterResponse = {
-      message: response.message || 'Registration successful',
-      user: {
-        id: backendData.user?.id || '',
-        fullName: backendData.user?.name || data.fullName,
-        email: backendData.user?.email || data.email,
-        cmsId: backendData.user?.cmsId || data.cmsId,
-        role: backendData.user?.role || data.role,
-      },
-      token: backendData.token || backendData.access_token || '',
-    };
-    
-    if (transformedResponse.token) {
-      setToken(transformedResponse.token);
-    }
-    return transformedResponse;
-  },
+    access_token: string;
+    token: string;
+    expires_in: string;
+  };
+}
 
-  /**
-   * Login user
-   */
-  login: async (data: LoginRequest): Promise<LoginResponse> => {
-    const response = await apiInvoker<LoginResponse>(
-      END_POINT.auth.login,
-      "POST",
-      data
-    );
-    if (response.token) {
-      setToken(response.token);
-    }
-    return response;
-  },
-
-  /**
-   * Logout user (protected route)
-   */
-  logout: async (): Promise<LogoutResponse> => {
-    const response = await apiInvoker<LogoutResponse>(
-      END_POINT.auth.logout,
-      "POST"
-    );
-    removeToken();
-    return response;
-  },
-
-  /**
-   * Get user profile (protected route)
-   */
-  getProfile: async (): Promise<ProfileResponse> => {
-    return await apiInvoker<ProfileResponse>(END_POINT.auth.profile, "GET");
-  },
-
-  /**
-   * Update user profile (protected route)
-   */
-  updateProfile: async (
-    data: UpdateProfileRequest
-  ): Promise<UpdateProfileResponse> => {
-    return await apiInvoker<UpdateProfileResponse>(
-      END_POINT.auth.updateProfile,
-      "PUT",
-      data
-    );
-  },
-
-  /**
-   * Change password (protected route)
-   */
-  changePassword: async (
-    data: ChangePasswordRequest
-  ): Promise<ChangePasswordResponse> => {
-    return await apiInvoker<ChangePasswordResponse>(
-      END_POINT.auth.changePassword,
-      "POST",
-      data
-    );
-  },
-
-  /**
-   * Request password reset
-   */
-  requestPasswordReset: async (
-    data: RequestPasswordResetRequest
-  ): Promise<RequestPasswordResetResponse> => {
-    return await apiInvoker<RequestPasswordResetResponse>(
-      END_POINT.auth.requestPasswordReset,
-      "POST",
-      data
-    );
-  },
-
-  /**
-   * Reset password
-   */
-  resetPassword: async (
-    data: ResetPasswordRequest
-  ): Promise<ResetPasswordResponse> => {
-    return await apiInvoker<ResetPasswordResponse>(
-      END_POINT.auth.resetPassword,
-      "POST",
-      data
-    );
-  },
-
-  /**
-   * Refresh token (protected route)
-   */
-  refreshToken: async (): Promise<RefreshTokenResponse> => {
-    const response = await apiInvoker<RefreshTokenResponse>(
-      END_POINT.auth.refreshToken,
-      "POST"
-    );
-    if (response.token) {
-      setToken(response.token);
-    }
-    return response;
-  },
-};
+export const refreshToken = () => {
+  return apiInvoker<refreshTokenResponse>(END_POINT.auth.refreshToken, "POST");
+}
 

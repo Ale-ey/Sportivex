@@ -1,8 +1,5 @@
 import React, { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
+import { Link } from "react-router-dom";
 import { Button } from "../../components/ui/button";
 import { Input } from "../../components/ui/input";
 import { Label } from "../../components/ui/label";
@@ -15,49 +12,17 @@ import {
 } from "../../components/ui/card";
 import { Eye, EyeOff, Mail, Lock, ArrowLeft } from "lucide-react";
 import gymBg from "@/assets/WEBP/gym.webp";
-
-const signInSchema = z.object({
-  email: z.string().email("Please enter a valid email address"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
-});
-
-type SignInFormData = z.infer<typeof signInSchema>;
+import { useLogin } from "../../hooks/useAuth";
 
 const SignIn: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const navigate = useNavigate();
 
   const {
     register,
     handleSubmit,
-    formState: { errors },
-  } = useForm<SignInFormData>({
-    resolver: zodResolver(signInSchema),
-  });
-
-  const onSubmit = async (data: SignInFormData) => {
-    setIsLoading(true);
-    try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      console.log("Sign in data:", data);
-
-      // For demo purposes, accept any valid email format and password with 6+ characters
-      // In a real app, this would make an API call to authenticate
-      if (data.email && data.password.length >= 6) {
-        // Navigate to dashboard after successful login
-        navigate("/dashboard");
-      } else {
-        alert("Invalid credentials. Please check your email and password.");
-      }
-    } catch (error) {
-      console.error("Sign in error:", error);
-      alert("An error occurred during sign in. Please try again.");
-    } finally {
-      setIsLoading(false);
-    }
-  };
+    formState: { errors, isSubmitting },
+    error: apiError,
+  } = useLogin();
 
   return (
     <div
@@ -86,7 +51,12 @@ const SignIn: React.FC = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-4">
+              {apiError && (
+                <div className="p-3 text-sm text-red-600 bg-red-50 rounded-md">
+                  {apiError}
+                </div>
+              )}
               <div className="space-y-2">
                 <Label htmlFor="email">Email</Label>
                 <div className="relative">
@@ -139,8 +109,8 @@ const SignIn: React.FC = () => {
                 </Link>
               </div>
 
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? "Signing in..." : "Sign In"}
+              <Button type="submit" className="w-full" disabled={isSubmitting}>
+                {isSubmitting ? "Signing in..." : "Sign In"}
               </Button>
             </form>
 

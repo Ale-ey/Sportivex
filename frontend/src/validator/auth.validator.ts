@@ -51,9 +51,15 @@ export const registerSchema = z
     role: z
       .string()
       .min(1, { message: "Role is required." })
-      .refine((val) => ["Student", "Admin", "Instructor"].includes(val), {
-        message: "Role must be Student, Admin, or Instructor",
+      .refine((val) => ["UG Student", "PG Student", "Alumni", "Faculty"].includes(val), {
+        message: "Role must be UG Student, PG Student, Alumni, or Faculty",
       }),
+    gender: z
+      .string()
+      .refine((val) => !val || ["male", "female", "other"].includes(val.toLowerCase()), {
+        message: "Gender must be male, female, or other",
+      })
+      .optional(),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Passwords do not match.",
@@ -77,23 +83,22 @@ export const loginSchema = z.object({
 
 // Update profile validation schema
 export const updateProfileSchema = z.object({
-  fullName: z
+  name: z
     .string()
-    .min(2, "Full name must be at least 2 characters")
-    .max(100, "Full name must not exceed 100 characters")
+    .min(2, "Name must be at least 2 characters")
+    .max(100, "Name must not exceed 100 characters")
     .optional(),
-  role: z
-    .string()
-    .refine((val) => !val || ["Student", "Admin", "Instructor"].includes(val), {
-      message: "Role must be Student, Admin, or Instructor",
-    })
-    .optional(),
+  phone: z.string().optional(),
+  dateOfBirth: z.string().optional(),
+  address: z.string().optional(),
+  profilePictureUrl: z.string().url("Must be a valid URL").optional().or(z.literal("")),
+  bio: z.string().optional(),
 });
 
 // Change password validation schema
 export const changePasswordSchema = z
   .object({
-    oldPassword: z
+    currentPassword: z
       .string()
       .trim()
       .min(1, { message: "Current password is required." }),
@@ -116,7 +121,7 @@ export const changePasswordSchema = z
         message: "Password must include at least one special character.",
       }),
   })
-  .refine((data) => data.oldPassword !== data.newPassword, {
+  .refine((data) => data.currentPassword !== data.newPassword, {
     message: "New password must be different from current password.",
     path: ["newPassword"],
   });

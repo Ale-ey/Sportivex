@@ -1,4 +1,5 @@
 import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
+import { Toaster } from "react-hot-toast";
 import Index from "./pages/home/Index";
 import FireCatProject from "./pages/home/FireCatProject";
 import SportRetailProject from "./pages/home/SportRetailProject";
@@ -81,6 +82,7 @@ function App() {
           
         </Routes>
       </BrowserRouter>
+      <Toaster position="bottom-right" />
     </>
   );
 }

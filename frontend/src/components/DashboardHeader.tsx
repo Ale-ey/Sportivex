@@ -1,5 +1,5 @@
-import React from "react";
-import { NavLink } from "react-router-dom";
+import React, { useState } from "react";
+import { NavLink, useNavigate } from "react-router-dom";
 
 import { Avatar, AvatarImage, AvatarFallback } from "./ui/avatar";
 import {
@@ -16,6 +16,17 @@ import {
   NavigationMenuItem,
   NavigationMenuLink,
 } from "@/components/ui/navigation-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "./ui/alert-dialog";
+import { useLogout } from "@/hooks/useAuth";
 
 type NavItem = {
   to: string;
@@ -28,6 +39,18 @@ interface DashboardHeaderProps {
 }
 
 const DashboardHeader: React.FC<DashboardHeaderProps> = ({ items }) => {
+  const [showLogoutDialog, setShowLogoutDialog] = useState(false);
+  const { logout, isLoading } = useLogout();
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    const result = await logout();
+    if (result.success) {
+      setShowLogoutDialog(false);
+      navigate("/auth/signin");
+    }
+  };
+
   return (
     <header className="bg-white/90 backdrop-blur border-b border-slate-200">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -113,7 +136,13 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ items }) => {
                     </NavLink>
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
-                  <DropdownMenuItem className="text-rose-600">
+                  <DropdownMenuItem
+                    className="text-rose-600 cursor-pointer"
+                    onSelect={(e) => {
+                      e.preventDefault();
+                      setShowLogoutDialog(true);
+                    }}
+                  >
                     Logout
                   </DropdownMenuItem>
                 </DropdownMenuContent>
@@ -122,6 +151,27 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ items }) => {
           </div>
         </div>
       </div>
+
+      <AlertDialog open={showLogoutDialog} onOpenChange={setShowLogoutDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure you want to logout?</AlertDialogTitle>
+            <AlertDialogDescription>
+              You will need to sign in again to access your account.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isLoading}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleLogout}
+              disabled={isLoading}
+              className="bg-rose-600 hover:bg-rose-700"
+            >
+              {isLoading ? "Logging out..." : "Logout"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </header>
   );
 };
