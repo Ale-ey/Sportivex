@@ -6,8 +6,7 @@ import dotenv from 'dotenv';
 
 // Import routes
 import authRoutes from "./routes/auth.js";
-// Global JWT validator
-import jwtValidator from "./middlewares/jwt_validator.js";
+import swimmingRoutes from "./routes/swimming.js";
 
 dotenv.config();
 
@@ -29,11 +28,9 @@ app.get('/health', (_req, res) => {
   });
 });
 
-// Global JWT validation (skips public routes defined inside the middleware)
-app.use(jwtValidator);
-
 // API routes
 app.use('/api/auth', authRoutes);
+app.use('/api/swimming', swimmingRoutes);
 
 // 404 handler
 app.use((_req, res) => {
@@ -81,6 +78,7 @@ app.listen(PORT, () => {
   console.log(`🚀 Server is running on port ${PORT}`);
   console.log(`📊 Health check: http://localhost:${PORT}/health`);
   console.log(`🔐 Auth endpoints: http://localhost:${PORT}/api/auth`);
+  console.log(`🏊 Swimming endpoints: http://localhost:${PORT}/api/swimming`);
   
   console.log('\n🎉 Server startup completed!');
 });

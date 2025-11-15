@@ -15,7 +15,7 @@ import {
  */
 const register = async (req, res) => {
   try {
-    const { name, cmsId, role, email, password } = req.body;
+    const { name, cmsId, role, email, password, gender } = req.body;
 
     // Validate required fields
     if (!name || !cmsId || !role || !email || !password) {
@@ -74,6 +74,14 @@ const register = async (req, res) => {
       });
     }
 
+    // Validate gender if provided (optional field)
+    if (gender && !['male', 'female', 'other'].includes(gender.toLowerCase())) {
+      return res.status(400).json({
+        success: false,
+        message: 'Gender must be one of: male, female, other'
+      });
+    }
+
     // Check if user already exists with this email
     const { data: existingUser } = await supabase
       .from('users_metadata')
@@ -105,21 +113,27 @@ const register = async (req, res) => {
     // Hash the password using bcrypt (10 rounds)
     const passwordHash = await bcrypt.hash(password, 10);
 
+    // Build user data object matching schema
+    const userData = {
+      name: name.trim(),
+      cms_id: parseInt(cmsId),
+      role: role.toLowerCase(),
+      email: email.toLowerCase(),
+      password_hash: passwordHash,
+      institution: 'NUST',
+      email_confirmed: false
+    };
+
+    // Add gender if provided (optional field)
+    if (gender) {
+      userData.gender = gender.toLowerCase();
+    }
+
     // Insert user into users_metadata table
+    // Note: registration_date, created_at, updated_at have defaults in schema
     const { data: newUser, error: insertError } = await supabase
       .from('users_metadata')
-      .insert([
-        {
-          name: name.trim(),
-          cms_id: parseInt(cmsId),
-          role: role.toLowerCase(),
-          email: email.toLowerCase(),
-          password_hash: passwordHash,
-          institution: 'NUST',
-          registration_date: new Date().toISOString(),
-          email_confirmed: false
-        }
-      ])
+      .insert([userData])
       .select()
       .single();
 
