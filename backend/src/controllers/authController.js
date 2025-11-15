@@ -1,5 +1,5 @@
 import bcrypt from "bcryptjs";
-import { supabaseAdmin } from "../config/supabase.js";
+import { supabase, supabaseAdmin } from "../config/supabase.js";
 import { generateToken } from "../config/auth.js";
 import { 
   isValidEmailFormat, 
