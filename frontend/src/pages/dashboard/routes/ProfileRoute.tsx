@@ -23,7 +23,7 @@ import {
 } from "../../../components/ui/dialog";
 import { User, Mail, Phone, Calendar, MapPin, Edit2, Loader2, Lock, Upload, X } from "lucide-react";
 import toast from "react-hot-toast";
-
+// profile route
 const ProfileRoute: React.FC = () => {
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
