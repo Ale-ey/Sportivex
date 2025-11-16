@@ -331,8 +331,85 @@ const updateProfile = async (req, res) => {
     if (phone !== undefined) updateData.phone = phone;
     if (dateOfBirth !== undefined) updateData.date_of_birth = dateOfBirth;
     if (address !== undefined) updateData.address = address;
-    if (profilePictureUrl !== undefined) updateData.profile_picture_url = profilePictureUrl;
     if (bio !== undefined) updateData.bio = bio;
+
+    // Handle file upload if provided
+    if (req.file) {
+      try {
+        // Get existing profile picture URL to delete old one later
+        const { data: existingUser } = await supabase
+          .from('users_metadata')
+          .select('profile_picture_url')
+          .eq('id', userId)
+          .single();
+
+        // Generate unique filename
+        const fileExt = req.file.originalname.split('.').pop();
+        const fileName = `${userId}-${Date.now()}.${fileExt}`;
+        const filePath = `profile-pictures/${fileName}`;
+
+        // Upload file to Supabase Storage
+        const { data: uploadData, error: uploadError } = await supabaseAdmin
+          .storage
+          .from('profile-pictures')
+          .upload(filePath, req.file.buffer, {
+            contentType: req.file.mimetype,
+            upsert: false
+          });
+
+        if (uploadError) {
+          console.error('Storage upload error:', uploadError);
+          return res.status(500).json({
+            success: false,
+            message: 'Failed to upload profile picture'
+          });
+        }
+
+        // Get public URL
+        const { data: urlData } = supabaseAdmin
+          .storage
+          .from('profile-pictures')
+          .getPublicUrl(filePath);
+
+        // getPublicUrl returns { data: { publicUrl: string } }
+        const publicUrl = urlData?.publicUrl;
+
+        if (!publicUrl) {
+          return res.status(500).json({
+            success: false,
+            message: 'Failed to get profile picture URL'
+          });
+        }
+
+        updateData.profile_picture_url = publicUrl;
+
+        // Delete old profile picture if it exists and is from our storage
+        if (existingUser?.profile_picture_url) {
+          const oldUrl = existingUser.profile_picture_url;
+          // Check if old URL is from our storage bucket
+          if (oldUrl.includes('/profile-pictures/')) {
+            const oldFileName = oldUrl.split('/profile-pictures/')[1];
+            if (oldFileName && oldFileName !== fileName) {
+              // Delete old file (don't wait for this, just fire and forget)
+              supabaseAdmin
+                .storage
+                .from('profile-pictures')
+                .remove([oldFileName])
+                .catch(err => console.error('Error deleting old profile picture:', err));
+            }
+          }
+        }
+      } catch (fileError) {
+        console.error('File upload error:', fileError);
+        return res.status(500).json({
+          success: false,
+          message: 'Error processing profile picture upload'
+        });
+      }
+    } else if (profilePictureUrl !== undefined) {
+      // If profilePictureUrl is provided in body (for URL-based updates)
+      updateData.profile_picture_url = profilePictureUrl;
+    }
 
     // Validate name if provided
     if (name) {

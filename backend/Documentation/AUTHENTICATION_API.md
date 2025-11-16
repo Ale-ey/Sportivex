@@ -315,17 +315,56 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 
 **PUT** `/profile`
 
-Update current user's profile information.
+Update current user's profile information. Supports both JSON data and file uploads for profile pictures.
 
 #### Headers
 
 ```
 Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+Content-Type: multipart/form-data (when uploading file) OR application/json (for text-only updates)
 ```
 
-#### Request Body
+#### Request Options
 
-All fields are optional. Only include fields you want to update:
+**Option 1: Update with File Upload (multipart/form-data)**
+
+Upload a profile picture file along with other profile data:
+
+- **Field Name for File**: `profilePicture`
+- **Accepted File Types**: jpeg, jpg, png, gif, webp
+- **Max File Size**: 5MB
+- **Storage**: Files are uploaded to Supabase Storage bucket `profile-pictures`
+- **Old Files**: Automatically deleted when a new picture is uploaded
+
+**Form Data Fields** (all optional):
+- `profilePicture`: Image file (file upload)
+- `name`: String - Full name
+- `phone`: String - Phone number
+- `dateOfBirth`: String - Date in YYYY-MM-DD format
+- `address`: String - Address
+- `bio`: String - Bio text
+
+**Example using FormData (JavaScript):**
+
+```javascript
+const formData = new FormData();
+formData.append('profilePicture', fileInput.files[0]);
+formData.append('name', 'Jane Doe');
+formData.append('phone', '+92-300-7654321');
+formData.append('bio', 'Updated bio text');
+
+const response = await fetch('http://localhost:3000/api/auth/profile', {
+  method: 'PUT',
+  headers: {
+    'Authorization': `Bearer ${token}`
+  },
+  body: formData
+});
+```
+
+**Option 2: Update without File (application/json)**
+
+Update profile fields without uploading a file. You can still update `profilePictureUrl` with a direct URL:
 
 ```json
 {
@@ -356,14 +395,41 @@ All fields are optional. Only include fields you want to update:
             "phone": "+92-300-7654321",
             "dateOfBirth": "2000-06-15",
             "address": "Rawalpindi, Pakistan",
-            "profilePictureUrl": "https://example.com/new-profile.jpg",
+            "profilePictureUrl": "https://your-supabase-project.supabase.co/storage/v1/object/public/profile-pictures/user-id-timestamp.jpg",
             "bio": "Updated bio text"
         }
     }
 }
 ```
 
-**Error (400):**
+**Error (400) - Invalid File Type:**
+
+```json
+{
+    "success": false,
+    "message": "Only image files are allowed (jpeg, jpg, png, gif, webp)"
+}
+```
+
+**Error (400) - File Too Large:**
+
+```json
+{
+    "success": false,
+    "message": "File size exceeds 5MB limit"
+}
+```
+
+**Error (500) - Upload Failed:**
+
+```json
+{
+    "success": false,
+    "message": "Failed to upload profile picture"
+}
+```
+
+**Error (400) - Update Failed:**
 
 ```json
 {
@@ -372,7 +438,11 @@ All fields are optional. Only include fields you want to update:
 }
 ```
 
-> **Note**: Email, CMS ID, and role cannot be updated through this endpoint
+> **Note**: 
+> - Email, CMS ID, and role cannot be updated through this endpoint
+> - When uploading a file, the `profilePictureUrl` field in the response will contain the Supabase Storage public URL
+> - Old profile pictures stored in Supabase Storage are automatically deleted when a new one is uploaded
+> - If you provide both a file upload and `profilePictureUrl` in JSON, the file upload takes precedence
 
 ---
 
@@ -575,6 +645,27 @@ NODE_ENV=development
 # Frontend
 FRONTEND_URL=http://localhost:5173
 ```
+
+## Supabase Storage Setup
+
+To enable profile picture uploads, you need to create a storage bucket in Supabase:
+
+1. **Create Storage Bucket**:
+   - Go to your Supabase project dashboard
+   - Navigate to **Storage** → **Buckets**
+   - Click **New bucket**
+   - Name: `profile-pictures`
+   - Make it **Public** (so images can be accessed via public URLs)
+   - Click **Create bucket**
+
+2. **Set Bucket Policies** (Optional but recommended):
+   - Go to **Storage** → **Policies**
+   - Create policies for the `profile-pictures` bucket:
+     - **Upload Policy**: Allow authenticated users to upload files
+     - **Read Policy**: Allow public read access (if bucket is public, this is automatic)
+
+3. **Verify Setup**:
+   - The bucket should be accessible via: `https://your-project.supabase.co/storage/v1/object/public/profile-pictures/`
 
 ---
 

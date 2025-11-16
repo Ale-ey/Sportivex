@@ -1,6 +1,7 @@
 import express from 'express';
 import authController from "../controllers/authController.js";
 import { authenticateToken } from "../middlewares/auth.js";
+import { uploadProfilePicture } from "../middlewares/upload.js";
 
 const router = express.Router();
 
@@ -13,7 +14,7 @@ router.post('/reset-password', authController.resetPassword);
 // Protected routes (authentication required)
 
 router.get('/profile', authenticateToken, authController.getProfile);
-router.put('/profile', authenticateToken, authController.updateProfile);
+router.put('/profile', authenticateToken, uploadProfilePicture, authController.updateProfile);
 router.post('/change-password', authenticateToken, authController.changePassword);
 router.post('/refresh-token', authenticateToken, authController.refreshToken);
 
