@@ -1,7 +1,7 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import toast from "react-hot-toast";
 import { AxiosError } from "axios";
 import {
@@ -195,7 +195,7 @@ export const useGetProfile = () => {
   const [error, setError] = useState<string | null>(null);
   const [user, setUser] = useState<User | null>(null);
 
-  const getProfile = async () => {
+  const getProfile = useCallback(async () => {
     setIsLoading(true);
     setError(null);
     try {
@@ -216,21 +216,22 @@ export const useGetProfile = () => {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, []);
 
   return { getProfile, user, isLoading, error };
 };
 
 // Update Profile Hook
-export const useUpdateProfile = () => {
+export const useUpdateProfile = (onSuccess?: () => void) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const {
     register,
     handleSubmit,
-    formState: { errors },
+    formState: { errors, isDirty },
     reset,
+    getValues,
   } = useForm<UpdateProfileFormData>({
     resolver: zodResolver(updateProfileSchema),
   });
@@ -253,6 +254,10 @@ export const useUpdateProfile = () => {
           id: "updateProfileSuccess",
         });
         reset();
+        // Call onSuccess callback if provided
+        if (onSuccess) {
+          onSuccess();
+        }
       }
     } catch (error) {
       if (error instanceof AxiosError) {
@@ -272,16 +277,17 @@ export const useUpdateProfile = () => {
   return {
     register,
     handleSubmit: handleSubmit(onSubmit),
-    formState: { errors, isSubmitting: isLoading },
+    formState: { errors, isSubmitting: isLoading, isDirty },
     onSubmit,
     reset,
+    getValues,
     error,
     isLoading,
   };
 };
 
 // Change Password Hook
-export const useChangePassword = () => {
+export const useChangePassword = (onSuccess?: () => void) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -309,6 +315,10 @@ export const useChangePassword = () => {
           id: "changePasswordSuccess",
         });
         reset();
+        // Call onSuccess callback if provided
+        if (onSuccess) {
+          onSuccess();
+        }
       }
     } catch (error) {
       if (error instanceof AxiosError) {

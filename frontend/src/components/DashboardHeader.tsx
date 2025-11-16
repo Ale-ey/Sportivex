@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { NavLink } from "react-router-dom";
 
 import { Avatar, AvatarImage, AvatarFallback } from "./ui/avatar";
@@ -26,7 +26,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "./ui/alert-dialog";
-import { useLogout } from "@/hooks/useAuth";
+import { useLogout, useGetProfile } from "@/hooks/useAuth";
 
 type NavItem = {
   to: string;
@@ -41,14 +41,26 @@ interface DashboardHeaderProps {
 const DashboardHeader: React.FC<DashboardHeaderProps> = ({ items }) => {
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
   const { logout, isLoading } = useLogout();
- 
+  const { getProfile, user } = useGetProfile();
 
-  const handleLogout =  () => {
-     logout();
-   
-      setShowLogoutDialog(false);
-   
-   
+  // Fetch profile on mount
+  useEffect(() => {
+    getProfile();
+  }, [getProfile]);
+
+  const handleLogout = () => {
+    logout();
+    setShowLogoutDialog(false);
+  };
+
+  // Helper function to get initials from name
+  const getInitials = (name: string | undefined) => {
+    if (!name) return "U";
+    const parts = name.trim().split(" ");
+    if (parts.length >= 2) {
+      return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
+    }
+    return name.substring(0, 2).toUpperCase();
   };
 
   return (
@@ -109,8 +121,13 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ items }) => {
                 <DropdownMenuTrigger asChild>
                   <button className="rounded-full focus:outline-none">
                     <Avatar>
-                      <AvatarImage src="/Ali.jpg" alt="User avatar" />
-                      <AvatarFallback>AJ</AvatarFallback>
+                      <AvatarImage 
+                        src={user?.profilePictureUrl || undefined} 
+                        alt={user?.name || "User avatar"} 
+                      />
+                      <AvatarFallback>
+                        {getInitials(user?.name)}
+                      </AvatarFallback>
                     </Avatar>
                   </button>
                 </DropdownMenuTrigger>

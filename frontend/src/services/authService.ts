@@ -110,6 +110,11 @@ export const updateProfile = (payload: updateProfilePayload) => {
   return apiInvoker<updateProfileResponse>(END_POINT.auth.updateProfile, "PUT", payload);
 }
 
+// Update profile with file upload (FormData)
+export const updateProfileWithFile = (formData: FormData) => {
+  return apiInvoker<updateProfileResponse>(END_POINT.auth.updateProfile, "PUT", formData);
+}
+
 export interface changePasswordPayload {
   currentPassword: string;
   newPassword: string;
