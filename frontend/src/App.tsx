@@ -23,6 +23,7 @@ import SetNewPassword from "./pages/auth/SetNewPassword";
 import Dashboard from "./layouts/Dashboard";
 import HomeRoute from "./pages/dashboard/routes/HomeRoute";
 import SportsRoute from "./pages/dashboard/routes/SportsRoute";
+import BadmintonRoute from "./pages/dashboard/routes/BadmintonRoute";
 import LeaguesRoute from "./pages/dashboard/routes/LeaguesRoute";
 import TrainingRoute from "./pages/dashboard/routes/TrainingRoute";
 import AiChatRoute from "./pages/dashboard/routes/AiChatRoute";
@@ -69,6 +70,7 @@ function App() {
             <Route index element={<Navigate to="home" replace />} />
             <Route path="home" element={<HomeRoute />} />
             <Route path="sports" element={<SportsRoute />} />
+            <Route path="badminton" element={<BadmintonRoute />} />
             <Route path="leagues" element={<LeaguesRoute />} />
             <Route path="training" element={<TrainingRoute />} />
             <Route path="ai-chat" element={<AiChatRoute />} />

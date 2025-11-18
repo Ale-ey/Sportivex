@@ -1,4 +1,5 @@
 import React from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "../../../components/ui/button";
 import { Search, Filter } from "lucide-react";
 import SportCard from "../../../components/SportCard";
@@ -13,6 +14,16 @@ interface SportsTabProps {
 }
 
 const SportsTab: React.FC<SportsTabProps> = ({ sports }) => {
+  const navigate = useNavigate();
+
+  const handleSportClick = (sportName: string) => {
+    const normalizedName = sportName.toLowerCase();
+    if (normalizedName === "badminton") {
+      navigate("/dashboard/badminton");
+    }
+    // Add other sport navigation here as needed
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
@@ -39,7 +50,12 @@ const SportsTab: React.FC<SportsTabProps> = ({ sports }) => {
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6">
         {sports.map((sport, index) => (
-          <SportCard key={index} title={sport.name} image={sport.image} />
+          <SportCard
+            key={index}
+            title={sport.name}
+            image={sport.image}
+            onClick={() => handleSportClick(sport.name)}
+          />
         ))}
       </div>
     </div>
