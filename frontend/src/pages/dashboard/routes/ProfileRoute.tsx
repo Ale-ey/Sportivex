@@ -21,7 +21,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "../../../components/ui/dialog";
-import { User, Mail, Phone, Calendar, MapPin, Edit2, Loader2, Lock, Upload, X } from "lucide-react";
+import { User, Mail, Phone, Calendar, MapPin, Edit2, Loader2, Lock, Upload, X, Users } from "lucide-react";
 import toast from "react-hot-toast";
 // profile route
 const ProfileRoute: React.FC = () => {
@@ -33,9 +33,8 @@ const ProfileRoute: React.FC = () => {
   const isUpdatingRef = useRef(false);
   const { getProfile, user, isLoading: isLoadingProfile, error: profileError } = useGetProfile();
   const updateProfileHook = useUpdateProfile(() => {
-    // After successful update, reset initialization flag
-    // Don't call getProfile here to avoid infinite loops
-    // The updated user data is already in the response
+    // After successful update, refresh profile to get updated data (including gender)
+    getProfile();
     hasInitialized.current = false;
     isUpdatingRef.current = false;
   });
@@ -77,6 +76,7 @@ const ProfileRoute: React.FC = () => {
         address: user.address || "",
         profilePictureUrl: user.profilePictureUrl || "",
         bio: user.bio || "",
+        gender: user.gender || "",
       }, {
         keepDefaultValues: false,
         keepValues: false,
@@ -147,6 +147,7 @@ const ProfileRoute: React.FC = () => {
     if (formValues.dateOfBirth) formDataToSend.append('dateOfBirth', formValues.dateOfBirth);
     if (formValues.address) formDataToSend.append('address', formValues.address);
     if (formValues.bio) formDataToSend.append('bio', formValues.bio);
+    if (formValues.gender) formDataToSend.append('gender', formValues.gender);
 
     isUpdatingRef.current = true;
     updateProfileWithFile(formDataToSend)
@@ -256,6 +257,14 @@ const ProfileRoute: React.FC = () => {
                   </span>
                 </div>
               )}
+              {user?.gender && (
+                <div className="flex items-center gap-3 text-sm">
+                  <Users className="h-4 w-4 text-[#023E8A]" />
+                  <span className="text-slate-600 capitalize">
+                    {user.gender}
+                  </span>
+                </div>
+              )}
             </div>
             {user?.bio && (
               <div className="pt-4 border-t border-[#E2F5FB]">
@@ -356,6 +365,29 @@ const ProfileRoute: React.FC = () => {
                 {errors.address && (
                   <p className="text-sm text-red-600">{errors.address.message}</p>
                 )}
+              </div>
+
+              {/* Gender */}
+              <div className="space-y-2">
+                <Label htmlFor="gender" className="text-slate-700">
+                  Gender
+                </Label>
+                <select
+                  id="gender"
+                  {...register("gender")}
+                  className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 bg-white border-[#E2F5FB] focus:border-[#023E8A]"
+                >
+                  <option value="">Select your gender</option>
+                  <option value="male">Male</option>
+                  <option value="female">Female</option>
+                  <option value="other">Other</option>
+                </select>
+                {errors.gender && (
+                  <p className="text-sm text-red-600">{errors.gender.message}</p>
+                )}
+                <p className="text-xs text-slate-500">
+                  Required for swimming pool access. This determines which time slots you can see and reserve.
+                </p>
               </div>
 
               {/* Profile Picture Upload */}

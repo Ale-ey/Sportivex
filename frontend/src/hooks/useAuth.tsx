@@ -247,6 +247,7 @@ export const useUpdateProfile = (onSuccess?: () => void) => {
         ...(data.address && { address: data.address }),
         ...(data.profilePictureUrl && { profilePictureUrl: data.profilePictureUrl }),
         ...(data.bio && { bio: data.bio }),
+        ...(data.gender !== undefined && { gender: data.gender }),
       };
       const response: updateProfileResponse = await updateProfileService(payload);
       if (response) {
