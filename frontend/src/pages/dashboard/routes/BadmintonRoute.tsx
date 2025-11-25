@@ -6,7 +6,7 @@ import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Users, User, Play, RotateCcw, Sparkles, ToggleLeft, ToggleRight } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useGetProfile } from '@/hooks/useAuth';
-
+// h
 // Hardcoded player data with availability
 const INITIAL_PLAYERS = [
   { id: '1', name: 'Ali Khan', avatar: null as string | null, initials: 'AK', available: true },
