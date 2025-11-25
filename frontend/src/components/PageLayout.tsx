@@ -1,9 +1,9 @@
 import React, { useEffect } from "react";
 import { useLocation } from "react-router-dom";
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
-import ContactInfo from "@/components/ContactInfo";
-import FloatingContactButton from "@/components/FloatingContactButton";
+import Navbar from "@/components/landingPage/Navbar";
+import Footer from "@/components/landingPage/Footer";
+import ContactInfo from "@/components/landingPage/ContactInfo";
+import FloatingContactButton from "@/components/landingPage/FloatingContactButton";
 
 type PageLayoutProps = {
   children: React.ReactNode;

@@ -1,0 +1,363 @@
+{
+	"info": {
+		"_postman_id": "sportivex-auth-collection",
+		"name": "Sportivex Auth API",
+		"description": "Authentication endpoints for Sportivex backend",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Register / Sign Up",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"if (pm.response.code === 201) {",
+							"    const jsonData = pm.response.json();",
+							"    if (jsonData.data && jsonData.data.token) {",
+							"        pm.environment.set('auth_token', jsonData.data.token);",
+							"        pm.environment.set('user_id', jsonData.data.user.id);",
+							"    }",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"name\": \"John Doe\",\n    \"cmsId\": 123456,\n    \"role\": \"student\",\n    \"email\": \"john.doe@nust.edu.pk\",\n    \"password\": \"securePassword123\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{base_url}}/api/auth/register",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"auth",
+						"register"
+					]
+				},
+				"description": "Register a new user with NUST email, CMS ID, and role.\n\n**Required Fields:**\n- `name`: Full name (min 2 characters)\n- `cmsId`: CMS ID number (positive integer, unique)\n- `role`: Must be one of: \"student\", \"alumni\", \"faculty\"\n- `email`: Valid NUST email address (unique)\n- `password`: Minimum 6 characters\n\n**Response:** Returns user data and JWT token on success."
+			},
+			"response": []
+		},
+		{
+			"name": "Login",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"if (pm.response.code === 200) {",
+							"    const jsonData = pm.response.json();",
+							"    if (jsonData.data && jsonData.data.token) {",
+							"        pm.environment.set('auth_token', jsonData.data.token);",
+							"        pm.environment.set('user_id', jsonData.data.user.id);",
+							"    }",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"email\": \"john.doe@nust.edu.pk\",\n    \"password\": \"securePassword123\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{base_url}}/api/auth/login",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"auth",
+						"login"
+					]
+				},
+				"description": "Authenticate user with email and password.\n\n**Required Fields:**\n- `email`: User's NUST email address\n- `password`: User's password\n\n**Response:** Returns user data and JWT token on success."
+			},
+			"response": []
+		},
+		{
+			"name": "Get Profile",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{auth_token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "{{base_url}}/api/auth/profile",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"auth",
+						"profile"
+					]
+				},
+				"description": "Get current authenticated user's profile information.\n\n**Headers Required:**\n- `Authorization: Bearer <token>`\n\n**Response:** Returns full user profile data."
+			},
+			"response": []
+		},
+		{
+			"name": "Update Profile",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{auth_token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "PUT",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"name\": \"Jane Doe\",\n    \"phone\": \"+92-300-7654321\",\n    \"dateOfBirth\": \"2000-06-15\",\n    \"address\": \"Rawalpindi, Pakistan\",\n    \"bio\": \"Updated bio text\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{base_url}}/api/auth/profile",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"auth",
+						"profile"
+					]
+				},
+				"description": "Update current user's profile information.\n\n**Headers Required:**\n- `Authorization: Bearer <token>`\n\n**Body Fields (all optional):**\n- `name`: Full name\n- `phone`: Phone number\n- `dateOfBirth`: Date in YYYY-MM-DD format\n- `address`: Address string\n- `profilePictureUrl`: URL to profile picture\n- `bio`: User bio text"
+			},
+			"response": []
+		},
+		{
+			"name": "Change Password",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{auth_token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"currentPassword\": \"oldPassword123\",\n    \"newPassword\": \"newSecurePassword456\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{base_url}}/api/auth/change-password",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"auth",
+						"change-password"
+					]
+				},
+				"description": "Change password for authenticated user.\n\n**Headers Required:**\n- `Authorization: Bearer <token>`\n\n**Required Fields:**\n- `currentPassword`: Current password\n- `newPassword`: New password (min 6 characters)"
+			},
+			"response": []
+		},
+		{
+			"name": "Refresh Token",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"if (pm.response.code === 200) {",
+							"    const jsonData = pm.response.json();",
+							"    if (jsonData.data && jsonData.data.token) {",
+							"        pm.environment.set('auth_token', jsonData.data.token);",
+							"    }",
+							"}"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{auth_token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"url": {
+					"raw": "{{base_url}}/api/auth/refresh-token",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"auth",
+						"refresh-token"
+					]
+				},
+				"description": "Generate a new JWT token using current valid token.\n\n**Headers Required:**\n- `Authorization: Bearer <token>`\n\n**Response:** Returns new JWT token (automatically saved to environment variable)."
+			},
+			"response": []
+		},
+		{
+			"name": "Logout",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "{{auth_token}}",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"url": {
+					"raw": "{{base_url}}/api/auth/logout",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"auth",
+						"logout"
+					]
+				},
+				"description": "Logout current user (client-side token removal recommended).\n\n**Headers Required:**\n- `Authorization: Bearer <token>`"
+			},
+			"response": []
+		},
+		{
+			"name": "Request Password Reset",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"email\": \"john.doe@nust.edu.pk\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{base_url}}/api/auth/request-password-reset",
+					"host": [
+						"{{base_url}}"
+					],
+					"path": [
+						"api",
+						"auth",
+						"request-password-reset"
+					]
+				},
+				"description": "Request a password reset email.\n\n**Required Fields:**\n- `email`: User's NUST email address\n\n**Note:** Returns success even if email doesn't exist (prevents email enumeration attacks)."
+			},
+			"response": []
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:3000",
+			"type": "string"
+		},
+		{
+			"key": "auth_token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "user_id",
+			"value": "",
+			"type": "string"
+		}
+	]
+}
+

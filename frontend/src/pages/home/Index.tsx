@@ -1,10 +1,10 @@
 import PageLayout from "@/components/PageLayout";
-import Hero from "@/components/Hero";
-import Projects from "@/components/Projects";
-import WhyWrlds from "@/components/WhyWrlds";
-import BlogPreview from "@/components/BlogPreview";
-import SportsNavigation from "@/components/SportsNavigation";
-import SEO from "@/components/SEO";
+import Hero from "@/components/landingPage/Hero";
+import Projects from "@/components/landingPage/Projects";
+import WhyWrlds from "@/components/landingPage/WhyWrlds";
+import BlogPreview from "@/components/landingPage/BlogPreview";
+import SportsNavigation from "@/components/landingPage/SportsNavigation";
+import SEO from "@/components/landingPage/SEO";
 import { useEffect } from "react";
 
 const Index = () => {

@@ -3,8 +3,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import { Link } from "react-router-dom";
-import SEO from "@/components/SEO";
-import BlogPostCard from "@/components/BlogPostCard";
+import SEO from "@/components/landingPage/SEO";
+import BlogPostCard from "@/components/landingPage/BlogPostCard";
 import { blogPosts } from "@/constant/data/blogPosts";
 
 const Blog = () => {
@@ -41,7 +41,8 @@ const Blog = () => {
               NUST Sports News
             </h1>
             <p className="text-xl text-gray-200 mb-6">
-              Latest updates, achievements, and events from NUST University's sports programs
+              Latest updates, achievements, and events from NUST University's
+              sports programs
             </p>
           </div>
         </div>

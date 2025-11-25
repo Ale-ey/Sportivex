@@ -1,4 +1,5 @@
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
+import { Toaster } from "react-hot-toast";
 import Index from "./pages/home/Index";
 import FireCatProject from "./pages/home/FireCatProject";
 import SportRetailProject from "./pages/home/SportRetailProject";
@@ -19,30 +20,28 @@ import SignIn from "./pages/auth/SignIn";
 import SignUp from "./pages/auth/SignUp";
 import ForgotPassword from "./pages/auth/ForgotPassword";
 import SetNewPassword from "./pages/auth/SetNewPassword";
-import Dashboard from "./pages/auth/Dashboard";
-
-// Global pages
-import SportsComplexAccount from "./pages/global/SportsComplexAccount";
-
-// Sports pages
-import Events from "./pages/sports/Events";
-import Gym from "./pages/sports/Gym";
-
-// Swimming pages
-import SwimmingRegistration from "./pages/swimming/Registration";
-import TimeTracking from "./pages/swimming/TimeTracking";
-import Invoice from "./pages/swimming/Invoice";
-import Cancellation from "./pages/swimming/Cancellation";
-import FreezeApplication from "./pages/swimming/FreezeApplication";
-import RulesRegulations from "./pages/swimming/RulesRegulations";
-import Shop from "./pages/swimming/Shop";
+import Dashboard from "./layouts/Dashboard";
+import HomeRoute from "./pages/dashboard/routes/HomeRoute";
+import SportsRoute from "./pages/dashboard/routes/SportsRoute";
+import SwimmingRoute from "./pages/dashboard/routes/SwimmingRoute";
+import LeaguesRoute from "./pages/dashboard/routes/LeaguesRoute";
+import TrainingRoute from "./pages/dashboard/routes/TrainingRoute";
+import AiChatRoute from "./pages/dashboard/routes/AiChatRoute";
+import AccountRoute from "./pages/dashboard/routes/AccountRoute";
+import ProfileRoute from "./pages/dashboard/routes/ProfileRoute";
+import SettingsRoute from "./pages/dashboard/routes/SettingsRoute";
+import BillingRoute from "./pages/dashboard/routes/BillingRoute";
+import PublicRoute from "./routes/PulblicRoute";
+import PrivateRoute from "./routes/PrivateRoute";
 
 function App() {
   return (
     <>
       <BrowserRouter>
         <Routes>
+          <Route element={<PublicRoute/>}>
           {/* Home routes */}
+          <Route path="*" element={<NotFound />} />
           <Route path="/" element={<Index />} />
           <Route path="/projects/firecat" element={<FireCatProject />} />
           <Route
@@ -65,27 +64,27 @@ function App() {
           <Route path="/auth/signup" element={<SignUp />} />
           <Route path="/auth/forgot-password" element={<ForgotPassword />} />
           <Route path="/auth/set-new-password" element={<SetNewPassword />} />
-          <Route path="/dashboard" element={<Dashboard />} />
+          </Route>
+          <Route element={<PrivateRoute/>}>
+          <Route path="/dashboard" element={<Dashboard />}>
+            <Route index element={<Navigate to="home" replace />} />
+            <Route path="home" element={<HomeRoute />} />
+            <Route path="sports" element={<SportsRoute />} />
+            <Route path="swimming" element={<SwimmingRoute />} />
+            <Route path="leagues" element={<LeaguesRoute />} />
+            <Route path="training" element={<TrainingRoute />} />
+            <Route path="ai-chat" element={<AiChatRoute />} />
+            <Route path="account" element={<AccountRoute />} />
+            <Route path="profile" element={<ProfileRoute />} />
+            <Route path="settings" element={<SettingsRoute />} />
+            <Route path="billing" element={<BillingRoute />} />
+          </Route>
+          </Route>
 
-          {/* Global routes */}
-          <Route path="/global/sports-complex" element={<SportsComplexAccount />} />
-
-          {/* Sports routes */}
-          <Route path="/sports/events" element={<Events />} />
-          <Route path="/gym" element={<Gym />} />
-
-          {/* Swimming routes */}
-          <Route path="/swimming/registration" element={<SwimmingRegistration />} />
-          <Route path="/swimming/time-tracking" element={<TimeTracking />} />
-          <Route path="/swimming/invoice" element={<Invoice />} />
-          <Route path="/swimming/cancellation" element={<Cancellation />} />
-          <Route path="/swimming/freeze" element={<FreezeApplication />} />
-          <Route path="/swimming/rules" element={<RulesRegulations />} />
-          <Route path="/swimming/shop" element={<Shop />} />
-
-          <Route path="*" element={<NotFound />} />
+          
         </Routes>
       </BrowserRouter>
+      <Toaster position="bottom-right" />
     </>
   );
 }

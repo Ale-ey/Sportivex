@@ -1,5 +1,5 @@
-import ProjectPageLayout from "@/components/ProjectPageLayout";
-import SEO from "@/components/SEO";
+import ProjectPageLayout from "@/components/landingPage/ProjectPageLayout";
+import SEO from "@/components/landingPage/SEO";
 import {
   Footprints,
   Zap,
