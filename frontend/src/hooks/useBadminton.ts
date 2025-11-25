@@ -6,7 +6,7 @@ import {
   badmintonService,
   type Player,
   type Court,
-  type Match,
+
 } from '@/services/badmintonService';
 
 /**
@@ -69,8 +69,7 @@ export const useBadminton = () => {
 
     // Actions - Match Setup
     setMatchMode: setMatchModeState,
-    setTeam1: setTeam1State,
-    setTeam2: setTeam2State,
+
     setTimeRemaining,
     addPlayerToTeam,
     removePlayerFromTeam,
