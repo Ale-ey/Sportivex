@@ -77,6 +77,7 @@ export interface User {
   bio?: string;
   emailConfirmed?: boolean;
   registrationDate?: string;
+  gender?: string;
 }
 
 export interface profileResponse {
@@ -97,6 +98,7 @@ export interface updateProfilePayload {
   address?: string;
   profilePictureUrl?: string;
   bio?: string;
+  gender?: string;
 }
 
 export interface updateProfileResponse {

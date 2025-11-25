@@ -274,18 +274,28 @@ const getProfile = async (req, res) => {
     const userId = req.user.id;
 
     // Fetch user from database
-    const { data: user, error } = await supabase
+    const { data: user, error } = await supabaseAdmin
       .from('users_metadata')
-      .select('id, name, cms_id, role, email, institution, phone, date_of_birth, address, profile_picture_url, bio, email_confirmed, registration_date')
+      .select('id, name, cms_id, role, email, institution, phone, date_of_birth, address, profile_picture_url, bio, email_confirmed, registration_date, gender')
       .eq('id', userId)
       .single();
     
     if (error || !user) {
+      console.error('Get profile error:', error);
       return res.status(404).json({
         success: false,
         message: 'User not found'
       });
     }
+
+    console.log('User profile fetched:', { userId, gender: user.gender, hasGender: !!user.gender, allFields: Object.keys(user) });
+
+    // Set cache-control headers to prevent caching
+    res.set({
+      'Cache-Control': 'no-store, no-cache, must-revalidate, private',
+      'Pragma': 'no-cache',
+      'Expires': '0'
+    });
 
     res.status(200).json({
       success: true,
@@ -303,7 +313,8 @@ const getProfile = async (req, res) => {
           profilePictureUrl: user.profile_picture_url,
           bio: user.bio,
           emailConfirmed: user.email_confirmed,
-          registrationDate: user.registration_date
+          registrationDate: user.registration_date,
+          gender: user.gender || null
         }
       }
     });
@@ -323,7 +334,7 @@ const getProfile = async (req, res) => {
 const updateProfile = async (req, res) => {
   try {
     const userId = req.user.id;
-    const { name, phone, dateOfBirth, address, profilePictureUrl, bio } = req.body;
+    const { name, phone, dateOfBirth, address, profilePictureUrl, bio, gender } = req.body;
 
     // Build update object with only provided fields
     const updateData = {};
@@ -332,6 +343,17 @@ const updateProfile = async (req, res) => {
     if (dateOfBirth !== undefined) updateData.date_of_birth = dateOfBirth;
     if (address !== undefined) updateData.address = address;
     if (bio !== undefined) updateData.bio = bio;
+    
+    // Validate and update gender if provided
+    if (gender !== undefined) {
+      if (gender && !['male', 'female', 'other'].includes(gender.toLowerCase())) {
+        return res.status(400).json({
+          success: false,
+          message: 'Gender must be one of: male, female, other'
+        });
+      }
+      updateData.gender = gender ? gender.toLowerCase() : null;
+    }
 
     // Handle file upload if provided
     if (req.file) {
@@ -422,21 +444,26 @@ const updateProfile = async (req, res) => {
       }
     }
 
+    console.log('Updating profile:', { userId, updateData, hasGender: 'gender' in updateData, genderValue: updateData.gender });
+
     // Update user in database
-    const { data: updatedUser, error } = await supabase
+    const { data: updatedUser, error } = await supabaseAdmin
       .from('users_metadata')
       .update(updateData)
       .eq('id', userId)
-      .select()
+      .select('id, name, cms_id, role, email, institution, phone, date_of_birth, address, profile_picture_url, bio, email_confirmed, registration_date, gender')
       .single();
 
     if (error) {
       console.error('Update error:', error);
       return res.status(400).json({
         success: false,
-        message: 'Failed to update profile'
+        message: 'Failed to update profile',
+        error: error.message
       });
     }
+
+    console.log('Profile updated successfully:', { userId, updatedGender: updatedUser.gender });
 
     res.status(200).json({
       success: true,
@@ -452,7 +479,8 @@ const updateProfile = async (req, res) => {
           dateOfBirth: updatedUser.date_of_birth,
           address: updatedUser.address,
           profilePictureUrl: updatedUser.profile_picture_url,
-          bio: updatedUser.bio
+          bio: updatedUser.bio,
+          gender: updatedUser.gender
         }
       }
     });

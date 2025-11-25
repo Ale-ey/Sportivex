@@ -56,10 +56,10 @@ export const registerSchema = z
       }),
     gender: z
       .string()
-      .refine((val) => !val || ["male", "female", "other"].includes(val.toLowerCase()), {
+      .min(1, { message: "Gender is required for swimming pool access." })
+      .refine((val) => ["male", "female", "other"].includes(val.toLowerCase()), {
         message: "Gender must be male, female, or other",
-      })
-      .optional(),
+      }),
   })
   .refine((data) => data.password === data.confirmPassword, {
     message: "Passwords do not match.",
@@ -93,6 +93,12 @@ export const updateProfileSchema = z.object({
   address: z.string().optional(),
   profilePictureUrl: z.string().url("Must be a valid URL").optional().or(z.literal("")),
   bio: z.string().optional(),
+  gender: z
+    .string()
+    .refine((val) => !val || ["male", "female", "other"].includes(val.toLowerCase()), {
+      message: "Gender must be male, female, or other",
+    })
+    .optional(),
 });
 
 // Change password validation schema

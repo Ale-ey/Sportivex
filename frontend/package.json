@@ -40,7 +40,8 @@
     "tailwind-merge": "^3.3.1",
     "tailwindcss": "^4.1.13",
     "vue3-touch-events": "^5.0.13",
-    "zod": "^4.1.11"
+    "zod": "^4.1.11",
+    "zustand": "^5.0.8"
   },
   "devDependencies": {
     "@eslint/js": "^9.36.0",
