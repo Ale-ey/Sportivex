@@ -7,6 +7,7 @@ import morgan from "morgan";
 
 import authRoutes from "./routes/auth.js";
 import swimmingRoutes from "./routes/swimming.js";
+import badmintonRoutes from "./routes/badminton.js";
 
 
 const app = express();
@@ -62,6 +63,7 @@ app.get("/health", (_req, res) => {
 // API routes
 app.use('/api/auth', authRoutes);
 app.use('/api/swimming', swimmingRoutes);
+app.use('/api/badminton', badmintonRoutes);
 
 // 404 handler
 app.use((_req, res) => {
@@ -103,6 +105,7 @@ app.listen(PORT, () => {
   console.log(`Health check: http://localhost:${PORT}/health`);
   console.log(`Auth endpoints: http://localhost:${PORT}/api/auth`);
   console.log(`Swimming endpoints: http://localhost:${PORT}/api/swimming`);
+  console.log(`Badminton endpoints: http://localhost:${PORT}/api/badminton`);
   
   console.log('\n🎉 Server startup completed!');
 });

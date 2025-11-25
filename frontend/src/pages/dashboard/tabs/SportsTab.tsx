@@ -17,8 +17,11 @@ const SportsTab: React.FC<SportsTabProps> = ({ sports }) => {
   const navigate = useNavigate();
 
   const handleSportClick = (sportName: string) => {
-    if (sportName.toLowerCase() === "swimming") {
+    const sport = sportName.toLowerCase();
+    if (sport === "swimming") {
       navigate("/dashboard/swimming");
+    } else if (sport === "badminton") {
+      navigate("/dashboard/badminton");
     }
     // Add other sport navigation here as needed
   };

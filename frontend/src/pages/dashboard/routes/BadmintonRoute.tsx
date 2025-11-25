@@ -3,92 +3,136 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
-import { Users, User, Play, RotateCcw, Sparkles, ToggleLeft, ToggleRight } from 'lucide-react';
+import { Users, User, Play, RotateCcw, Sparkles, ToggleLeft, ToggleRight, Clock, MapPin } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useGetProfile } from '@/hooks/useAuth';
-// h
-// Hardcoded player data with availability
-const INITIAL_PLAYERS = [
-  { id: '1', name: 'Ali Khan', avatar: null as string | null, initials: 'AK', available: true },
-  { id: '2', name: 'Sarah Ahmed', avatar: null as string | null, initials: 'SA', available: true },
-  { id: '3', name: 'Ahmed Ali', avatar: null as string | null, initials: 'AA', available: true },
-  { id: '4', name: 'Fatima Hassan', avatar: null as string | null, initials: 'FH', available: true },
-  { id: '5', name: 'Omar Malik', avatar: null as string | null, initials: 'OM', available: true },
-  { id: '6', name: 'Zainab Ali', avatar: null as string | null, initials: 'ZA', available: true },
-  { id: '7', name: 'Hassan Raza', avatar: null as string | null, initials: 'HR', available: true },
-  { id: '8', name: 'Ayesha Khan', avatar: null as string | null, initials: 'AK', available: true },
-  { id: '9', name: 'Bilal Shah', avatar: null as string | null, initials: 'BS', available: true },
-  { id: '10', name: 'Mariam Ali', avatar: null as string | null, initials: 'MA', available: true },
-];
+import { useBadminton } from '@/hooks/useBadminton';
+import type { Player } from '@/services/badmintonService';
 
 type MatchMode = '1v1' | '2v2';
-type Player = typeof INITIAL_PLAYERS[0] & { available: boolean };
-type Team = Player[];
 
 interface BadmintonRouteProps {}
 
 const BadmintonRoute: React.FC<BadmintonRouteProps> = () => {
   const { getProfile, user } = useGetProfile();
-  const [matchMode, setMatchMode] = useState<MatchMode>('1v1');
-  const [team1, setTeam1] = useState<Team>([]);
-  const [team2, setTeam2] = useState<Team>([]);
-  const [players, setPlayers] = useState<Player[]>(INITIAL_PLAYERS);
+  const {
+    // State
+    availablePlayers: players,
+    myAvailability,
+    availableCourts: courts,
+    selectedCourt,
+    currentMatch,
+    matchMode,
+    team1,
+    team2,
+    timeRemaining,
+    loadingPlayers,
+    loadingAvailability,
+    loadingCourts,
+    loadingMatches,
+    // Actions
+    fetchAvailablePlayers,
+    fetchMyAvailability,
+    toggleAvailability,
+    fetchAvailableCourts,
+    selectCourt,
+    createMatch,
+    startMatch,
+    endMatch,
+    fetchMyMatches,
+    findMatch,
+    setMatchMode,
+    addPlayer,
+    removePlayer,
+    areTeamsReady,
+    formatTimeRemaining,
+    isMatchInProgress,
+  } = useBadminton();
+
   const [isSelectingRandom, setIsSelectingRandom] = useState<{ team: 1 | 2; slot: number } | null>(null);
   const [randomSelectionIndex, setRandomSelectionIndex] = useState(0);
-  const [allPlayersReady, setAllPlayersReady] = useState(false);
-  const [matchStarted, setMatchStarted] = useState(false);
-  const [playerReady, setPlayerReady] = useState<Record<string, boolean>>({});
   const scrollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const timerIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const playersPerTeam = matchMode === '1v1' ? 1 : 2;
+  const matchStarted = isMatchInProgress();
+  const loading = loadingPlayers || loadingAvailability || loadingCourts || loadingMatches;
 
-  // Get user profile on mount
+  // Get user profile and initial data on mount
   useEffect(() => {
-    getProfile();
-  }, [getProfile]);
+    const loadInitialData = async () => {
+      try {
+        await getProfile();
+        await Promise.all([
+          fetchMyAvailability(),
+          fetchAvailablePlayers(),
+          fetchAvailableCourts(),
+          fetchMyMatches()
+        ]);
+      } catch (error) {
+        console.error('Error loading initial data:', error);
+        toast.error('Failed to load data');
+      }
+    };
+    loadInitialData();
+  }, [getProfile, fetchMyAvailability, fetchAvailablePlayers, fetchAvailableCourts, fetchMyMatches]);
 
-  // Add current user to players list and auto-select for both teams when user is loaded
+  // Timer for match countdown
   useEffect(() => {
-    if (user) {
-      const getInitials = (name: string) => {
-        const parts = name.trim().split(' ');
-        if (parts.length >= 2) {
-          return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
+    if (matchStarted && currentMatch && currentMatch.status === 'in_progress') {
+      timerIntervalRef.current = setInterval(() => {
+        if (currentMatch.actual_start_time) {
+          const startTime = new Date(currentMatch.actual_start_time).getTime();
+          const endTime = startTime + 30 * 60 * 1000;
+          const remaining = Math.max(0, endTime - Date.now());
+          
+          if (remaining <= 0) {
+            // Auto-end match when time is up
+            if (currentMatch.id) {
+              endMatch(currentMatch.id);
+            }
+          }
         }
-        return name.substring(0, 2).toUpperCase();
+      }, 1000);
+      
+      return () => {
+        if (timerIntervalRef.current) {
+          clearInterval(timerIntervalRef.current);
+        }
       };
+    }
+  }, [matchStarted, currentMatch, endMatch]);
 
+  // Refresh available players periodically
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (!matchStarted) {
+        fetchAvailablePlayers();
+      }
+    }, 10000); // Refresh every 10 seconds
+    
+    return () => clearInterval(interval);
+  }, [matchStarted, fetchAvailablePlayers]);
+
+  // Add current user to team when user is loaded
+  useEffect(() => {
+    if (user && myAvailability && !matchStarted && team1.length === 0) {
       const currentUserPlayer: Player = {
-        id: user.id || 'current-user',
+        id: user.id || '',
         name: user.name || 'You',
+        email: user.email || '',
         avatar: user.profilePictureUrl ?? null,
+        cms_id: typeof user.cmsId === 'number' ? user.cmsId : (typeof user.cmsId === 'string' ? parseInt(user.cmsId, 10) || 0 : 0),
+        role: user.role || '',
+        gender: user.gender || null,
         initials: getInitials(user.name || 'You'),
         available: true,
       };
 
-      // Add current user to players list if not already there
-      setPlayers((prev) => {
-        const exists = prev.some((p) => p.id === user.id);
-        if (!exists) {
-          return [...prev, currentUserPlayer];
-        }
-        return prev;
-      });
-
-      // Auto-select current user for both teams if teams are empty
-      if (team1.length === 0 && team2.length === 0) {
-        setTeam1([currentUserPlayer]);
-        setTeam2([currentUserPlayer]);
-      }
+      // Auto-select current user for team 1 if empty
+      addPlayer(currentUserPlayer, 1);
     }
-  }, [user, team1.length, team2.length]);
-
-  // Check if all players are ready
-  useEffect(() => {
-    const totalPlayers = team1.length + team2.length;
-    const readyCount = Object.values(playerReady).filter(Boolean).length;
-    setAllPlayersReady(totalPlayers > 0 && totalPlayers === readyCount);
-  }, [team1, team2, playerReady]);
+  }, [user, myAvailability, matchStarted, team1.length, addPlayer]);
 
   // Random selection animation
   useEffect(() => {
@@ -105,10 +149,9 @@ const BadmintonRoute: React.FC<BadmintonRouteProps> = () => {
 
       scrollIntervalRef.current = setInterval(() => {
         setRandomSelectionIndex((prev) => (prev + 1) % availablePlayers.length);
-      }, 150); // Fast scrolling animation
+      }, 150);
 
-      // Stop after 2 seconds and select random player
-      const timeout = setTimeout(() => {
+      const timeout = setTimeout(async () => {
         if (scrollIntervalRef.current) {
           clearInterval(scrollIntervalRef.current);
           scrollIntervalRef.current = null;
@@ -117,15 +160,14 @@ const BadmintonRoute: React.FC<BadmintonRouteProps> = () => {
         if (availablePlayers.length > 0) {
           const randomPlayer = availablePlayers[Math.floor(Math.random() * availablePlayers.length)];
           
-          if (isSelectingRandom.team === 1) {
-            const newTeam1 = [...team1];
-            newTeam1[isSelectingRandom.slot] = randomPlayer;
-            setTeam1(newTeam1);
-          } else {
-            const newTeam2 = [...team2];
-            newTeam2[isSelectingRandom.slot] = randomPlayer;
-            setTeam2(newTeam2);
+          // Remove player at slot if exists
+          const currentTeam = isSelectingRandom.team === 1 ? team1 : team2;
+          if (currentTeam[isSelectingRandom.slot]) {
+            removePlayer(currentTeam[isSelectingRandom.slot].id, isSelectingRandom.team);
           }
+          
+          // Add new player
+          addPlayer(randomPlayer, isSelectingRandom.team);
           
           toast.success(`${randomPlayer.name} selected!`);
         }
@@ -141,102 +183,52 @@ const BadmintonRoute: React.FC<BadmintonRouteProps> = () => {
         clearTimeout(timeout);
       };
     }
-  }, [isSelectingRandom, team1, team2, players]);
+  }, [isSelectingRandom, team1, team2, players, addPlayer, removePlayer]);
+
+  const getInitials = (name: string) => {
+    const parts = name.trim().split(' ');
+    if (parts.length >= 2) {
+      return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
+    }
+    return name.substring(0, 2).toUpperCase();
+  };
+
+  const handleToggleAvailability = async () => {
+    await toggleAvailability(!myAvailability);
+  };
 
   const handleModeSelect = (mode: MatchMode) => {
     setMatchMode(mode);
-    // Reset teams but keep current user
-    if (user) {
-      const getInitials = (name: string) => {
-        const parts = name.trim().split(' ');
-        if (parts.length >= 2) {
-          return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
-        }
-        return name.substring(0, 2).toUpperCase();
-      };
-
+    // Teams will be cleared by setMatchMode, then add current user if available
+    if (user && myAvailability) {
       const currentUserPlayer: Player = {
-        id: user.id || 'current-user',
+        id: user.id || '',
         name: user.name || 'You',
+        email: user.email || '',
         avatar: user.profilePictureUrl ?? null,
+        cms_id: typeof user.cmsId === 'number' ? user.cmsId : (typeof user.cmsId === 'string' ? parseInt(user.cmsId, 10) || 0 : 0),
+        role: user.role || '',
+        gender: user.gender || null,
         initials: getInitials(user.name || 'You'),
         available: true,
       };
-
-      setTeam1([currentUserPlayer]);
-      setTeam2([currentUserPlayer]);
-    } else {
-      setTeam1([]);
-      setTeam2([]);
+      setTimeout(() => addPlayer(currentUserPlayer, 1), 0);
     }
-    setPlayerReady({});
-    setMatchStarted(false);
-  };
-
-  const handleToggleMyAvailability = () => {
-    if (!user) return;
-    
-    // Update current user's availability in players list
-    setPlayers((prev) =>
-      prev.map((p) => {
-        if (p.id === user.id) {
-          return { ...p, available: !p.available };
-        }
-        return p;
-      })
-    );
-    
-    // Also update in teams if user is selected
-    const updateTeamAvailability = (team: Team) => {
-      return team.map((p) => {
-        if (p.id === user.id) {
-          return { ...p, available: !p.available };
-        }
-        return p;
-      });
-    };
-    
-    setTeam1(updateTeamAvailability(team1));
-    setTeam2(updateTeamAvailability(team2));
-  };
-
-  // Get current user's availability status
-  const getMyAvailability = (): boolean => {
-    if (!user) return true;
-    const currentUserPlayer = players.find((p) => p.id === user.id);
-    return currentUserPlayer?.available ?? true;
   };
 
   const handlePlayerSlotClick = (team: 1 | 2, slot: number) => {
-    // If slot is empty, start random selection
     const currentTeam = team === 1 ? team1 : team2;
     if (!currentTeam[slot]) {
       setIsSelectingRandom({ team, slot });
     } else {
-      // If slot has player, remove them and clear ready status
       const player = currentTeam[slot];
       if (player) {
-        setPlayerReady((prev) => {
-          const newReady = { ...prev };
-          delete newReady[player.id];
-          return newReady;
-        });
-      }
-      
-      if (team === 1) {
-        const newTeam1 = [...team1];
-        newTeam1.splice(slot, 1);
-        setTeam1(newTeam1);
-      } else {
-        const newTeam2 = [...team2];
-        newTeam2.splice(slot, 1);
-        setTeam2(newTeam2);
+        removePlayer(player.id, team);
       }
     }
   };
 
   const handlePlayerSelect = (player: Player, team: 1 | 2) => {
-    // Check if player is already selected
     const isInTeam1 = team1.some((p) => p.id === player.id);
     const isInTeam2 = team2.some((p) => p.id === player.id);
     
@@ -245,63 +237,71 @@ const BadmintonRoute: React.FC<BadmintonRouteProps> = () => {
       return;
     }
 
-    // Find first empty slot in the team
-    if (team === 1) {
-      if (team1.length < playersPerTeam) {
-        const newTeam1 = [...team1];
-        newTeam1.push(player);
-        setTeam1(newTeam1);
-      }
-    } else {
-      if (team2.length < playersPerTeam) {
-        const newTeam2 = [...team2];
-        newTeam2.push(player);
-        setTeam2(newTeam2);
-      }
-    }
+    addPlayer(player, team);
   };
 
-  const handlePlayerReady = (playerId: string) => {
-    setPlayerReady((prev) => ({ ...prev, [playerId]: !prev[playerId] }));
-  };
-
-  const handleStartMatch = () => {
-    if (allPlayersReady) {
-      setMatchStarted(true);
-      toast.success('Match started!', { icon: '🎾' });
-    }
-  };
-
-  const handleReset = () => {
-    // Reset teams but keep current user
-    if (user) {
-      const getInitials = (name: string) => {
-        const parts = name.trim().split(' ');
-        if (parts.length >= 2) {
-          return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
+  const handleFindMatch = async (team: 1 | 2, slot: number) => {
+    try {
+      const response = await findMatch(matchMode, team);
+      if (response.success && response.player) {
+        const selectedPlayer = response.player;
+        
+        // Remove player at slot if exists, then add new one
+        const currentTeam = team === 1 ? team1 : team2;
+        if (currentTeam[slot]) {
+          removePlayer(currentTeam[slot].id, team);
         }
-        return name.substring(0, 2).toUpperCase();
-      };
-
-      const currentUserPlayer: Player = {
-        id: user.id || 'current-user',
-        name: user.name || 'You',
-        avatar: user.profilePictureUrl ?? null,
-        initials: getInitials(user.name || 'You'),
-        available: true,
-      };
-
-      setTeam1([currentUserPlayer]);
-      setTeam2([currentUserPlayer]);
-    } else {
-      setTeam1([]);
-      setTeam2([]);
+        
+        addPlayer(selectedPlayer, team);
+        toast.success(`${selectedPlayer.name} selected!`);
+      }
+    } catch (error) {
+      console.error('Error finding match:', error);
     }
-    setPlayerReady({});
-    setMatchStarted(false);
-    setAllPlayersReady(false);
   };
 
+  const handleStartMatch = async () => {
+    if (!selectedCourt) {
+      toast.error('Please select a court');
+      return;
+    }
+
+    if (!areTeamsReady()) {
+      toast.error(`Both teams must have ${playersPerTeam} player(s)`);
+      return;
+    }
+
+    try {
+      const matchData = {
+        courtId: selectedCourt.id,
+        team1Player1Id: team1[0].id,
+        team1Player2Id: matchMode === '2v2' ? team1[1]?.id : undefined,
+        team2Player1Id: team2[0].id,
+        team2Player2Id: matchMode === '2v2' ? team2[1]?.id : undefined,
+        matchMode,
+      };
+
+      const createResponse = await createMatch(matchData);
+      
+      if (createResponse.success && createResponse.match) {
+        toast.success('Match created successfully!');
+        
+        // Start the match
+        const startResponse = await startMatch(createResponse.match.id);
+        if (startResponse.success) {
+          toast.success('Match started!', { icon: '🎾' });
+        }
+      }
+    } catch (error: any) {
+      console.error('Error starting match:', error);
+    }
+  };
+
+  const handleEndMatch = async () => {
+    if (!currentMatch) return;
+
+    await endMatch(currentMatch.id);
+  };
 
   const renderPlayerSlot = (team: 1 | 2, slot: number) => {
     const currentTeam = team === 1 ? team1 : team2;
@@ -340,7 +340,6 @@ const BadmintonRoute: React.FC<BadmintonRouteProps> = () => {
                     </Avatar>
                   </div>
                 ))}
-                {/* Duplicate for seamless loop */}
                 {availablePlayers.map((p) => (
                   <div key={`dup-${p.id}`} className="h-32 w-32 flex items-center justify-center flex-shrink-0">
                     <Avatar className="w-24 h-24">
@@ -360,23 +359,6 @@ const BadmintonRoute: React.FC<BadmintonRouteProps> = () => {
                   {player.initials}
                 </AvatarFallback>
               </Avatar>
-              <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2">
-                <Button
-                  size="sm"
-                  variant={playerReady[player.id] ? 'default' : 'outline'}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    handlePlayerReady(player.id);
-                  }}
-                  className={`text-xs h-6 px-2 ${
-                    playerReady[player.id]
-                      ? 'bg-green-500 hover:bg-green-600 text-white'
-                      : 'bg-white border-[#0077B6] text-[#0077B6]'
-                  }`}
-                >
-                  {playerReady[player.id] ? '✓ Ready' : 'Ready'}
-                </Button>
-              </div>
             </>
           ) : (
             <div className="text-center">
@@ -388,13 +370,63 @@ const BadmintonRoute: React.FC<BadmintonRouteProps> = () => {
         {player && (
           <p className="text-center mt-2 text-sm font-medium text-[#023E8A]">{player.name}</p>
         )}
+        {!player && !isSelecting && (
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleFindMatch(team, slot);
+            }}
+            className="mt-2 w-full text-xs bg-[#0077B6] text-white hover:bg-[#005885]"
+          >
+            Find Match
+          </Button>
+        )}
       </div>
     );
   };
 
-  if (matchStarted) {
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-[#0077B6] mx-auto"></div>
+          <p className="mt-4 text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (matchStarted && currentMatch) {
     return (
       <div className="space-y-6 animate-in fade-in duration-500">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-3xl font-bold text-[#023E8A] mb-2">Match in Progress</h2>
+            <div className="flex items-center gap-4 mt-2">
+              <Badge className="bg-[#0077B6] text-white">
+                <MapPin className="w-3 h-3 mr-1" />
+                Court {currentMatch.court?.court_number || 'N/A'}
+              </Badge>
+              {timeRemaining > 0 && (
+                <Badge className="bg-green-500 text-white">
+                  <Clock className="w-3 h-3 mr-1" />
+                  {formatTimeRemaining(timeRemaining)} remaining
+                </Badge>
+              )}
+            </div>
+          </div>
+          <Button
+            onClick={handleEndMatch}
+            variant="outline"
+            className="border-red-500 text-red-600 hover:bg-red-50"
+          >
+            <RotateCcw className="w-4 h-4 mr-2" />
+            End Match
+          </Button>
+        </div>
+
         <div className="text-center space-y-4">
           <div className="flex items-center justify-center gap-8 py-12">
             {/* Team 1 */}
@@ -439,24 +471,10 @@ const BadmintonRoute: React.FC<BadmintonRouteProps> = () => {
               <Badge className="bg-[#0077B6] text-white text-lg px-4 py-2">Team 2</Badge>
             </div>
           </div>
-
-          <div className="text-3xl font-bold text-[#023E8A] mt-8">Match in Progress!</div>
-          <p className="text-muted-foreground">Good luck to both teams!</p>
-
-          <Button
-            onClick={handleReset}
-            variant="outline"
-            className="mt-6 border-[#ADE8F4] text-[#0077B6] hover:bg-[#EAF7FD]"
-          >
-            <RotateCcw className="w-4 h-4 mr-2" />
-            New Match
-          </Button>
         </div>
       </div>
     );
   }
-
-  const myAvailability = getMyAvailability();
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">
@@ -468,7 +486,7 @@ const BadmintonRoute: React.FC<BadmintonRouteProps> = () => {
         {user && (
           <Button
             variant="outline"
-            onClick={handleToggleMyAvailability}
+            onClick={handleToggleAvailability}
             className={`border-2 ${
               myAvailability
                 ? 'border-green-500 text-green-600 hover:bg-green-50'
@@ -525,6 +543,35 @@ const BadmintonRoute: React.FC<BadmintonRouteProps> = () => {
                 <div className="text-xs opacity-90">Doubles</div>
               </div>
             </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Court Selection */}
+      <Card className="border border-[#E2F5FB]">
+        <CardHeader>
+          <CardTitle className="text-[#023E8A]">Select Court</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 gap-4">
+            {courts.map((court) => (
+              <Button
+                key={court.id}
+                onClick={() => selectCourt(court)}
+                variant={selectedCourt?.id === court.id ? 'default' : 'outline'}
+                className={`h-20 ${
+                  selectedCourt?.id === court.id
+                    ? 'bg-[#0077B6] text-white'
+                    : 'bg-white border-2 border-[#E2F5FB] text-[#023E8A] hover:bg-[#EAF7FD]'
+                }`}
+              >
+                <MapPin className="w-5 h-5 mr-2" />
+                <div className="text-left">
+                  <div className="font-semibold">{court.name}</div>
+                  <div className="text-xs opacity-90">{court.status}</div>
+                </div>
+              </Button>
+            ))}
           </div>
         </CardContent>
       </Card>
@@ -601,7 +648,6 @@ const BadmintonRoute: React.FC<BadmintonRouteProps> = () => {
                     }`}
                     onClick={() => {
                       if (!isSelected) {
-                        // Find first empty slot - prioritize team 1, then team 2
                         if (team1.length < playersPerTeam) {
                           handlePlayerSelect(player, 1);
                         } else if (team2.length < playersPerTeam) {
@@ -636,7 +682,7 @@ const BadmintonRoute: React.FC<BadmintonRouteProps> = () => {
       </Card>
 
       {/* Play Button */}
-      {allPlayersReady && team1.length === playersPerTeam && team2.length === playersPerTeam && (
+      {areTeamsReady() && (
         <div className="flex justify-center animate-in slide-in-from-bottom duration-500">
           <Button
             onClick={handleStartMatch}
@@ -653,4 +699,3 @@ const BadmintonRoute: React.FC<BadmintonRouteProps> = () => {
 };
 
 export default BadmintonRoute;
-
