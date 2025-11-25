@@ -1,4 +1,4 @@
-import { getSocket, initializeSocket, disconnectSocket } from '@/lib/socket';
+import {  initializeSocket, disconnectSocket } from '@/lib/socket';
 import type { Socket } from 'socket.io-client';
 
 export type AvailabilityChangedEvent = {
