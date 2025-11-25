@@ -37,6 +37,7 @@
     "react-toastify": "^11.0.5",
     "recharts": "^3.2.1",
     "resend": "^6.4.2",
+    "socket.io-client": "^4.8.1",
     "tailwind-merge": "^3.3.1",
     "tailwindcss": "^4.1.13",
     "vue3-touch-events": "^5.0.13",
