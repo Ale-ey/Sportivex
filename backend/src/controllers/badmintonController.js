@@ -11,6 +11,7 @@ import {
   getUserActiveMatches,
   getAvailableCourtsAtTime
 } from '../services/badmintonService.js';
+import { emitAvailabilityChange, emitMatchChange } from '../socket/socketServer.js';
 
 /**
  * Get all available players
@@ -92,6 +93,9 @@ export const toggleAvailabilityController = async (req, res) => {
         message: 'Failed to update availability'
       });
     }
+
+    // Emit real-time availability change
+    emitAvailabilityChange(user.id, isAvailable);
 
     res.json({
       success: true,
@@ -201,6 +205,9 @@ export const createMatchController = async (req, res) => {
       });
     }
 
+    // Emit real-time match creation event
+    emitMatchChange(result.match);
+
     res.status(201).json({
       success: true,
       message: 'Match created successfully',
@@ -238,6 +245,9 @@ export const startMatchController = async (req, res) => {
       });
     }
 
+    // Emit real-time match start event
+    emitMatchChange(result.match);
+
     res.json({
       success: true,
       message: 'Match started',
@@ -274,6 +284,9 @@ export const endMatchController = async (req, res) => {
         message: result.error || 'Failed to end match'
       });
     }
+
+    // Emit real-time match end event
+    emitMatchChange(result.match);
 
     res.json({
       success: true,

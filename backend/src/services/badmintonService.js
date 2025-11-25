@@ -1,10 +1,11 @@
 import { supabaseAdmin as supabase } from '../config/supabase.js';
 
 /**
- * Get all available players
+ * Get all available players (excluding those in active matches)
  */
 export const getAvailablePlayers = async (excludeUserId = null) => {
   try {
+    // First, get all users who are available
     let query = supabase
       .from('badminton_availability')
       .select(`
@@ -36,8 +37,30 @@ export const getAvailablePlayers = async (excludeUserId = null) => {
       return { success: false, players: [], error: error.message };
     }
 
+    // Get all user IDs who are in active matches
+    const { data: activeMatches, error: matchesError } = await supabase
+      .from('badminton_matches')
+      .select('team1_player1_id, team1_player2_id, team2_player1_id, team2_player2_id')
+      .in('status', ['scheduled', 'in_progress']);
+
+    if (matchesError) {
+      console.error('Error getting active matches:', matchesError);
+    }
+
+    // Collect all user IDs in active matches
+    const usersInMatches = new Set();
+    if (activeMatches) {
+      activeMatches.forEach(match => {
+        if (match.team1_player1_id) usersInMatches.add(match.team1_player1_id);
+        if (match.team1_player2_id) usersInMatches.add(match.team1_player2_id);
+        if (match.team2_player1_id) usersInMatches.add(match.team2_player1_id);
+        if (match.team2_player2_id) usersInMatches.add(match.team2_player2_id);
+      });
+    }
+
+    // Filter out users who are in active matches
     const players = (data || [])
-      .filter(item => item.user) // Filter out items where user is null
+      .filter(item => item.user && !usersInMatches.has(item.user.id)) // Filter out null users and users in matches
       .map(item => ({
         id: item.user.id,
         name: item.user.name,
@@ -214,10 +237,10 @@ export const createMatch = async (matchData) => {
       .select(`
         *,
         court:badminton_courts (*),
-        team1_player1:users_metadata!badminton_matches_team1_player1_id_fkey (id, name, profile_picture_url),
-        team1_player2:users_metadata!badminton_matches_team1_player2_id_fkey (id, name, profile_picture_url),
-        team2_player1:users_metadata!badminton_matches_team2_player1_id_fkey (id, name, profile_picture_url),
-        team2_player2:users_metadata!badminton_matches_team2_player2_id_fkey (id, name, profile_picture_url)
+        team1_player1:users_metadata!team1_player1_id (id, name, email, profile_picture_url, cms_id, role, gender),
+        team1_player2:users_metadata!team1_player2_id (id, name, email, profile_picture_url, cms_id, role, gender),
+        team2_player1:users_metadata!team2_player1_id (id, name, email, profile_picture_url, cms_id, role, gender),
+        team2_player2:users_metadata!team2_player2_id (id, name, email, profile_picture_url, cms_id, role, gender)
       `)
       .single();
 
@@ -232,7 +255,62 @@ export const createMatch = async (matchData) => {
       .update({ status: 'occupied' })
       .eq('id', courtId);
 
-    return { success: true, match: data };
+    // Transform player data
+    const transformed = { ...data };
+    if (data.team1_player1) {
+      transformed.team1_player1 = {
+        id: data.team1_player1.id,
+        name: data.team1_player1.name,
+        email: data.team1_player1.email,
+        avatar: data.team1_player1.profile_picture_url,
+        cms_id: data.team1_player1.cms_id || 0,
+        role: data.team1_player1.role || '',
+        gender: data.team1_player1.gender,
+        initials: getInitials(data.team1_player1.name),
+        available: true
+      };
+    }
+    if (data.team1_player2) {
+      transformed.team1_player2 = {
+        id: data.team1_player2.id,
+        name: data.team1_player2.name,
+        email: data.team1_player2.email,
+        avatar: data.team1_player2.profile_picture_url,
+        cms_id: data.team1_player2.cms_id || 0,
+        role: data.team1_player2.role || '',
+        gender: data.team1_player2.gender,
+        initials: getInitials(data.team1_player2.name),
+        available: true
+      };
+    }
+    if (data.team2_player1) {
+      transformed.team2_player1 = {
+        id: data.team2_player1.id,
+        name: data.team2_player1.name,
+        email: data.team2_player1.email,
+        avatar: data.team2_player1.profile_picture_url,
+        cms_id: data.team2_player1.cms_id || 0,
+        role: data.team2_player1.role || '',
+        gender: data.team2_player1.gender,
+        initials: getInitials(data.team2_player1.name),
+        available: true
+      };
+    }
+    if (data.team2_player2) {
+      transformed.team2_player2 = {
+        id: data.team2_player2.id,
+        name: data.team2_player2.name,
+        email: data.team2_player2.email,
+        avatar: data.team2_player2.profile_picture_url,
+        cms_id: data.team2_player2.cms_id || 0,
+        role: data.team2_player2.role || '',
+        gender: data.team2_player2.gender,
+        initials: getInitials(data.team2_player2.name),
+        available: true
+      };
+    }
+
+    return { success: true, match: transformed };
   } catch (error) {
     console.error('Error in createMatch:', error);
     return { success: false, error: error.message };
@@ -251,7 +329,14 @@ export const startMatch = async (matchId) => {
         actual_start_time: new Date().toISOString()
       })
       .eq('id', matchId)
-      .select()
+      .select(`
+        *,
+        court:badminton_courts (*),
+        team1_player1:users_metadata!team1_player1_id (id, name, email, profile_picture_url, cms_id, role, gender),
+        team1_player2:users_metadata!team1_player2_id (id, name, email, profile_picture_url, cms_id, role, gender),
+        team2_player1:users_metadata!team2_player1_id (id, name, email, profile_picture_url, cms_id, role, gender),
+        team2_player2:users_metadata!team2_player2_id (id, name, email, profile_picture_url, cms_id, role, gender)
+      `)
       .single();
 
     if (error) {
@@ -259,7 +344,62 @@ export const startMatch = async (matchId) => {
       return { success: false, error: error.message };
     }
 
-    return { success: true, match: data };
+    // Transform player data
+    const transformed = { ...data };
+    if (data.team1_player1) {
+      transformed.team1_player1 = {
+        id: data.team1_player1.id,
+        name: data.team1_player1.name,
+        email: data.team1_player1.email,
+        avatar: data.team1_player1.profile_picture_url,
+        cms_id: data.team1_player1.cms_id || 0,
+        role: data.team1_player1.role || '',
+        gender: data.team1_player1.gender,
+        initials: getInitials(data.team1_player1.name),
+        available: true
+      };
+    }
+    if (data.team1_player2) {
+      transformed.team1_player2 = {
+        id: data.team1_player2.id,
+        name: data.team1_player2.name,
+        email: data.team1_player2.email,
+        avatar: data.team1_player2.profile_picture_url,
+        cms_id: data.team1_player2.cms_id || 0,
+        role: data.team1_player2.role || '',
+        gender: data.team1_player2.gender,
+        initials: getInitials(data.team1_player2.name),
+        available: true
+      };
+    }
+    if (data.team2_player1) {
+      transformed.team2_player1 = {
+        id: data.team2_player1.id,
+        name: data.team2_player1.name,
+        email: data.team2_player1.email,
+        avatar: data.team2_player1.profile_picture_url,
+        cms_id: data.team2_player1.cms_id || 0,
+        role: data.team2_player1.role || '',
+        gender: data.team2_player1.gender,
+        initials: getInitials(data.team2_player1.name),
+        available: true
+      };
+    }
+    if (data.team2_player2) {
+      transformed.team2_player2 = {
+        id: data.team2_player2.id,
+        name: data.team2_player2.name,
+        email: data.team2_player2.email,
+        avatar: data.team2_player2.profile_picture_url,
+        cms_id: data.team2_player2.cms_id || 0,
+        role: data.team2_player2.role || '',
+        gender: data.team2_player2.gender,
+        initials: getInitials(data.team2_player2.name),
+        available: true
+      };
+    }
+
+    return { success: true, match: transformed };
   } catch (error) {
     console.error('Error in startMatch:', error);
     return { success: false, error: error.message };
@@ -290,7 +430,10 @@ export const endMatch = async (matchId) => {
         actual_end_time: new Date().toISOString()
       })
       .eq('id', matchId)
-      .select()
+      .select(`
+        *,
+        court:badminton_courts (*)
+      `)
       .single();
 
     if (error) {
@@ -331,10 +474,10 @@ export const getUserActiveMatches = async (userId) => {
       .select(`
         *,
         court:badminton_courts (*),
-        team1_player1:users_metadata!badminton_matches_team1_player1_id_fkey (id, name, profile_picture_url),
-        team1_player2:users_metadata!badminton_matches_team1_player2_id_fkey (id, name, profile_picture_url),
-        team2_player1:users_metadata!badminton_matches_team2_player1_id_fkey (id, name, profile_picture_url),
-        team2_player2:users_metadata!badminton_matches_team2_player2_id_fkey (id, name, profile_picture_url)
+        team1_player1:users_metadata!team1_player1_id (id, name, email, profile_picture_url, cms_id, role, gender),
+        team1_player2:users_metadata!team1_player2_id (id, name, email, profile_picture_url, cms_id, role, gender),
+        team2_player1:users_metadata!team2_player1_id (id, name, email, profile_picture_url, cms_id, role, gender),
+        team2_player2:users_metadata!team2_player2_id (id, name, email, profile_picture_url, cms_id, role, gender)
       `)
       .in('status', ['scheduled', 'in_progress'])
       .or(`team1_player1_id.eq.${userId},team1_player2_id.eq.${userId},team2_player1_id.eq.${userId},team2_player2_id.eq.${userId}`)
@@ -345,7 +488,88 @@ export const getUserActiveMatches = async (userId) => {
       return { success: false, matches: [] };
     }
 
-    return { success: true, matches: data || [] };
+    // Transform the data to match frontend expectations
+    const transformedMatches = await Promise.all((data || []).map(async (match) => {
+      const transformed = { ...match };
+      
+      // Transform players to match Player interface, with fallback to fetch separately
+      if (match.team1_player1_id) {
+        if (match.team1_player1 && typeof match.team1_player1 === 'object') {
+          transformed.team1_player1 = {
+            id: match.team1_player1.id,
+            name: match.team1_player1.name,
+            email: match.team1_player1.email,
+            avatar: match.team1_player1.profile_picture_url,
+            cms_id: match.team1_player1.cms_id || 0,
+            role: match.team1_player1.role || '',
+            gender: match.team1_player1.gender,
+            initials: getInitials(match.team1_player1.name),
+            available: true
+          };
+        } else {
+          // Fallback: fetch player data separately
+          transformed.team1_player1 = await fetchPlayerData(match.team1_player1_id);
+        }
+      }
+      
+      if (match.team1_player2_id) {
+        if (match.team1_player2 && typeof match.team1_player2 === 'object') {
+          transformed.team1_player2 = {
+            id: match.team1_player2.id,
+            name: match.team1_player2.name,
+            email: match.team1_player2.email,
+            avatar: match.team1_player2.profile_picture_url,
+            cms_id: match.team1_player2.cms_id || 0,
+            role: match.team1_player2.role || '',
+            gender: match.team1_player2.gender,
+            initials: getInitials(match.team1_player2.name),
+            available: true
+          };
+        } else {
+          transformed.team1_player2 = await fetchPlayerData(match.team1_player2_id);
+        }
+      }
+      
+      if (match.team2_player1_id) {
+        if (match.team2_player1 && typeof match.team2_player1 === 'object') {
+          transformed.team2_player1 = {
+            id: match.team2_player1.id,
+            name: match.team2_player1.name,
+            email: match.team2_player1.email,
+            avatar: match.team2_player1.profile_picture_url,
+            cms_id: match.team2_player1.cms_id || 0,
+            role: match.team2_player1.role || '',
+            gender: match.team2_player1.gender,
+            initials: getInitials(match.team2_player1.name),
+            available: true
+          };
+        } else {
+          transformed.team2_player1 = await fetchPlayerData(match.team2_player1_id);
+        }
+      }
+      
+      if (match.team2_player2_id) {
+        if (match.team2_player2 && typeof match.team2_player2 === 'object') {
+          transformed.team2_player2 = {
+            id: match.team2_player2.id,
+            name: match.team2_player2.name,
+            email: match.team2_player2.email,
+            avatar: match.team2_player2.profile_picture_url,
+            cms_id: match.team2_player2.cms_id || 0,
+            role: match.team2_player2.role || '',
+            gender: match.team2_player2.gender,
+            initials: getInitials(match.team2_player2.name),
+            available: true
+          };
+        } else {
+          transformed.team2_player2 = await fetchPlayerData(match.team2_player2_id);
+        }
+      }
+      
+      return transformed;
+    }));
+
+    return { success: true, matches: transformedMatches };
   } catch (error) {
     console.error('Error in getUserActiveMatches:', error);
     return { success: false, matches: [] };
@@ -392,5 +616,36 @@ function getInitials(name) {
     return `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase();
   }
   return name.substring(0, 2).toUpperCase();
+}
+
+/**
+ * Helper function to fetch and transform player data
+ */
+async function fetchPlayerData(userId) {
+  if (!userId) return null;
+  try {
+    const { data, error } = await supabase
+      .from('users_metadata')
+      .select('id, name, email, profile_picture_url, cms_id, role, gender')
+      .eq('id', userId)
+      .single();
+    
+    if (error || !data) return null;
+    
+    return {
+      id: data.id,
+      name: data.name,
+      email: data.email,
+      avatar: data.profile_picture_url,
+      cms_id: data.cms_id || 0,
+      role: data.role || '',
+      gender: data.gender,
+      initials: getInitials(data.name),
+      available: true
+    };
+  } catch (error) {
+    console.error('Error fetching player data:', error);
+    return null;
+  }
 }
 
