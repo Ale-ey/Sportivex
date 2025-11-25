@@ -1,4 +1,4 @@
-import { supabase } from '../config/supabase.js';
+import { supabaseAdmin as supabase } from '../config/supabase.js';
 import {
   validateTimeSlot,
   validateQRCode,
@@ -19,36 +19,133 @@ import { getTodayDate } from '../utils/timeSlotDetermination.js';
 export const getTimeSlots = async (req, res) => {
   try {
     const { gender, active } = req.query;
+    const user = req.user; // Get user from auth middleware
 
+    console.log('Time slots query params:', { gender, active, activeType: typeof active });
+    console.log('User info:', { userId: user?.id, userRole: user?.role, userGender: user?.gender });
+
+    // First, get time slots without the join to avoid issues with null trainer_id
     let query = supabase
       .from('swimming_time_slots')
-      .select('*, trainer:users_metadata(id, name, email)');
+      .select('*');
 
-    if (gender) {
-      query = query.eq('gender_restriction', gender.toLowerCase());
+    // Filter by active status
+    if (active !== undefined) {
+      const isActive = active === 'true' || active === true;
+      console.log('Filtering by active:', isActive);
+      query = query.eq('is_active', isActive);
     }
 
-    if (active !== undefined) {
-      query = query.eq('is_active', active === 'true');
+    // Auto-filter based on user's gender and role
+    if (user) {
+      const userGender = user.gender?.toLowerCase();
+      const userRole = user.role?.toLowerCase();
+
+      // Build gender restrictions array based on user
+      const allowedGenderRestrictions = [];
+
+      if (userGender === 'male') {
+        allowedGenderRestrictions.push('male', 'mixed');
+      } else if (userGender === 'female') {
+        allowedGenderRestrictions.push('female', 'mixed');
+      } else if (userGender === 'other') {
+        // Other can access mixed slots only
+        allowedGenderRestrictions.push('mixed');
+      } else {
+        // No gender set - can only access mixed slots
+        allowedGenderRestrictions.push('mixed');
+      }
+
+      // Filter by role - UG students cannot access faculty_pg slots
+      if (userRole === 'ug') {
+        // UG students: male see [male, mixed], female see [female, mixed]
+        // Remove faculty_pg from allowed restrictions for UG students
+        const filtered = allowedGenderRestrictions.filter(r => r !== 'faculty_pg');
+        if (filtered.length > 0) {
+          query = query.in('gender_restriction', filtered);
+        } else {
+          // If no allowed restrictions, return empty (shouldn't happen)
+          query = query.eq('gender_restriction', 'nonexistent');
+        }
+      } else if (userRole === 'pg' || userRole === 'faculty' || userRole === 'alumni') {
+        // PG, Faculty, Alumni: 
+        // - Male see [male, mixed, faculty_pg]
+        // - Female see [female, mixed, faculty_pg]
+        // - Other see [mixed, faculty_pg]
+        if (!allowedGenderRestrictions.includes('faculty_pg')) {
+          allowedGenderRestrictions.push('faculty_pg');
+        }
+        query = query.in('gender_restriction', allowedGenderRestrictions);
+      } else {
+        // Unknown role - only mixed slots
+        query = query.eq('gender_restriction', 'mixed');
+      }
+
+      console.log('Filtered gender restrictions for user:', {
+        userGender,
+        userRole,
+        allowedRestrictions: allowedGenderRestrictions
+      });
+    } else if (gender) {
+      // Fallback to query param if no user (shouldn't happen with auth middleware)
+      query = query.eq('gender_restriction', gender.toLowerCase());
     }
 
     const { data, error } = await query.order('start_time');
 
+    console.log('Time slots query result:', { 
+      dataCount: data?.length || 0, 
+      error: error?.message || null,
+      errorCode: error?.code || null,
+      errorDetails: error?.details || null,
+      hasData: !!data,
+      firstItem: data?.[0] || null
+    });
+
     if (error) {
-      console.error('Error fetching time slots:', error);
+      console.error('Error fetching time slots:', {
+        message: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint
+      });
       return res.status(500).json({
         success: false,
-        message: 'Failed to fetch time slots'
+        message: 'Failed to fetch time slots',
+        error: error.message,
+        errorCode: error.code
       });
     }
 
-    // For each time slot, get current attendance count for today
+    // If no data but no error, log it
+    if (!data || data.length === 0) {
+      console.log('No time slots found in database. Query params:', { gender, active });
+    }
+
+    // For each time slot, get trainer info and current attendance count for today
     const today = getTodayDate();
     const enrichedData = await Promise.all(
       data.map(async (slot) => {
+        // Get trainer info if trainer_id exists
+        let trainer = null;
+        if (slot.trainer_id) {
+          const { data: trainerData, error: trainerError } = await supabase
+            .from('users_metadata')
+            .select('id, name, email')
+            .eq('id', slot.trainer_id)
+            .single();
+          
+          if (!trainerError && trainerData) {
+            trainer = trainerData;
+          }
+        }
+
+        // Get attendance count
         const { count } = await getAttendanceCount(slot.id, today);
+        
         return {
           ...slot,
+          trainer,
           currentCount: count,
           availableSpots: slot.max_capacity - count
         };
