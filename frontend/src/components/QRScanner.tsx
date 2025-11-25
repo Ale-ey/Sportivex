@@ -1,5 +1,5 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import { Card, CardContent } from './ui/card';
 import { Button } from './ui/button';
 import { Camera, X, Scan } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
@@ -15,7 +15,7 @@ const QRScanner: React.FC<QRScannerProps> = ({ onScan, isScanning = false }) => 
   const [error, setError] = useState<string | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
-  const [scannedCode, setScannedCode] = useState<string | null>(null);
+  const [,setScannedCode] = useState<string | null>(null);
 
   useEffect(() => {
     if (isOpen && hasPermission) {

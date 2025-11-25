@@ -5,10 +5,7 @@ import useSwimmingStore from '@/stores/swimmingStore';
 import {
   swimmingService,
   type TimeSlot,
-  type AttendanceRecord,
-  type WaitlistEntry,
-  type Rule,
-} from '@/services/swimmingService';
+ } from '@/services/swimmingService';
 import { getCurrentUserId } from '@/utils/jwt';
 
 /**
