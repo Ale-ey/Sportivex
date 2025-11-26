@@ -9,6 +9,7 @@ import { createServer } from "http";
 import authRoutes from "./routes/auth.js";
 import swimmingRoutes from "./routes/swimming.js";
 import badmintonRoutes from "./routes/badminton.js";
+import gymRoutes from "./routes/gym.js";
 import { initializeSocketServer } from "./socket/socketServer.js";
 
 const app = express();
@@ -69,6 +70,7 @@ app.get("/health", (_req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/swimming', swimmingRoutes);
 app.use('/api/badminton', badmintonRoutes);
+app.use('/api/gym', gymRoutes);
 
 // 404 handler
 app.use((_req, res) => {
@@ -111,6 +113,7 @@ httpServer.listen(PORT, () => {
   console.log(`Auth endpoints: http://localhost:${PORT}/api/auth`);
   console.log(`Swimming endpoints: http://localhost:${PORT}/api/swimming`);
   console.log(`Badminton endpoints: http://localhost:${PORT}/api/badminton`);
+  console.log(`Gym endpoints: http://localhost:${PORT}/api/gym`);
   console.log(`WebSocket server: ws://localhost:${PORT}`);
   
   console.log('\n🎉 Server startup completed!');

@@ -22,6 +22,8 @@ const SportsTab: React.FC<SportsTabProps> = ({ sports }) => {
       navigate("/dashboard/swimming");
     } else if (sport === "badminton") {
       navigate("/dashboard/badminton");
+    } else if (sport.includes("gym") || sport === "gym training" || sport === "gym & fitness") {
+      navigate("/dashboard/gym");
     }
     // Add other sport navigation here as needed
   };
