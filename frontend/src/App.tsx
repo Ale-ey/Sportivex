@@ -33,6 +33,8 @@ import AccountRoute from "./pages/dashboard/routes/AccountRoute";
 import ProfileRoute from "./pages/dashboard/routes/ProfileRoute";
 import SettingsRoute from "./pages/dashboard/routes/SettingsRoute";
 import BillingRoute from "./pages/dashboard/routes/BillingRoute";
+import AdminRouteComponent from "./pages/dashboard/routes/AdminRoute";
+import AdminRoute from "./routes/AdminRoute";
 import PublicRoute from "./routes/PulblicRoute";
 import PrivateRoute from "./routes/PrivateRoute";
 
@@ -82,6 +84,7 @@ function App() {
             <Route path="profile" element={<ProfileRoute />} />
             <Route path="settings" element={<SettingsRoute />} />
             <Route path="billing" element={<BillingRoute />} />
+            <Route path="admin" element={<AdminRoute />} />
           </Route>
           </Route>
 

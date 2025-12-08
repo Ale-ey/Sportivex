@@ -4,6 +4,7 @@ import {
   getUserAvailability,
   setUserAvailability,
   getCourts,
+  updateCourtStatus,
   checkCourtAvailability,
   createMatch,
   startMatch,
@@ -131,6 +132,44 @@ export const getCourtsController = async (req, res) => {
     });
   } catch (error) {
     console.error('Error in getCourtsController:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error'
+    });
+  }
+};
+
+/**
+ * Update court status (admin only)
+ */
+export const updateCourtStatusController = async (req, res) => {
+  try {
+    const { courtId } = req.params;
+    const { status } = req.body;
+
+    if (!status || !['available', 'occupied', 'maintenance'].includes(status)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid status. Must be: available, occupied, or maintenance'
+      });
+    }
+
+    const result = await updateCourtStatus(courtId, status);
+
+    if (!result.success) {
+      return res.status(400).json({
+        success: false,
+        message: result.error || 'Failed to update court status'
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'Court status updated successfully',
+      court: result.court
+    });
+  } catch (error) {
+    console.error('Error in updateCourtStatusController:', error);
     res.status(500).json({
       success: false,
       message: 'Internal server error'

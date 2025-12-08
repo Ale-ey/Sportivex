@@ -10,6 +10,7 @@ import authRoutes from "./routes/auth.js";
 import swimmingRoutes from "./routes/swimming.js";
 import badmintonRoutes from "./routes/badminton.js";
 import gymRoutes from "./routes/gym.js";
+import leagueRoutes from "./routes/leagues.js";
 import { initializeSocketServer } from "./socket/socketServer.js";
 
 const app = express();
@@ -71,6 +72,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/swimming', swimmingRoutes);
 app.use('/api/badminton', badmintonRoutes);
 app.use('/api/gym', gymRoutes);
+app.use('/api/leagues', leagueRoutes);
 
 // 404 handler
 app.use((_req, res) => {

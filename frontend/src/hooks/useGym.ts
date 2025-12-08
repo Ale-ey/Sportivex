@@ -4,7 +4,7 @@ import { AxiosError } from 'axios';
 import useGymStore from '@/stores/gymStore';
 import {
   gymService,
-  type Exercise,
+
   type ExerciseFilters,
   type WorkoutExercise,
   type UserGoal,

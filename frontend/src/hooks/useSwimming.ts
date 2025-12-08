@@ -537,11 +537,11 @@ export const useSwimming = () => {
   );
 
   /**
-   * Check if slot can be reserved (not past and not full)
+   * Check if slot can be reserved (not past, not full, and is active)
    */
   const canReserveSlot = useCallback(
     (slot: TimeSlot): boolean => {
-      return !isPastSlot(slot) && !isSlotFull(slot);
+      return !isPastSlot(slot) && !isSlotFull(slot) && (slot.is_active ?? true);
     },
     [isPastSlot, isSlotFull]
   );

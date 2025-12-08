@@ -4,7 +4,6 @@ import Projects from "@/components/landingPage/Projects";
 import WhyWrlds from "@/components/landingPage/WhyWrlds";
 import BlogPreview from "@/components/landingPage/BlogPreview";
 import SportsNavigation from "@/components/landingPage/SportsNavigation";
-import CazzaFeatures from "@/components/landingPage/CazzaFeatures";
 import SEO from "@/components/landingPage/SEO";
 import { useEffect } from "react";
 
@@ -40,7 +39,6 @@ const Index = () => {
       <Hero />
       <SportsNavigation />
       <WhyWrlds />
-      <CazzaFeatures />
       <Projects />
       <BlogPreview />
     </PageLayout>

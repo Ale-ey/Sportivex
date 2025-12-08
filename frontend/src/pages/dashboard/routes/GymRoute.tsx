@@ -14,13 +14,12 @@ import {
   Flame,
   Target,
   TrendingUp,
-  Calendar,
+
   Clock,
   Dumbbell,
   Loader2,
   Search,
-  Filter,
-  X,
+
   CheckCircle2,
   BarChart3,
 } from 'lucide-react';
@@ -40,6 +39,7 @@ const GymRoute: React.FC = () => {
     activeWorkout,
     workoutHistory,
     progress,
+    progressPeriod,
     stats,
     goals,
     loadingExercises,
@@ -57,7 +57,7 @@ const GymRoute: React.FC = () => {
     fetchStats,
     fetchGoals,
     saveGoal,
-    removeExerciseFromWorkout,
+
   } = useGym();
 
   const [searchTerm, setSearchTerm] = useState('');

@@ -152,6 +152,16 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ items }) => {
                       Billing
                     </NavLink>
                   </DropdownMenuItem>
+                  {user?.role?.toLowerCase()?.trim() === 'admin' && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem asChild>
+                        <NavLink to="/dashboard/admin" className="w-full font-semibold text-[#023E8A]">
+                          Admin Panel
+                        </NavLink>
+                      </DropdownMenuItem>
+                    </>
+                  )}
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
                     className="text-rose-600 cursor-pointer"
