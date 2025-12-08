@@ -40,7 +40,6 @@ import { badmintonService, type Court } from '@/services/badmintonService';
 import type { League, CreateLeagueRequest } from '@/services/adminService';
 import { useAdminSwimming } from '@/hooks/useAdminSwimming';
 import toast from 'react-hot-toast';
-import QRCodeScanner from '@/components/QRCodeScanner';
 
 const AdminRoute: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'slots' | 'courts' | 'leagues' | 'qr-scanner'>('slots');
@@ -404,7 +403,7 @@ const AdminRoute: React.FC = () => {
           className="rounded-b-none"
         >
           <QrCode className="w-4 h-4 mr-2" />
-          QR Scanner
+          QR Codes
         </Button>
       </div>
 
@@ -852,36 +851,41 @@ const AdminRoute: React.FC = () => {
         </div>
       )}
 
-      {/* QR Scanner Tab */}
+      {/* QR Codes Tab */}
       {activeTab === 'qr-scanner' && (
         <div className="space-y-4">
           <div className="flex justify-between items-center">
-            <h3 className="text-xl font-semibold">QR Code Scanner & Management</h3>
+            <h3 className="text-xl font-semibold">QR Code Management</h3>
             <Button onClick={() => setShowQRDialog(true)}>
               <Plus className="w-4 h-4 mr-2" />
               Create QR Code
             </Button>
           </div>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Scan QR Code for Attendance</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <QRCodeScanner />
-            </CardContent>
-          </Card>
-
-          <div>
-            <h3 className="text-lg font-semibold mb-4">QR Codes List</h3>
-            {loadingQRCodes ? (
-              <div className="flex items-center justify-center h-32">
-                <Loader2 className="w-6 h-6 animate-spin" />
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {qrCodes.map((qr) => (
-                  <Card key={qr.id}>
+          {loadingQRCodes ? (
+            <div className="flex items-center justify-center h-64">
+              <Loader2 className="w-8 h-8 animate-spin" />
+            </div>
+          ) : qrCodes.length === 0 ? (
+            <Card className="border border-[#E2F5FB]">
+              <CardContent className="p-8 text-center">
+                <QrCode className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
+                <p className="text-muted-foreground mb-4">
+                  No QR codes found. Create one to get started!
+                </p>
+                <Button onClick={() => setShowQRDialog(true)}>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Create QR Code
+                </Button>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {qrCodes.map((qr) => {
+                const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(qr.qr_code_value)}`;
+                
+                return (
+                  <Card key={qr.id} className="border border-[#E2F5FB]">
                     <CardHeader>
                       <div className="flex items-start justify-between">
                         <CardTitle className="text-lg">{qr.location_name}</CardTitle>
@@ -891,30 +895,76 @@ const AdminRoute: React.FC = () => {
                       </div>
                     </CardHeader>
                     <CardContent>
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm text-muted-foreground">QR Code Value</span>
-                          <code className="text-xs bg-muted px-2 py-1 rounded">{qr.qr_code_value}</code>
+                      <div className="space-y-4">
+                        {/* QR Code Display */}
+                        <div className="flex flex-col items-center p-4 bg-white rounded-lg border-2 border-dashed border-[#E2F5FB]">
+                          <img
+                            src={qrCodeUrl}
+                            alt={`QR Code for ${qr.location_name}`}
+                            className="w-full max-w-[250px] h-auto rounded-lg"
+                          />
+                          <p className="text-xs text-muted-foreground mt-2 text-center">
+                            Scan this QR code for attendance
+                          </p>
                         </div>
-                        {qr.description && (
-                          <p className="text-sm text-muted-foreground">{qr.description}</p>
-                        )}
-                        <Button
-                          size="sm"
-                          variant="destructive"
-                          onClick={() => handleDeleteQRCode(qr.id)}
-                          className="w-full mt-2"
-                        >
-                          <Trash2 className="w-4 h-4 mr-1" />
-                          Delete
-                        </Button>
+
+                        {/* QR Code Details */}
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm text-muted-foreground">QR Code Value</span>
+                            <code className="text-xs bg-muted px-2 py-1 rounded break-all">
+                              {qr.qr_code_value}
+                            </code>
+                          </div>
+                          {qr.description && (
+                            <div>
+                              <span className="text-sm text-muted-foreground">Description:</span>
+                              <p className="text-sm mt-1">{qr.description}</p>
+                            </div>
+                          )}
+                          {qr.created_at && (
+                            <div className="flex items-center justify-between">
+                              <span className="text-sm text-muted-foreground">Created</span>
+                              <span className="text-xs text-muted-foreground">
+                                {new Date(qr.created_at).toLocaleDateString()}
+                              </span>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Actions */}
+                        <div className="flex gap-2 pt-2">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              const link = document.createElement('a');
+                              link.href = qrCodeUrl;
+                              link.download = `${qr.location_name}_QR_Code.png`;
+                              link.click();
+                            }}
+                            className="flex-1"
+                          >
+                            <QrCode className="w-4 h-4 mr-1" />
+                            Download
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => handleDeleteQRCode(qr.id)}
+                            className="flex-1"
+                          >
+                            <Trash2 className="w-4 h-4 mr-1" />
+                            Delete
+                          </Button>
+                        </div>
                       </div>
                     </CardContent>
                   </Card>
-                ))}
-              </div>
-            )}
-          </div>
+                );
+              })}
+            </div>
+          )}
 
           {/* QR Code Dialog */}
           <Dialog open={showQRDialog} onOpenChange={setShowQRDialog}>
