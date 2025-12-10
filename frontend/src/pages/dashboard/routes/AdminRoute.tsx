@@ -86,6 +86,7 @@ const AdminRoute: React.FC = () => {
     registration_deadline: '',
     max_participants: undefined,
     prize: '',
+    registration_fee: undefined,
   });
 
   // QR Codes State
@@ -305,6 +306,7 @@ const AdminRoute: React.FC = () => {
       registration_deadline: '',
       max_participants: undefined,
       prize: '',
+      registration_fee: undefined,
     });
   };
 
@@ -348,6 +350,7 @@ const AdminRoute: React.FC = () => {
       registration_deadline: league.registration_deadline,
       max_participants: league.max_participants,
       prize: league.prize || '',
+      registration_fee: league.registration_fee,
     });
     setShowLeagueDialog(true);
   };
@@ -770,6 +773,14 @@ const AdminRoute: React.FC = () => {
                           <span className="font-semibold text-orange-600">{league.prize}</span>
                         </div>
                       )}
+                      <div className="flex items-center justify-between p-2 bg-blue-50 rounded-md">
+                        <span className="text-sm text-muted-foreground">Registration Fee:</span>
+                        <span className="font-semibold text-blue-600">
+                          {league.registration_fee !== undefined && league.registration_fee > 0
+                            ? `$${league.registration_fee.toFixed(2)}`
+                            : 'Free'}
+                        </span>
+                      </div>
                       <div className="flex items-center justify-between p-3 border rounded-md bg-muted/50">
                         <div>
                           <Label className="text-xs">Registration Status</Label>
@@ -915,6 +926,25 @@ const AdminRoute: React.FC = () => {
                       placeholder="e.g., $5,000"
                     />
                   </div>
+                </div>
+                <div>
+                  <Label>Registration Fee</Label>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    min="0"
+                    value={leagueForm.registration_fee !== undefined ? leagueForm.registration_fee : ''}
+                    onChange={(e) =>
+                      setLeagueForm({
+                        ...leagueForm,
+                        registration_fee: e.target.value ? parseFloat(e.target.value) : undefined,
+                      })
+                    }
+                    placeholder="e.g., 50.00 (leave empty for free)"
+                  />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Enter the registration fee in your currency. Leave empty for free registration.
+                  </p>
                 </div>
                 <div className="flex gap-2">
                   <Button

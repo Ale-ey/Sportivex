@@ -42,6 +42,17 @@ BEGIN
   END IF;
 END $$;
 
+-- Add registration_fee field to leagues table (if not exists)
+DO $$ 
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_name = 'leagues' AND column_name = 'registration_fee'
+  ) THEN
+    ALTER TABLE leagues ADD COLUMN registration_fee NUMERIC(10, 2) DEFAULT 0.00 CHECK (registration_fee >= 0);
+  END IF;
+END $$;
+
 -- Create league_registrations table
 CREATE TABLE IF NOT EXISTS league_registrations (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

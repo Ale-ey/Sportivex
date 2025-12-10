@@ -10,6 +10,7 @@ export interface League {
   registration_deadline: string;
   max_participants?: number;
   prize?: string;
+  registration_fee?: number;
   status: 'upcoming' | 'registration_open' | 'in_progress' | 'completed' | 'cancelled';
   registration_enabled?: boolean;
   created_by?: string;

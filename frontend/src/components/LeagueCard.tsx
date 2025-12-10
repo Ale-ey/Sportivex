@@ -136,6 +136,17 @@ const LeagueCard: React.FC<LeagueCardProps> = ({
             </Badge>
             <p className="text-2xl font-bold text-[#023E8A]">{prize}</p>
             <p className="text-xs text-slate-500">Prize Pool</p>
+            {league?.registration_fee !== undefined && league.registration_fee > 0 && (
+              <>
+                <p className="text-lg font-semibold text-[#0077B6] mt-2">
+                  ${league.registration_fee.toFixed(2)}
+                </p>
+                <p className="text-xs text-slate-500">Registration Fee</p>
+              </>
+            )}
+            {league?.registration_fee === 0 || (league?.registration_fee === undefined && status === "Registration Open") && (
+              <p className="text-xs text-emerald-600 font-medium mt-2">Free Registration</p>
+            )}
           </div>
         </div>
 

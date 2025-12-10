@@ -65,6 +65,7 @@ export const createLeague = async (leagueData, createdBy) => {
           registration_deadline: leagueData.registration_deadline,
           max_participants: leagueData.max_participants || null,
           prize: leagueData.prize || null,
+          registration_fee: leagueData.registration_fee !== undefined ? leagueData.registration_fee : 0.00,
           status: leagueData.status || 'upcoming',
           created_by: createdBy,
         },
@@ -98,6 +99,7 @@ export const updateLeague = async (id, leagueData) => {
     if (leagueData.registration_deadline !== undefined) updateData.registration_deadline = leagueData.registration_deadline;
     if (leagueData.max_participants !== undefined) updateData.max_participants = leagueData.max_participants;
     if (leagueData.prize !== undefined) updateData.prize = leagueData.prize;
+    if (leagueData.registration_fee !== undefined) updateData.registration_fee = leagueData.registration_fee;
     if (leagueData.status !== undefined) updateData.status = leagueData.status;
 
     const { data, error } = await supabase

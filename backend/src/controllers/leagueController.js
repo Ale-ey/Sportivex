@@ -78,7 +78,7 @@ export const getLeagueByIdController = async (req, res) => {
 export const createLeagueController = async (req, res) => {
   try {
     const user = req.user;
-    const { name, description, sport_type, start_date, end_date, registration_deadline, max_participants, prize, status } = req.body;
+    const { name, description, sport_type, start_date, end_date, registration_deadline, max_participants, prize, registration_fee, status } = req.body;
 
     // Validation
     if (!name || !sport_type || !start_date || !end_date || !registration_deadline) {
@@ -98,6 +98,7 @@ export const createLeagueController = async (req, res) => {
         registration_deadline,
         max_participants,
         prize,
+        registration_fee,
         status,
       },
       user.id
@@ -132,7 +133,7 @@ export const createLeagueController = async (req, res) => {
 export const updateLeagueController = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, description, sport_type, start_date, end_date, registration_deadline, max_participants, prize, status } = req.body;
+    const { name, description, sport_type, start_date, end_date, registration_deadline, max_participants, prize, registration_fee, status } = req.body;
 
     const result = await updateLeague(id, {
       name,
@@ -143,6 +144,7 @@ export const updateLeagueController = async (req, res) => {
       registration_deadline,
       max_participants,
       prize,
+      registration_fee,
       status,
     });
 
