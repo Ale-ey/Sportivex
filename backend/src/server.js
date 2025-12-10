@@ -4,14 +4,22 @@ import process from "node:process";
 import express from "express";
 import cors from "cors";
 import morgan from "morgan";
+import { createServer } from "http";
 
 import authRoutes from "./routes/auth.js";
 import swimmingRoutes from "./routes/swimming.js";
 import badmintonRoutes from "./routes/badminton.js";
-
+import gymRoutes from "./routes/gym.js";
+import leagueRoutes from "./routes/leagues.js";
+import horseRidingRoutes from "./routes/horseRiding.js";
+import { initializeSocketServer } from "./socket/socketServer.js";
 
 const app = express();
+const httpServer = createServer(app);
 const PORT = process.env.PORT || 3000;
+
+// Initialize Socket.IO
+export const io = initializeSocketServer(httpServer);
 
 // -------------------
 // CORS MUST BE FIRST
@@ -23,6 +31,7 @@ const corsOptions = {
       process.env.FRONTEND_URL || "http://localhost:5173",
       "http://localhost:5173",
       "http://127.0.0.1:5173",
+      "https://sportivex.vercel.app",
       "https://sportivex-git-dev-ale-eys-projects.vercel.app"
     ];
     
@@ -64,6 +73,9 @@ app.get("/health", (_req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/swimming', swimmingRoutes);
 app.use('/api/badminton', badmintonRoutes);
+app.use('/api/gym', gymRoutes);
+app.use('/api/leagues', leagueRoutes);
+app.use('/api/horse-riding', horseRidingRoutes);
 
 // 404 handler
 app.use((_req, res) => {
@@ -85,6 +97,7 @@ app.use((err, req, res, next) => {
     process.env.FRONTEND_URL || "http://localhost:5173",
     "http://localhost:5173",
     "http://127.0.0.1:5173",
+    "https://sportivex.vercel.app",
     "https://sportivex-git-dev-ale-eys-projects.vercel.app"
   ];
   
@@ -100,12 +113,15 @@ app.use((err, req, res, next) => {
 });
 
 // -------------------
-app.listen(PORT, () => {
+httpServer.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
   console.log(`Health check: http://localhost:${PORT}/health`);
   console.log(`Auth endpoints: http://localhost:${PORT}/api/auth`);
   console.log(`Swimming endpoints: http://localhost:${PORT}/api/swimming`);
   console.log(`Badminton endpoints: http://localhost:${PORT}/api/badminton`);
+  console.log(`Gym endpoints: http://localhost:${PORT}/api/gym`);
+  console.log(`Horse Riding endpoints: http://localhost:${PORT}/api/horse-riding`);
+  console.log(`WebSocket server: ws://localhost:${PORT}`);
   
   console.log('\n🎉 Server startup completed!');
 });

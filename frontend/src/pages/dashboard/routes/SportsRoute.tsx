@@ -19,14 +19,14 @@ const SportsRoute: React.FC = () => {
       name: "Badminton",
       image: webp.badminton,
     },
-    {
-      name: "Paddle",
-      image: webp.paddle,
-    },
-    {
-      name: "Basketball",
-      image: webp.basketball,
-    },
+    // {
+    //   name: "Paddle",
+    //   image: webp.paddle,
+    // },
+    // {
+    //   name: "Basketball",
+    //   image: webp.basketball,
+    // },
     {
       name: "Bowling",
       image: webp.bowling,

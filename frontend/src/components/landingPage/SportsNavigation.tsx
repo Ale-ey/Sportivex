@@ -12,7 +12,6 @@ import {
   Footprints,
   CircleDot,
   Users,
-  Anchor,
 } from "lucide-react";
 
 const SportsNavigation: React.FC = () => {
@@ -97,22 +96,22 @@ const SportsNavigation: React.FC = () => {
         "Competition Climbing",
       ],
     },
-    {
-      title: "Paddle Sports",
-      description:
-        "Kayaking, canoeing, and paddleboarding with water safety programs",
-      icon: Anchor,
-      link: "/paddle-sports",
-      color: "bg-gradient-to-br from-cyan-400 to-cyan-600",
-      imageUrl: "/paddle-sports.jpg",
-      features: [
-        "Kayaking",
-        "Canoeing",
-        "Paddleboarding",
-        "Water Safety",
-        "Guided Tours",
-      ],
-    },
+    // {
+    //   title: "Paddle Sports",
+    //   description:
+    //     "Kayaking, canoeing, and paddleboarding with water safety programs",
+    //   icon: Anchor,
+    //   link: "/paddle-sports",
+    //   color: "bg-gradient-to-br from-cyan-400 to-cyan-600",
+    //   imageUrl: "/paddle-sports.jpg",
+    //   features: [
+    //     "Kayaking",
+    //     "Canoeing",
+    //     "Paddleboarding",
+    //     "Water Safety",
+    //     "Guided Tours",
+    //   ],
+    // },
     {
       title: "Squash",
       description:

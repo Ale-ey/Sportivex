@@ -177,7 +177,7 @@ const register = async (req, res) => {
         },
         access_token: token,
         token: token,
-        expires_in: '1h'
+        expires_in: '24h'
       }
     });
 
@@ -251,7 +251,7 @@ const login = async (req, res) => {
         },
         access_token: token,
         token: token,
-        expires_in: '1h'
+        expires_in: '24h'
       }
     });
 

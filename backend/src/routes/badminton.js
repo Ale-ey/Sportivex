@@ -23,6 +23,9 @@ router.get('/courts', authenticateToken, badmintonController.getCourtsController
 // Get available courts at current time
 router.get('/courts/available', authenticateToken, badmintonController.getAvailableCourtsController);
 
+// Update court status (admin only)
+router.put('/courts/:courtId/status', authenticateToken, badmintonController.updateCourtStatusController);
+
 // ==================== MATCHES ROUTES ====================
 
 // Create a match

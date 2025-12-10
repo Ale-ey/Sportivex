@@ -1,4 +1,4 @@
-import { useCallback } from 'react';
+import { useCallback, useEffect } from 'react';
 import toast from 'react-hot-toast';
 import { AxiosError } from 'axios';
 import useBadmintonStore from '@/stores/badmintonStore';
@@ -6,14 +6,17 @@ import {
   badmintonService,
   type Player,
   type Court,
-
 } from '@/services/badmintonService';
+import { socketService } from '@/services/socketService';
+import { useGetProfile } from '@/hooks/useAuth';
 
 /**
  * Custom hook for badminton module operations
  * Provides all user-side badminton functionality with state management
  */
 export const useBadminton = () => {
+  const { user } = useGetProfile();
+
   const {
     // State - Players
     availablePlayers,
@@ -262,12 +265,30 @@ export const useBadminton = () => {
       if (response.success) {
         setMyMatches(response.matches);
         
-        // Set current match if there's an active one
-        const activeMatch = response.matches.find(
-          (m) => m.status === 'in_progress' || m.status === 'scheduled'
+        // Set current match if there's an active one (prioritize in_progress over scheduled)
+        const inProgressMatch = response.matches.find(
+          (m) => m.status === 'in_progress'
         );
+        const scheduledMatch = response.matches.find(
+          (m) => m.status === 'scheduled'
+        );
+        const activeMatch = inProgressMatch || scheduledMatch;
+        
         if (activeMatch) {
           setCurrentMatch(activeMatch);
+          
+          // Calculate and set time remaining for in-progress matches
+          if (activeMatch.status === 'in_progress' && activeMatch.actual_start_time) {
+            const startTime = new Date(activeMatch.actual_start_time).getTime();
+            const endTime = startTime + 30 * 60 * 1000;
+            const remaining = Math.max(0, Math.floor((endTime - Date.now()) / 1000));
+            setTimeRemaining(remaining);
+          } else {
+            setTimeRemaining(0);
+          }
+        } else {
+          setCurrentMatch(null);
+          setTimeRemaining(0);
         }
         
         return { success: true, matches: response.matches };
@@ -287,7 +308,7 @@ export const useBadminton = () => {
     } finally {
       setLoadingMatches(false);
     }
-  }, [setMyMatches, setCurrentMatch, setLoadingMatches, setMatchesError]);
+  }, [setMyMatches, setCurrentMatch, setLoadingMatches, setMatchesError, setTimeRemaining]);
 
   /**
    * Create a match
@@ -341,7 +362,15 @@ export const useBadminton = () => {
         const response = await badmintonService.startMatch(matchId);
         if (response.success) {
           setCurrentMatch(response.match);
-          setTimeRemaining(30 * 60); // 30 minutes in seconds
+          // Calculate time remaining from actual start time
+          if (response.match.actual_start_time) {
+            const startTime = new Date(response.match.actual_start_time).getTime();
+            const endTime = startTime + 30 * 60 * 1000;
+            const remaining = Math.max(0, Math.floor((endTime - Date.now()) / 1000));
+            setTimeRemaining(remaining);
+          } else {
+            setTimeRemaining(30 * 60); // Fallback: 30 minutes in seconds
+          }
           toast.success(response.message || 'Match started');
           return { success: true, match: response.match };
         } else {
@@ -529,6 +558,123 @@ export const useBadminton = () => {
     [currentMatch]
   );
 
+  // ==================== REAL-TIME WEBSOCKET ====================
+
+  /**
+   * Set up WebSocket connection for real-time updates
+   */
+  useEffect(() => {
+    if (!user?.id) return;
+
+    // Initialize socket connection
+    socketService.initialize();
+
+    // Register event handlers
+    socketService.on({
+      onAvailabilityChanged: async (data) => {
+        console.log('Availability changed:', data);
+        
+        // Refresh available players list
+        await fetchAvailablePlayers();
+        
+        // If it's the current user, update their availability
+        if (data.userId === user.id) {
+          setMyAvailability(data.isAvailable);
+        }
+      },
+
+      onMatchChanged: async (data) => {
+        console.log('Match changed:', data);
+        
+        // Check if current user is involved in this match
+        const isInvolved = 
+          data.team1Player1Id === user.id ||
+          data.team1Player2Id === user.id ||
+          data.team2Player1Id === user.id ||
+          data.team2Player2Id === user.id;
+
+        if (isInvolved) {
+          // Refresh user's matches to get updated match data
+          await fetchMyMatches();
+        }
+
+        // Always refresh available players (to remove/add players from list)
+        await fetchAvailablePlayers();
+        
+        // Refresh available courts if match status changed
+        if (data.status === 'completed' || data.status === 'cancelled') {
+          await fetchAvailableCourts();
+        }
+      },
+
+      onMatchUpdated: async (data) => {
+        console.log('Match updated for user:', data);
+        
+        const match = data.match;
+        
+        // Check if current user is involved in this match
+        const isInvolved = 
+          match.team1_player1_id === user.id ||
+          match.team1_player2_id === user.id ||
+          match.team2_player1_id === user.id ||
+          match.team2_player2_id === user.id;
+
+        if (isInvolved) {
+          // Always update current match if user is involved (even if not set before)
+          setCurrentMatch(match);
+          
+          // Update time remaining if match is in progress
+          if (match.status === 'in_progress' && match.actual_start_time) {
+            const startTime = new Date(match.actual_start_time).getTime();
+            const endTime = startTime + 30 * 60 * 1000;
+            const remaining = Math.max(0, Math.floor((endTime - Date.now()) / 1000));
+            setTimeRemaining(remaining);
+          } else if (match.status === 'completed' || match.status === 'cancelled') {
+            // Clear match state if completed or cancelled
+            setCurrentMatch(null);
+            setTimeRemaining(0);
+            clearTeams();
+            setSelectedCourt(null);
+          }
+          
+          // Refresh available players and courts
+          await Promise.all([
+            fetchAvailablePlayers(),
+            fetchAvailableCourts()
+          ]);
+        }
+      },
+
+      onConnect: () => {
+        console.log('Socket connected for badminton module');
+      },
+
+      onDisconnect: (reason) => {
+        console.log('Socket disconnected:', reason);
+      },
+
+      onError: (error) => {
+        console.error('Socket error:', error);
+      }
+    });
+
+    // Cleanup on unmount
+    return () => {
+      socketService.off();
+    };
+  }, [
+    user?.id, 
+    currentMatch?.id, 
+    fetchAvailablePlayers, 
+    fetchMyMatches, 
+    fetchAvailableCourts, 
+    setMyAvailability, 
+    setCurrentMatch, 
+    setTimeRemaining,
+    clearTeams,
+    setSelectedCourt
+  ]);
+
   return {
     // State - Players
     availablePlayers,
@@ -590,6 +736,7 @@ export const useBadminton = () => {
     isMatchInProgress,
     isUserInMatch,
     clearAll,
+    setTimeRemaining,
   };
 };
 

@@ -47,6 +47,7 @@ const BadmintonRoute: React.FC<BadmintonRouteProps> = () => {
     areTeamsReady,
     formatTimeRemaining,
     isMatchInProgress,
+    setTimeRemaining,
   } = useBadminton();
 
   const [isSelectingRandom, setIsSelectingRandom] = useState<{ team: 1 | 2; slot: number } | null>(null);
@@ -80,11 +81,21 @@ const BadmintonRoute: React.FC<BadmintonRouteProps> = () => {
   // Timer for match countdown
   useEffect(() => {
     if (matchStarted && currentMatch && currentMatch.status === 'in_progress') {
+      // Initialize timer immediately
+      if (currentMatch.actual_start_time) {
+        const startTime = new Date(currentMatch.actual_start_time).getTime();
+        const endTime = startTime + 30 * 60 * 1000;
+        const remaining = Math.max(0, Math.floor((endTime - Date.now()) / 1000));
+        setTimeRemaining(remaining);
+      }
+
       timerIntervalRef.current = setInterval(() => {
         if (currentMatch.actual_start_time) {
           const startTime = new Date(currentMatch.actual_start_time).getTime();
           const endTime = startTime + 30 * 60 * 1000;
-          const remaining = Math.max(0, endTime - Date.now());
+          const remaining = Math.max(0, Math.floor((endTime - Date.now()) / 1000));
+          
+          setTimeRemaining(remaining);
           
           if (remaining <= 0) {
             // Auto-end match when time is up
@@ -100,8 +111,11 @@ const BadmintonRoute: React.FC<BadmintonRouteProps> = () => {
           clearInterval(timerIntervalRef.current);
         }
       };
+    } else {
+      // Clear timer when match is not in progress
+      setTimeRemaining(0);
     }
-  }, [matchStarted, currentMatch, endMatch]);
+  }, [matchStarted, currentMatch, endMatch, setTimeRemaining]);
 
   // Refresh available players periodically
   useEffect(() => {
@@ -399,6 +413,34 @@ const BadmintonRoute: React.FC<BadmintonRouteProps> = () => {
   }
 
   if (matchStarted && currentMatch) {
+    // Build teams from match data
+    const matchTeam1: Player[] = [];
+    const matchTeam2: Player[] = [];
+    
+    if (currentMatch.team1_player1) {
+      matchTeam1.push(currentMatch.team1_player1);
+    }
+    if (currentMatch.team1_player2) {
+      matchTeam1.push(currentMatch.team1_player2);
+    }
+    if (currentMatch.team2_player1) {
+      matchTeam2.push(currentMatch.team2_player1);
+    }
+    if (currentMatch.team2_player2) {
+      matchTeam2.push(currentMatch.team2_player2);
+    }
+
+    // Determine which team the current user is on
+    const currentUserId = user?.id;
+    const isUserInTeam1 = currentUserId && (
+      currentMatch.team1_player1_id === currentUserId || 
+      currentMatch.team1_player2_id === currentUserId
+    );
+    const isUserInTeam2 = currentUserId && (
+      currentMatch.team2_player1_id === currentUserId || 
+      currentMatch.team2_player2_id === currentUserId
+    );
+
     return (
       <div className="space-y-6 animate-in fade-in duration-500">
         <div className="flex items-center justify-between">
@@ -407,7 +449,7 @@ const BadmintonRoute: React.FC<BadmintonRouteProps> = () => {
             <div className="flex items-center gap-4 mt-2">
               <Badge className="bg-[#0077B6] text-white">
                 <MapPin className="w-3 h-3 mr-1" />
-                Court {currentMatch.court?.court_number || 'N/A'}
+                {currentMatch.court?.name || `Court ${currentMatch.court?.court_number || currentMatch.court_id}`}
               </Badge>
               {timeRemaining > 0 && (
                 <Badge className="bg-green-500 text-white">
@@ -432,19 +474,24 @@ const BadmintonRoute: React.FC<BadmintonRouteProps> = () => {
             {/* Team 1 */}
             <div className="flex flex-col items-center gap-4">
               <div className="flex gap-4">
-                {team1.map((player) => (
+                {matchTeam1.map((player) => (
                   <div key={player.id} className="flex flex-col items-center">
                     <Avatar className="w-20 h-20">
                       <AvatarImage src={player.avatar || undefined} />
                       <AvatarFallback className="bg-[#023E8A] text-white text-lg">
-                        {player.initials}
+                        {player.initials || getInitials(player.name)}
                       </AvatarFallback>
                     </Avatar>
                     <p className="text-sm mt-2 font-medium text-[#023E8A]">{player.name}</p>
+                    {isUserInTeam1 && player.id === currentUserId && (
+                      <Badge className="mt-1 bg-green-500 text-white text-xs">You</Badge>
+                    )}
                   </div>
                 ))}
               </div>
-              <Badge className="bg-[#0077B6] text-white text-lg px-4 py-2">Team 1</Badge>
+              <Badge className="bg-[#0077B6] text-white text-lg px-4 py-2">
+                {isUserInTeam1 ? 'Your Team' : 'Opponent Team'}
+              </Badge>
             </div>
 
             {/* VS */}
@@ -456,19 +503,24 @@ const BadmintonRoute: React.FC<BadmintonRouteProps> = () => {
             {/* Team 2 */}
             <div className="flex flex-col items-center gap-4">
               <div className="flex gap-4">
-                {team2.map((player) => (
+                {matchTeam2.map((player) => (
                   <div key={player.id} className="flex flex-col items-center">
                     <Avatar className="w-20 h-20">
                       <AvatarImage src={player.avatar || undefined} />
                       <AvatarFallback className="bg-[#023E8A] text-white text-lg">
-                        {player.initials}
+                        {player.initials || getInitials(player.name)}
                       </AvatarFallback>
                     </Avatar>
                     <p className="text-sm mt-2 font-medium text-[#023E8A]">{player.name}</p>
+                    {isUserInTeam2 && player.id === currentUserId && (
+                      <Badge className="mt-1 bg-green-500 text-white text-xs">You</Badge>
+                    )}
                   </div>
                 ))}
               </div>
-              <Badge className="bg-[#0077B6] text-white text-lg px-4 py-2">Team 2</Badge>
+              <Badge className="bg-[#0077B6] text-white text-lg px-4 py-2">
+                {isUserInTeam2 ? 'Your Team' : 'Opponent Team'}
+              </Badge>
             </div>
           </div>
         </div>
