@@ -30,8 +30,15 @@ export const useLeague = () => {
     try {
       const response = await leagueService.registerForLeague(leagueId);
       if (response.success) {
-        toast.success('Successfully registered for league!');
-        return response.data.registration;
+        // Check if payment is required and redirect to Stripe
+        if (response.data.requiresPayment && response.data.checkoutUrl) {
+          // Redirect to Stripe checkout
+          window.location.href = response.data.checkoutUrl;
+          return response.data.registration;
+        } else {
+          toast.success('Successfully registered for league!');
+          return response.data.registration;
+        }
       } else {
         throw new Error(response.message || 'Failed to register');
       }

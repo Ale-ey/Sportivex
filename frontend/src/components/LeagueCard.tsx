@@ -28,7 +28,7 @@ const LeagueCard: React.FC<LeagueCardProps> = ({
   myRank,
   league,
 }) => {
-  const { registerForLeague, cancelRegistration, getUserRegistration } = useLeague();
+  const { registerForLeague, getUserRegistration } = useLeague();
   const [isRegistered, setIsRegistered] = useState(false);
   const [isRegistering, setIsRegistering] = useState(false);
   const [isChecking, setIsChecking] = useState(true);
@@ -58,29 +58,15 @@ const LeagueCard: React.FC<LeagueCardProps> = ({
     e.stopPropagation();
     if (!id || !league) return;
 
-    if (isRegistered) {
-      // Cancel registration
-      setIsRegistering(true);
-      try {
-        await cancelRegistration(id);
-        setIsRegistered(false);
-        toast.success('Registration cancelled');
-      } catch (error) {
-        // Error already handled in hook
-      } finally {
-        setIsRegistering(false);
-      }
-    } else {
-      // Register
-      setIsRegistering(true);
-      try {
-        await registerForLeague(id);
-        setIsRegistered(true);
-      } catch (error) {
-        // Error already handled in hook
-      } finally {
-        setIsRegistering(false);
-      }
+    // Register only (no cancel functionality)
+    setIsRegistering(true);
+    try {
+      await registerForLeague(id);
+      setIsRegistered(true);
+    } catch (error) {
+      // Error already handled in hook
+    } finally {
+      setIsRegistering(false);
     }
   };
 
@@ -156,20 +142,20 @@ const LeagueCard: React.FC<LeagueCardProps> = ({
               type="button"
               size="sm"
               onClick={handleRegister}
-              disabled={isRegistering}
+              disabled={isRegistering || isRegistered}
               className={`flex-1 ${
                 isRegistered
-                  ? "bg-red-500 hover:bg-red-600 text-white"
+                  ? "bg-gray-400 cursor-not-allowed text-white"
                   : "bg-gradient-to-r from-[#00B4D8] to-[#0096C7] hover:from-[#0096C7] hover:to-[#00B4D8] text-white"
               }`}
             >
               {isRegistering ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  {isRegistered ? "Cancelling..." : "Registering..."}
+                  Registering...
                 </>
               ) : isRegistered ? (
-                "Cancel Registration"
+                "Registered"
               ) : (
                 "Register Now"
               )}

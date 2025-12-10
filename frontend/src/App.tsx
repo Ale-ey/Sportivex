@@ -27,6 +27,7 @@ import SwimmingRoute from "./pages/dashboard/routes/SwimmingRoute";
 import BadmintonRoute from "./pages/dashboard/routes/BadmintonRoute";
 import GymRoute from "./pages/dashboard/routes/GymRoute";
 import LeaguesRoute from "./pages/dashboard/routes/LeaguesRoute";
+import HorseRidingRoute from "./pages/dashboard/routes/HorseRidingRoute";
 import TrainingRoute from "./pages/dashboard/routes/TrainingRoute";
 import AiChatRoute from "./pages/dashboard/routes/AiChatRoute";
 import AccountRoute from "./pages/dashboard/routes/AccountRoute";
@@ -78,6 +79,7 @@ function App() {
             <Route path="badminton" element={<BadmintonRoute />} />
             <Route path="gym" element={<GymRoute />} />
             <Route path="leagues" element={<LeaguesRoute />} />
+            <Route path="horse-riding" element={<HorseRidingRoute />} />
             <Route path="training" element={<TrainingRoute />} />
             <Route path="ai-chat" element={<AiChatRoute />} />
             <Route path="account" element={<AccountRoute />} />

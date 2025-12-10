@@ -50,6 +50,9 @@ export interface RegistrationResponse {
   message?: string;
   data: {
     registration: LeagueRegistration;
+    requiresPayment?: boolean;
+    checkoutUrl?: string;
+    sessionId?: string;
   };
 }
 
@@ -98,6 +101,14 @@ export const leagueService = {
    */
   cancelRegistration: async (leagueId: string): Promise<{ success: boolean; message?: string }> => {
     const response = await axiosInstance.delete(`/leagues/${leagueId}/registration`);
+    return response.data;
+  },
+
+  /**
+   * Verify league registration payment
+   */
+  verifyLeaguePayment: async (data: { registrationId: string; sessionId: string }): Promise<{ success: boolean; message?: string }> => {
+    const response = await axiosInstance.post('/leagues/verify-payment', data);
     return response.data;
   },
 };

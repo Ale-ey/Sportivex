@@ -79,6 +79,13 @@ router.put(
   leagueController.toggleLeagueRegistrationController
 );
 
+// Verify league registration payment (all authenticated users)
+router.post(
+  '/verify-payment',
+  authenticateToken,
+  leagueController.verifyLeaguePaymentController
+);
+
 export default router;
 
 

@@ -36,16 +36,20 @@ import {
   Users,
   ToggleLeft,
   ToggleRight,
+  Activity,
 } from 'lucide-react';
 import { adminService, type LeagueRegistration } from '@/services/adminService';
 import { type TimeSlot } from '@/services/swimmingService';
 import { badmintonService, type Court } from '@/services/badmintonService';
 import type { League, CreateLeagueRequest } from '@/services/adminService';
 import { useAdminSwimming } from '@/hooks/useAdminSwimming';
+import { useAdminHorseRiding } from '@/hooks/useHorseRiding';
+import { horseRidingService } from '@/services/horseRidingService';
 import toast from 'react-hot-toast';
 
 const AdminRoute: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'slots' | 'courts' | 'leagues' | 'qr-scanner'>('slots');
+  const [activeTab, setActiveTab] = useState<'slots' | 'courts' | 'leagues' | 'qr-scanner' | 'horse-riding'>('slots');
+  const [horseRidingSubTab, setHorseRidingSubTab] = useState<'slots' | 'rules' | 'equipment'>('slots');
   
   // Swimming Slots - Using Zustand store via hook
   const {
@@ -103,12 +107,75 @@ const AdminRoute: React.FC = () => {
   const [deleteSlotId, setDeleteSlotId] = useState<string | null>(null);
   const [deleteLeagueId, setDeleteLeagueId] = useState<string | null>(null);
   const [deleteQRCodeId, setDeleteQRCodeId] = useState<string | null>(null);
+  const [deleteHorseRidingSlotId, setDeleteHorseRidingSlotId] = useState<string | null>(null);
+  const [deleteHorseRidingRuleId, setDeleteHorseRidingRuleId] = useState<string | null>(null);
+  const [deleteHorseRidingEquipmentId, setDeleteHorseRidingEquipmentId] = useState<string | null>(null);
 
   // League Registrations State
   const [showRegistrationsDialog, setShowRegistrationsDialog] = useState(false);
   const [selectedLeagueName, setSelectedLeagueName] = useState<string>('');
   const [registrations, setRegistrations] = useState<LeagueRegistration[]>([]);
   const [loadingRegistrations, setLoadingRegistrations] = useState(false);
+
+  // Horse Riding Registrations State
+  const [showHorseRidingRegistrationsDialog, setShowHorseRidingRegistrationsDialog] = useState(false);
+  const [horseRidingRegistrations, setHorseRidingRegistrations] = useState<any[]>([]);
+  const [loadingHorseRidingRegistrations, setLoadingHorseRidingRegistrations] = useState(false);
+
+  // Horse Riding - Using Zustand store via hook
+  const {
+    timeSlots: horseRidingSlots,
+    rules: horseRidingRules,
+    equipment: horseRidingEquipment,
+    loadingSlots: loadingHorseRidingSlots,
+    loadingRules: loadingHorseRidingRules,
+    loadingEquipment: loadingHorseRidingEquipment,
+    fetchTimeSlots: fetchHorseRidingSlots,
+    createTimeSlot: createHorseRidingSlot,
+    updateTimeSlotById: updateHorseRidingSlot,
+    deleteTimeSlot: deleteHorseRidingSlot,
+    fetchRules: fetchHorseRidingRules,
+    createRule: createHorseRidingRule,
+    updateRuleById: updateHorseRidingRule,
+    deleteRule: deleteHorseRidingRule,
+    fetchEquipment: fetchHorseRidingEquipment,
+    createEquipment: createHorseRidingEquipment,
+    updateEquipmentById: updateHorseRidingEquipment,
+    deleteEquipment: deleteHorseRidingEquipment,
+  } = useAdminHorseRiding();
+
+  // Horse Riding Form States
+  const [showHorseRidingSlotDialog, setShowHorseRidingSlotDialog] = useState(false);
+  const [editingHorseRidingSlot, setEditingHorseRidingSlot] = useState<any>(null);
+  const [horseRidingSlotForm, setHorseRidingSlotForm] = useState({
+    start_time: '',
+    end_time: '',
+    day_of_week: null as number | null,
+    max_capacity: 5,
+    instructor_id: '',
+    is_active: true,
+  });
+
+  const [showHorseRidingRuleDialog, setShowHorseRidingRuleDialog] = useState(false);
+  const [editingHorseRidingRule, setEditingHorseRidingRule] = useState<any>(null);
+  const [horseRidingRuleForm, setHorseRidingRuleForm] = useState({
+    title: '',
+    content: '',
+    category: '',
+    display_order: 0,
+    is_active: true,
+  });
+
+  const [showHorseRidingEquipmentDialog, setShowHorseRidingEquipmentDialog] = useState(false);
+  const [editingHorseRidingEquipment, setEditingHorseRidingEquipment] = useState<any>(null);
+  const [horseRidingEquipmentForm, setHorseRidingEquipmentForm] = useState({
+    name: '',
+    description: '',
+    price: 0,
+    image_url: '',
+    stock_quantity: 0,
+    is_available: true,
+  });
 
   // Fetch data on mount and tab change
   useEffect(() => {
@@ -120,8 +187,18 @@ const AdminRoute: React.FC = () => {
       fetchLeagues();
     } else if (activeTab === 'qr-scanner') {
       fetchQRCodes();
+    } else if (activeTab === 'horse-riding') {
+      fetchHorseRidingData();
     }
   }, [activeTab, fetchTimeSlots]);
+
+  const fetchHorseRidingData = async () => {
+    await Promise.all([
+      fetchHorseRidingSlots(),
+      fetchHorseRidingRules(),
+      fetchHorseRidingEquipment(),
+    ]);
+  };
 
   // ==================== SWIMMING SLOTS ====================
 
@@ -339,6 +416,253 @@ const AdminRoute: React.FC = () => {
     }
   };
 
+  const handleViewHorseRidingRegistrations = async () => {
+    setShowHorseRidingRegistrationsDialog(true);
+    setLoadingHorseRidingRegistrations(true);
+    try {
+      const response = await horseRidingService.getAllRegistrations();
+      if (response.success) {
+        setHorseRidingRegistrations(response.data.registrations);
+      }
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to fetch registrations');
+    } finally {
+      setLoadingHorseRidingRegistrations(false);
+    }
+  };
+
+  // ==================== HORSE RIDING ====================
+
+  const resetHorseRidingSlotForm = () => {
+    setHorseRidingSlotForm({
+      start_time: '',
+      end_time: '',
+      day_of_week: null,
+      max_capacity: 5,
+      instructor_id: '',
+      is_active: true,
+    });
+  };
+
+  const resetHorseRidingRuleForm = () => {
+    setHorseRidingRuleForm({
+      title: '',
+      content: '',
+      category: '',
+      display_order: 0,
+      is_active: true,
+    });
+  };
+
+  const resetHorseRidingEquipmentForm = () => {
+    setHorseRidingEquipmentForm({
+      name: '',
+      description: '',
+      price: 0,
+      image_url: '',
+      stock_quantity: 0,
+      is_available: true,
+    });
+  };
+
+  const handleCreateHorseRidingSlot = async () => {
+    try {
+      await createHorseRidingSlot({
+        start_time: horseRidingSlotForm.start_time,
+        end_time: horseRidingSlotForm.end_time,
+        day_of_week: horseRidingSlotForm.day_of_week,
+        max_capacity: horseRidingSlotForm.max_capacity,
+        instructor_id: horseRidingSlotForm.instructor_id || null,
+        is_active: horseRidingSlotForm.is_active,
+      });
+      setShowHorseRidingSlotDialog(false);
+      resetHorseRidingSlotForm();
+      // Don't refetch - the hook already updates the store
+    } catch (error) {
+      // Error handled in hook
+    }
+  };
+
+  const handleUpdateHorseRidingSlot = async () => {
+    if (!editingHorseRidingSlot) return;
+    try {
+      await updateHorseRidingSlot(editingHorseRidingSlot.id, {
+        start_time: horseRidingSlotForm.start_time,
+        end_time: horseRidingSlotForm.end_time,
+        day_of_week: horseRidingSlotForm.day_of_week,
+        max_capacity: horseRidingSlotForm.max_capacity,
+        instructor_id: horseRidingSlotForm.instructor_id || null,
+        is_active: horseRidingSlotForm.is_active,
+      });
+      setShowHorseRidingSlotDialog(false);
+      setEditingHorseRidingSlot(null);
+      resetHorseRidingSlotForm();
+      // Don't refetch - the hook already updates the store
+    } catch (error) {
+      // Error handled in hook
+    }
+  };
+
+  const handleDeleteHorseRidingSlot = (id: string) => {
+    setDeleteHorseRidingSlotId(id);
+  };
+
+  const confirmDeleteHorseRidingSlot = async () => {
+    if (!deleteHorseRidingSlotId) return;
+    try {
+      await deleteHorseRidingSlot(deleteHorseRidingSlotId);
+      // Don't refetch - the hook already updates the store
+    } catch (error) {
+      // Error handled in hook
+    } finally {
+      setDeleteHorseRidingSlotId(null);
+    }
+  };
+
+  const openEditHorseRidingSlot = (slot: any) => {
+    setEditingHorseRidingSlot(slot);
+    setHorseRidingSlotForm({
+      start_time: slot.start_time,
+      end_time: slot.end_time,
+      day_of_week: slot.day_of_week,
+      max_capacity: slot.max_capacity,
+      instructor_id: slot.instructor_id || '',
+      is_active: slot.is_active ?? true,
+    });
+    setShowHorseRidingSlotDialog(true);
+  };
+
+  const handleCreateHorseRidingRule = async () => {
+    try {
+      await createHorseRidingRule({
+        title: horseRidingRuleForm.title,
+        content: horseRidingRuleForm.content,
+        category: horseRidingRuleForm.category || null,
+        display_order: horseRidingRuleForm.display_order,
+        is_active: horseRidingRuleForm.is_active,
+      });
+      setShowHorseRidingRuleDialog(false);
+      resetHorseRidingRuleForm();
+      // Don't refetch - the hook already updates the store
+    } catch (error) {
+      // Error handled in hook
+    }
+  };
+
+  const handleUpdateHorseRidingRule = async () => {
+    if (!editingHorseRidingRule) return;
+    try {
+      await updateHorseRidingRule(editingHorseRidingRule.id, {
+        title: horseRidingRuleForm.title,
+        content: horseRidingRuleForm.content,
+        category: horseRidingRuleForm.category || null,
+        display_order: horseRidingRuleForm.display_order,
+        is_active: horseRidingRuleForm.is_active,
+      });
+      setShowHorseRidingRuleDialog(false);
+      setEditingHorseRidingRule(null);
+      resetHorseRidingRuleForm();
+      // Don't refetch - the hook already updates the store
+    } catch (error) {
+      // Error handled in hook
+    }
+  };
+
+  const handleDeleteHorseRidingRule = (id: string) => {
+    setDeleteHorseRidingRuleId(id);
+  };
+
+  const confirmDeleteHorseRidingRule = async () => {
+    if (!deleteHorseRidingRuleId) return;
+    try {
+      await deleteHorseRidingRule(deleteHorseRidingRuleId);
+      // Don't refetch - the hook already updates the store
+    } catch (error) {
+      // Error handled in hook
+    } finally {
+      setDeleteHorseRidingRuleId(null);
+    }
+  };
+
+  const openEditHorseRidingRule = (rule: any) => {
+    setEditingHorseRidingRule(rule);
+    setHorseRidingRuleForm({
+      title: rule.title,
+      content: rule.content,
+      category: rule.category || '',
+      display_order: rule.display_order,
+      is_active: rule.is_active ?? true,
+    });
+    setShowHorseRidingRuleDialog(true);
+  };
+
+  const handleCreateHorseRidingEquipment = async () => {
+    try {
+      await createHorseRidingEquipment({
+        name: horseRidingEquipmentForm.name,
+        description: horseRidingEquipmentForm.description || null,
+        price: horseRidingEquipmentForm.price,
+        image_url: horseRidingEquipmentForm.image_url || null,
+        stock_quantity: horseRidingEquipmentForm.stock_quantity,
+        is_available: horseRidingEquipmentForm.is_available,
+      });
+      setShowHorseRidingEquipmentDialog(false);
+      resetHorseRidingEquipmentForm();
+      fetchHorseRidingEquipment();
+    } catch (error) {
+      // Error handled in hook
+    }
+  };
+
+  const handleUpdateHorseRidingEquipment = async () => {
+    if (!editingHorseRidingEquipment) return;
+    try {
+      await updateHorseRidingEquipment(editingHorseRidingEquipment.id, {
+        name: horseRidingEquipmentForm.name,
+        description: horseRidingEquipmentForm.description || null,
+        price: horseRidingEquipmentForm.price,
+        image_url: horseRidingEquipmentForm.image_url || null,
+        stock_quantity: horseRidingEquipmentForm.stock_quantity,
+        is_available: horseRidingEquipmentForm.is_available,
+      });
+      setShowHorseRidingEquipmentDialog(false);
+      setEditingHorseRidingEquipment(null);
+      resetHorseRidingEquipmentForm();
+      // Don't refetch - the hook already updates the store
+    } catch (error) {
+      // Error handled in hook
+    }
+  };
+
+  const handleDeleteHorseRidingEquipment = (id: string) => {
+    setDeleteHorseRidingEquipmentId(id);
+  };
+
+  const confirmDeleteHorseRidingEquipment = async () => {
+    if (!deleteHorseRidingEquipmentId) return;
+    try {
+      await deleteHorseRidingEquipment(deleteHorseRidingEquipmentId);
+      // Don't refetch - the hook already updates the store
+    } catch (error) {
+      // Error handled in hook
+    } finally {
+      setDeleteHorseRidingEquipmentId(null);
+    }
+  };
+
+  const openEditHorseRidingEquipment = (equipment: any) => {
+    setEditingHorseRidingEquipment(equipment);
+    setHorseRidingEquipmentForm({
+      name: equipment.name,
+      description: equipment.description || '',
+      price: equipment.price,
+      image_url: equipment.image_url || '',
+      stock_quantity: equipment.stock_quantity,
+      is_available: equipment.is_available ?? true,
+    });
+    setShowHorseRidingEquipmentDialog(true);
+  };
+
   const openEditLeague = (league: League) => {
     setEditingLeague(league);
     setLeagueForm({
@@ -445,6 +769,14 @@ const AdminRoute: React.FC = () => {
         >
           <QrCode className="w-4 h-4 mr-2" />
           QR Codes
+        </Button>
+        <Button
+          variant={activeTab === 'horse-riding' ? 'default' : 'ghost'}
+          onClick={() => setActiveTab('horse-riding')}
+          className="rounded-b-none"
+        >
+          <Activity className="w-4 h-4 mr-2" />
+          Horse Riding
         </Button>
       </div>
 
@@ -1000,10 +1332,13 @@ const AdminRoute: React.FC = () => {
                         <table className="w-full">
                           <thead className="bg-muted">
                             <tr>
-                              <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Name</th>
+                              <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">User</th>
                               <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Email</th>
                               <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">CMS ID</th>
+                              <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Phone</th>
+                              <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Gender</th>
                               <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Status</th>
+                              <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Payment</th>
                               <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Registered At</th>
                             </tr>
                           </thead>
@@ -1019,11 +1354,18 @@ const AdminRoute: React.FC = () => {
                                         className="w-8 h-8 rounded-full"
                                       />
                                     )}
-                                    <span className="font-medium">{registration.user?.name || 'Unknown'}</span>
+                                    <div>
+                                      <span className="font-medium">{registration.user?.name || 'Unknown'}</span>
+                                      {(registration.user as any)?.institution && (
+                                        <span className="text-xs text-muted-foreground block">{(registration.user as any).institution}</span>
+                                      )}
+                                    </div>
                                   </div>
                                 </td>
                                 <td className="px-4 py-3 text-sm text-muted-foreground">{registration.user?.email || 'N/A'}</td>
                                 <td className="px-4 py-3 text-sm text-muted-foreground">{registration.user?.cms_id || 'N/A'}</td>
+                                <td className="px-4 py-3 text-sm text-muted-foreground">{(registration.user as any)?.phone || 'N/A'}</td>
+                                <td className="px-4 py-3 text-sm text-muted-foreground">{(registration.user as any)?.gender || 'N/A'}</td>
                                 <td className="px-4 py-3">
                                   <Badge
                                     variant={
@@ -1033,6 +1375,123 @@ const AdminRoute: React.FC = () => {
                                     }
                                   >
                                     {registration.status}
+                                  </Badge>
+                                </td>
+                                <td className="px-4 py-3">
+                                  <Badge
+                                    variant={
+                                      (registration as any).payment_status === 'succeeded'
+                                        ? 'default'
+                                        : (registration as any).payment_status === 'pending'
+                                        ? 'secondary'
+                                        : 'destructive'
+                                    }
+                                  >
+                                    {(registration as any).payment_status || 'N/A'}
+                                  </Badge>
+                                </td>
+                                <td className="px-4 py-3 text-sm text-muted-foreground">
+                                  {new Date(registration.registered_at).toLocaleString()}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </DialogContent>
+          </Dialog>
+
+          {/* Horse Riding Registrations Dialog */}
+          <Dialog open={showHorseRidingRegistrationsDialog} onOpenChange={setShowHorseRidingRegistrationsDialog}>
+            <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Horse Riding Registrations</DialogTitle>
+                <DialogDescription>
+                  View all registrations with user profile details
+                </DialogDescription>
+              </DialogHeader>
+              {loadingHorseRidingRegistrations ? (
+                <div className="flex items-center justify-center h-64">
+                  <Loader2 className="w-8 h-8 animate-spin" />
+                </div>
+              ) : (
+                <div className="mt-4">
+                  {horseRidingRegistrations.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <Users className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                      <p>No registrations yet</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <div className="mb-4 p-3 bg-muted rounded-md">
+                        <p className="text-sm font-medium">
+                          Total Registrations: <span className="text-primary">{horseRidingRegistrations.length}</span>
+                        </p>
+                      </div>
+                      <div className="border rounded-lg overflow-hidden">
+                        <table className="w-full">
+                          <thead className="bg-muted">
+                            <tr>
+                              <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">User</th>
+                              <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Email</th>
+                              <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">CMS ID</th>
+                              <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Phone</th>
+                              <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Status</th>
+                              <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Payment</th>
+                              <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Registered</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y">
+                            {horseRidingRegistrations.map((registration: any) => (
+                              <tr key={registration.id} className="hover:bg-muted/50">
+                                <td className="px-4 py-3 text-sm">
+                                  <div className="flex items-center gap-2">
+                                    {registration.user?.profile_picture_url && (
+                                      <img
+                                        src={registration.user.profile_picture_url}
+                                        alt={registration.user.name}
+                                        className="w-8 h-8 rounded-full"
+                                      />
+                                    )}
+                                    <div>
+                                      <span className="font-medium">{registration.user?.name || 'Unknown'}</span>
+                                      {registration.user?.gender && (
+                                        <span className="text-xs text-muted-foreground block">{registration.user.gender}</span>
+                                      )}
+                                    </div>
+                                  </div>
+                                </td>
+                                <td className="px-4 py-3 text-sm text-muted-foreground">{registration.user?.email || 'N/A'}</td>
+                                <td className="px-4 py-3 text-sm text-muted-foreground">{registration.user?.cms_id || 'N/A'}</td>
+                                <td className="px-4 py-3 text-sm text-muted-foreground">{registration.user?.phone || 'N/A'}</td>
+                                <td className="px-4 py-3">
+                                  <Badge
+                                    variant={
+                                      registration.status === 'paid' || registration.status === 'enrolled'
+                                        ? 'default'
+                                        : registration.status === 'pending'
+                                        ? 'secondary'
+                                        : 'destructive'
+                                    }
+                                  >
+                                    {registration.status}
+                                  </Badge>
+                                </td>
+                                <td className="px-4 py-3">
+                                  <Badge
+                                    variant={
+                                      registration.payment_status === 'succeeded'
+                                        ? 'default'
+                                        : registration.payment_status === 'pending'
+                                        ? 'secondary'
+                                        : 'destructive'
+                                    }
+                                  >
+                                    {registration.payment_status}
                                   </Badge>
                                 </td>
                                 <td className="px-4 py-3 text-sm text-muted-foreground">
@@ -1220,6 +1679,627 @@ const AdminRoute: React.FC = () => {
           </Dialog>
         </div>
       )}
+
+      {/* Horse Riding Tab */}
+      {activeTab === 'horse-riding' && (
+        <div className="space-y-6">
+          <div className="flex justify-between items-center">
+            <h3 className="text-2xl font-semibold">Horse Riding Management</h3>
+            <Button onClick={handleViewHorseRidingRegistrations} variant="outline">
+              <Users className="w-4 h-4 mr-2" />
+              View All Registrations
+            </Button>
+          </div>
+          {/* Sub-tabs for Horse Riding */}
+          <div className="flex gap-2 border-b">
+            <Button
+              variant={horseRidingSubTab === 'slots' ? 'default' : 'ghost'}
+              className="rounded-b-none"
+              onClick={() => setHorseRidingSubTab('slots')}
+            >
+              Time Slots
+            </Button>
+            <Button
+              variant={horseRidingSubTab === 'rules' ? 'default' : 'ghost'}
+              className="rounded-b-none"
+              onClick={() => setHorseRidingSubTab('rules')}
+            >
+              Rules
+            </Button>
+            <Button
+              variant={horseRidingSubTab === 'equipment' ? 'default' : 'ghost'}
+              className="rounded-b-none"
+              onClick={() => setHorseRidingSubTab('equipment')}
+            >
+              Equipment
+            </Button>
+          </div>
+
+          {/* Time Slots Section */}
+          {horseRidingSubTab === 'slots' && (
+          <div className="space-y-4">
+            <div className="flex justify-between items-center">
+              <h3 className="text-xl font-semibold">Time Slots Management</h3>
+              <Button onClick={() => { setEditingHorseRidingSlot(null); resetHorseRidingSlotForm(); setShowHorseRidingSlotDialog(true); }}>
+                <Plus className="w-4 h-4 mr-2" />
+                Create Time Slot
+              </Button>
+            </div>
+
+            {loadingHorseRidingSlots ? (
+              <div className="flex items-center justify-center h-64">
+                <Loader2 className="w-8 h-8 animate-spin" />
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {horseRidingSlots.map((slot) => (
+                  <Card key={slot.id} className="hover:shadow-lg transition-shadow">
+                    <CardHeader>
+                      <div className="flex items-start justify-between">
+                        <CardTitle className="text-lg">
+                          {slot.start_time} - {slot.end_time}
+                        </CardTitle>
+                        <Badge variant={slot.is_active ? 'default' : 'secondary'}>
+                          {slot.is_active ? 'Active' : 'Inactive'}
+                        </Badge>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-muted-foreground">Day of Week</span>
+                          <span className="text-sm">
+                            {slot.day_of_week !== null 
+                              ? ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'][slot.day_of_week]
+                              : 'All Days'}
+                          </span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-muted-foreground">Max Capacity</span>
+                          <span className="text-sm font-medium">{slot.max_capacity}</span>
+                        </div>
+                        <div className="flex gap-2 mt-4">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => openEditHorseRidingSlot(slot)}
+                            className="flex-1"
+                          >
+                            <Edit className="w-4 h-4 mr-1" />
+                            Edit
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => handleDeleteHorseRidingSlot(slot.id)}
+                            className="flex-1"
+                          >
+                            <Trash2 className="w-4 h-4 mr-1" />
+                            Delete
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </div>
+          )}
+
+          {/* Rules Section */}
+          {horseRidingSubTab === 'rules' && (
+          <div className="space-y-4">
+            <div className="flex justify-between items-center">
+              <h3 className="text-xl font-semibold">Rules Management</h3>
+              <Button onClick={() => { setEditingHorseRidingRule(null); resetHorseRidingRuleForm(); setShowHorseRidingRuleDialog(true); }}>
+                <Plus className="w-4 h-4 mr-2" />
+                Create Rule
+              </Button>
+            </div>
+
+            {loadingHorseRidingRules ? (
+              <div className="flex items-center justify-center h-64">
+                <Loader2 className="w-8 h-8 animate-spin" />
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {horseRidingRules.map((rule) => (
+                  <Card key={rule.id} className="hover:shadow-lg transition-shadow">
+                    <CardHeader>
+                      <div className="flex items-start justify-between">
+                        <CardTitle className="text-lg">{rule.title}</CardTitle>
+                        <Badge variant={rule.is_active ? 'default' : 'secondary'}>
+                          {rule.is_active ? 'Active' : 'Inactive'}
+                        </Badge>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-2">
+                        {rule.category && (
+                          <div className="flex items-center justify-between">
+                            <span className="text-sm text-muted-foreground">Category</span>
+                            <Badge variant="outline">{rule.category}</Badge>
+                          </div>
+                        )}
+                        <p className="text-sm text-muted-foreground line-clamp-3">{rule.content}</p>
+                        <div className="flex gap-2 mt-4">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => openEditHorseRidingRule(rule)}
+                            className="flex-1"
+                          >
+                            <Edit className="w-4 h-4 mr-1" />
+                            Edit
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => handleDeleteHorseRidingRule(rule.id)}
+                            className="flex-1"
+                          >
+                            <Trash2 className="w-4 h-4 mr-1" />
+                            Delete
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </div>
+          )}
+
+          {/* Equipment Section */}
+          {horseRidingSubTab === 'equipment' && (
+          <div className="space-y-4">
+            <div className="flex justify-between items-center">
+              <h3 className="text-xl font-semibold">Equipment Management</h3>
+              <Button onClick={() => { setEditingHorseRidingEquipment(null); resetHorseRidingEquipmentForm(); setShowHorseRidingEquipmentDialog(true); }}>
+                <Plus className="w-4 h-4 mr-2" />
+                Create Equipment
+              </Button>
+            </div>
+
+            {loadingHorseRidingEquipment ? (
+              <div className="flex items-center justify-center h-64">
+                <Loader2 className="w-8 h-8 animate-spin" />
+              </div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {horseRidingEquipment.map((eq) => (
+                  <Card key={eq.id} className="hover:shadow-lg transition-shadow">
+                    <CardHeader>
+                      <div className="flex items-start justify-between">
+                        <CardTitle className="text-lg">{eq.name}</CardTitle>
+                        <Badge variant={eq.is_available ? 'default' : 'secondary'}>
+                          {eq.is_available ? 'Available' : 'Unavailable'}
+                        </Badge>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-2">
+                        {eq.description && (
+                          <p className="text-sm text-muted-foreground line-clamp-2">{eq.description}</p>
+                        )}
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-muted-foreground">Price</span>
+                          <span className="text-lg font-bold text-[#023E8A]">Rs. {eq.price.toLocaleString()}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-muted-foreground">Stock</span>
+                          <span className="text-sm font-medium">{eq.stock_quantity}</span>
+                        </div>
+                        <div className="flex gap-2 mt-4">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => openEditHorseRidingEquipment(eq)}
+                            className="flex-1"
+                          >
+                            <Edit className="w-4 h-4 mr-1" />
+                            Edit
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => handleDeleteHorseRidingEquipment(eq.id)}
+                            className="flex-1"
+                          >
+                            <Trash2 className="w-4 h-4 mr-1" />
+                            Delete
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            )}
+          </div>
+          )}
+        </div>
+      )}
+
+      {/* Horse Riding Dialogs - Outside tab section */}
+      <Dialog open={showHorseRidingSlotDialog} onOpenChange={setShowHorseRidingSlotDialog}>
+            <DialogContent className="max-w-2xl">
+              <DialogHeader>
+                <DialogTitle>{editingHorseRidingSlot ? 'Edit Time Slot' : 'Create Time Slot'}</DialogTitle>
+                <DialogDescription>
+                  {editingHorseRidingSlot ? 'Update the time slot details' : 'Create a new time slot for horse riding'}
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 mt-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>Start Time *</Label>
+                    <Input
+                      type="time"
+                      value={horseRidingSlotForm.start_time}
+                      onChange={(e) => setHorseRidingSlotForm({ ...horseRidingSlotForm, start_time: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <Label>End Time *</Label>
+                    <Input
+                      type="time"
+                      value={horseRidingSlotForm.end_time}
+                      onChange={(e) => setHorseRidingSlotForm({ ...horseRidingSlotForm, end_time: e.target.value })}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <Label>Day of Week</Label>
+                  <select
+                    value={horseRidingSlotForm.day_of_week !== null ? horseRidingSlotForm.day_of_week : ''}
+                    onChange={(e) => setHorseRidingSlotForm({ ...horseRidingSlotForm, day_of_week: e.target.value ? parseInt(e.target.value) : null })}
+                    className="w-full px-3 py-2 border rounded-md"
+                  >
+                    <option value="">All Days</option>
+                    <option value="0">Sunday</option>
+                    <option value="1">Monday</option>
+                    <option value="2">Tuesday</option>
+                    <option value="3">Wednesday</option>
+                    <option value="4">Thursday</option>
+                    <option value="5">Friday</option>
+                    <option value="6">Saturday</option>
+                  </select>
+                </div>
+                <div>
+                  <Label>Max Capacity</Label>
+                  <Input
+                    type="number"
+                    value={horseRidingSlotForm.max_capacity}
+                    onChange={(e) => setHorseRidingSlotForm({ ...horseRidingSlotForm, max_capacity: parseInt(e.target.value) || 5 })}
+                    min="1"
+                  />
+                </div>
+                <div>
+                  <Label>Instructor ID (Optional)</Label>
+                  <Input
+                    value={horseRidingSlotForm.instructor_id}
+                    onChange={(e) => setHorseRidingSlotForm({ ...horseRidingSlotForm, instructor_id: e.target.value })}
+                    placeholder="Enter instructor user ID"
+                  />
+                </div>
+                {editingHorseRidingSlot && (
+                  <div className="flex items-center justify-between p-3 border rounded-md bg-muted/50">
+                    <div>
+                      <Label>Status</Label>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        {horseRidingSlotForm.is_active ? 'Slot is currently active' : 'Slot is currently inactive'}
+                      </p>
+                    </div>
+                    <Button
+                      type="button"
+                      variant={horseRidingSlotForm.is_active ? 'default' : 'secondary'}
+                      onClick={() => setHorseRidingSlotForm({ ...horseRidingSlotForm, is_active: !horseRidingSlotForm.is_active })}
+                      className="flex items-center gap-2"
+                    >
+                      {horseRidingSlotForm.is_active ? (
+                        <>
+                          <Check className="w-4 h-4" />
+                          Active
+                        </>
+                      ) : (
+                        <>
+                          <X className="w-4 h-4" />
+                          Inactive
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                )}
+                <div className="flex gap-2">
+                  <Button
+                    onClick={editingHorseRidingSlot ? handleUpdateHorseRidingSlot : handleCreateHorseRidingSlot}
+                    className="flex-1"
+                  >
+                    {editingHorseRidingSlot ? 'Update' : 'Create'}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setShowHorseRidingSlotDialog(false);
+                      setEditingHorseRidingSlot(null);
+                      resetHorseRidingSlotForm();
+                    }}
+                    className="flex-1"
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+
+          {/* Rule Dialog */}
+          <Dialog open={showHorseRidingRuleDialog} onOpenChange={setShowHorseRidingRuleDialog}>
+            <DialogContent className="max-w-2xl">
+              <DialogHeader>
+                <DialogTitle>{editingHorseRidingRule ? 'Edit Rule' : 'Create Rule'}</DialogTitle>
+                <DialogDescription>
+                  {editingHorseRidingRule ? 'Update the rule details' : 'Create a new rule for horse riding'}
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 mt-4">
+                <div>
+                  <Label>Title *</Label>
+                  <Input
+                    value={horseRidingRuleForm.title}
+                    onChange={(e) => setHorseRidingRuleForm({ ...horseRidingRuleForm, title: e.target.value })}
+                    placeholder="e.g., Safety Guidelines"
+                  />
+                </div>
+                <div>
+                  <Label>Content *</Label>
+                  <Textarea
+                    value={horseRidingRuleForm.content}
+                    onChange={(e) => setHorseRidingRuleForm({ ...horseRidingRuleForm, content: e.target.value })}
+                    placeholder="Rule content..."
+                    rows={5}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>Category</Label>
+                    <Input
+                      value={horseRidingRuleForm.category}
+                      onChange={(e) => setHorseRidingRuleForm({ ...horseRidingRuleForm, category: e.target.value })}
+                      placeholder="e.g., Safety, Equipment"
+                    />
+                  </div>
+                  <div>
+                    <Label>Display Order</Label>
+                    <Input
+                      type="number"
+                      value={horseRidingRuleForm.display_order}
+                      onChange={(e) => setHorseRidingRuleForm({ ...horseRidingRuleForm, display_order: parseInt(e.target.value) || 0 })}
+                    />
+                  </div>
+                </div>
+                {editingHorseRidingRule && (
+                  <div className="flex items-center justify-between p-3 border rounded-md bg-muted/50">
+                    <div>
+                      <Label>Status</Label>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        {horseRidingRuleForm.is_active ? 'Rule is currently active' : 'Rule is currently inactive'}
+                      </p>
+                    </div>
+                    <Button
+                      type="button"
+                      variant={horseRidingRuleForm.is_active ? 'default' : 'secondary'}
+                      onClick={() => setHorseRidingRuleForm({ ...horseRidingRuleForm, is_active: !horseRidingRuleForm.is_active })}
+                      className="flex items-center gap-2"
+                    >
+                      {horseRidingRuleForm.is_active ? (
+                        <>
+                          <Check className="w-4 h-4" />
+                          Active
+                        </>
+                      ) : (
+                        <>
+                          <X className="w-4 h-4" />
+                          Inactive
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                )}
+                <div className="flex gap-2">
+                  <Button
+                    onClick={editingHorseRidingRule ? handleUpdateHorseRidingRule : handleCreateHorseRidingRule}
+                    className="flex-1"
+                  >
+                    {editingHorseRidingRule ? 'Update' : 'Create'}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setShowHorseRidingRuleDialog(false);
+                      setEditingHorseRidingRule(null);
+                      resetHorseRidingRuleForm();
+                    }}
+                    className="flex-1"
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+
+          {/* Equipment Dialog */}
+          <Dialog open={showHorseRidingEquipmentDialog} onOpenChange={setShowHorseRidingEquipmentDialog}>
+            <DialogContent className="max-w-2xl">
+              <DialogHeader>
+                <DialogTitle>{editingHorseRidingEquipment ? 'Edit Equipment' : 'Create Equipment'}</DialogTitle>
+                <DialogDescription>
+                  {editingHorseRidingEquipment ? 'Update the equipment details' : 'Create a new equipment item'}
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4 mt-4">
+                <div>
+                  <Label>Name *</Label>
+                  <Input
+                    value={horseRidingEquipmentForm.name}
+                    onChange={(e) => setHorseRidingEquipmentForm({ ...horseRidingEquipmentForm, name: e.target.value })}
+                    placeholder="e.g., Horse Riding Shoes"
+                  />
+                </div>
+                <div>
+                  <Label>Description</Label>
+                  <Textarea
+                    value={horseRidingEquipmentForm.description}
+                    onChange={(e) => setHorseRidingEquipmentForm({ ...horseRidingEquipmentForm, description: e.target.value })}
+                    placeholder="Equipment description..."
+                    rows={3}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>Price (PKR) *</Label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={horseRidingEquipmentForm.price}
+                      onChange={(e) => setHorseRidingEquipmentForm({ ...horseRidingEquipmentForm, price: parseFloat(e.target.value) || 0 })}
+                      placeholder="e.g., 6000"
+                    />
+                  </div>
+                  <div>
+                    <Label>Stock Quantity</Label>
+                    <Input
+                      type="number"
+                      min="0"
+                      value={horseRidingEquipmentForm.stock_quantity}
+                      onChange={(e) => setHorseRidingEquipmentForm({ ...horseRidingEquipmentForm, stock_quantity: parseInt(e.target.value) || 0 })}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <Label>Image URL (Optional)</Label>
+                  <Input
+                    value={horseRidingEquipmentForm.image_url}
+                    onChange={(e) => setHorseRidingEquipmentForm({ ...horseRidingEquipmentForm, image_url: e.target.value })}
+                    placeholder="https://example.com/image.jpg"
+                  />
+                </div>
+                {editingHorseRidingEquipment && (
+                  <div className="flex items-center justify-between p-3 border rounded-md bg-muted/50">
+                    <div>
+                      <Label>Availability</Label>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        {horseRidingEquipmentForm.is_available ? 'Equipment is currently available' : 'Equipment is currently unavailable'}
+                      </p>
+                    </div>
+                    <Button
+                      type="button"
+                      variant={horseRidingEquipmentForm.is_available ? 'default' : 'secondary'}
+                      onClick={() => setHorseRidingEquipmentForm({ ...horseRidingEquipmentForm, is_available: !horseRidingEquipmentForm.is_available })}
+                      className="flex items-center gap-2"
+                    >
+                      {horseRidingEquipmentForm.is_available ? (
+                        <>
+                          <Check className="w-4 h-4" />
+                          Available
+                        </>
+                      ) : (
+                        <>
+                          <X className="w-4 h-4" />
+                          Unavailable
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                )}
+                <div className="flex gap-2">
+                  <Button
+                    onClick={editingHorseRidingEquipment ? handleUpdateHorseRidingEquipment : handleCreateHorseRidingEquipment}
+                    className="flex-1"
+                  >
+                    {editingHorseRidingEquipment ? 'Update' : 'Create'}
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setShowHorseRidingEquipmentDialog(false);
+                      setEditingHorseRidingEquipment(null);
+                      resetHorseRidingEquipmentForm();
+                    }}
+                    className="flex-1"
+                  >
+                    Cancel
+                  </Button>
+                </div>
+              </div>
+            </DialogContent>
+          </Dialog>
+
+          {/* Delete Confirmation Dialogs for Horse Riding */}
+          <AlertDialog open={deleteHorseRidingSlotId !== null} onOpenChange={(open) => !open && setDeleteHorseRidingSlotId(null)}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete Time Slot</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Are you sure you want to delete this time slot? This action cannot be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel onClick={() => setDeleteHorseRidingSlotId(null)}>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={confirmDeleteHorseRidingSlot}
+                  className="bg-red-600 hover:bg-red-700"
+                >
+                  Delete
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+
+          <AlertDialog open={deleteHorseRidingRuleId !== null} onOpenChange={(open) => !open && setDeleteHorseRidingRuleId(null)}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete Rule</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Are you sure you want to delete this rule? This action cannot be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel onClick={() => setDeleteHorseRidingRuleId(null)}>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={confirmDeleteHorseRidingRule}
+                  className="bg-red-600 hover:bg-red-700"
+                >
+                  Delete
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+
+          <AlertDialog open={deleteHorseRidingEquipmentId !== null} onOpenChange={(open) => !open && setDeleteHorseRidingEquipmentId(null)}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete Equipment</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Are you sure you want to delete this equipment? This action cannot be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel onClick={() => setDeleteHorseRidingEquipmentId(null)}>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={confirmDeleteHorseRidingEquipment}
+                  className="bg-red-600 hover:bg-red-700"
+                >
+                  Delete
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
 
       {/* Delete Confirmation Dialogs */}
       

@@ -9,7 +9,10 @@ import {
   getLeagueRegistrations,
   getUserLeagueRegistration,
   cancelLeagueRegistration,
+  updateLeagueRegistrationPayment,
+  getLeagueRegistrationById,
 } from '../services/leagueService.js';
+import { createLeagueCheckoutSession, verifyCheckoutSession } from '../services/stripeService.js';
 
 /**
  * Get all leagues
@@ -256,11 +259,56 @@ export const registerForLeagueController = async (req, res) => {
       });
     }
 
+    // If payment is required, create Stripe checkout session
+    if (result.requiresPayment && result.fee > 0) {
+      const baseUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+      const successUrl = `${baseUrl}/dashboard/leagues?payment=success&registrationId=${result.registration.id}`;
+      const cancelUrl = `${baseUrl}/dashboard/leagues?payment=cancelled`;
+
+      // Get league name for checkout session
+      const leagueResult = await getLeagueById(id);
+      const leagueName = leagueResult.league?.name || 'League';
+
+      const stripeResult = await createLeagueCheckoutSession(
+        result.fee,
+        user.id,
+        result.registration.id,
+        leagueName,
+        successUrl,
+        cancelUrl
+      );
+
+      if (!stripeResult.success) {
+        return res.status(500).json({
+          success: false,
+          message: 'Failed to create payment session',
+          error: stripeResult.error
+        });
+      }
+
+      // Update registration with Stripe session ID
+      await updateLeagueRegistrationPayment(result.registration.id, {
+        stripe_session_id: stripeResult.session.id,
+      });
+
+      return res.status(201).json({
+        success: true,
+        message: 'Registration created. Please complete payment.',
+        data: {
+          registration: result.registration,
+          requiresPayment: true,
+          checkoutUrl: stripeResult.session.url,
+          sessionId: stripeResult.session.id
+        }
+      });
+    }
+
     res.status(201).json({
       success: true,
       message: 'Successfully registered for league',
       data: {
-        registration: result.registration
+        registration: result.registration,
+        requiresPayment: false
       }
     });
   } catch (error) {
@@ -328,6 +376,89 @@ export const getUserLeagueRegistrationController = async (req, res) => {
     });
   } catch (error) {
     console.error('Error in getUserLeagueRegistrationController:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error'
+    });
+  }
+};
+
+/**
+ * Verify league registration payment
+ */
+export const verifyLeaguePaymentController = async (req, res) => {
+  try {
+    const { registrationId, sessionId } = req.body;
+    const user = req.user;
+
+    if (!registrationId || !sessionId) {
+      return res.status(400).json({
+        success: false,
+        message: 'registrationId and sessionId are required'
+      });
+    }
+
+    // Get registration
+    const registrationResult = await getLeagueRegistrationById(registrationId);
+    if (!registrationResult.success || !registrationResult.registration) {
+      return res.status(404).json({
+        success: false,
+        message: 'Registration not found'
+      });
+    }
+
+    const registration = registrationResult.registration;
+
+    // Verify user owns this registration
+    if (registration.user_id !== user.id) {
+      return res.status(403).json({
+        success: false,
+        message: 'Unauthorized'
+      });
+    }
+
+    // Verify Stripe session
+    const stripeResult = await verifyCheckoutSession(sessionId);
+    if (!stripeResult.success) {
+      return res.status(400).json({
+        success: false,
+        message: 'Failed to verify payment session',
+        error: stripeResult.error
+      });
+    }
+
+    const session = stripeResult.session;
+
+    // Update registration based on payment status
+    if (session.payment_status === 'paid' || session.status === 'complete') {
+      const league = registration.league || {};
+      const fee = league.registration_fee || 0;
+
+      const updateResult = await updateLeagueRegistrationPayment(registrationId, {
+        payment_status: 'succeeded',
+        stripe_payment_intent_id: session.payment_intent || null,
+        amount_paid: fee,
+        paid_at: new Date().toISOString(),
+      });
+
+      return res.json({
+        success: true,
+        message: 'Payment verified successfully',
+        data: {
+          registration: updateResult.registration
+        }
+      });
+    }
+
+    res.json({
+      success: false,
+      message: 'Payment not completed',
+      data: {
+        paymentStatus: session.payment_status
+      }
+    });
+  } catch (error) {
+    console.error('Error in verifyLeaguePaymentController:', error);
     res.status(500).json({
       success: false,
       message: 'Internal server error'

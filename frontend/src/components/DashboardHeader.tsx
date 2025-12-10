@@ -80,8 +80,8 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ items }) => {
   return (
     <>
       <header className="bg-white/90 backdrop-blur border-b border-slate-200 sticky top-0 z-40">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center h-20 justify-between">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center h-20 justify-between">
             {/* Left: Brand + Mobile Menu Button */}
             <div className="flex items-center gap-3">
               {/* Mobile Menu Button - visible only on < md */}
@@ -96,50 +96,50 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ items }) => {
                   <Menu className="w-6 h-6 text-[#023E8A]" />
                 )}
               </button>
-              <h1 className="text-2xl font-bold text-[#023E8A]">Sportivex</h1>
-            </div>
+            <h1 className="text-2xl font-bold text-[#023E8A]">Sportivex</h1>
+          </div>
 
             {/* Center: Navigation (shadcn NavigationMenu) - hidden on mobile */}
             <div className="hidden md:flex flex-1 justify-center">
-              <NavigationMenu viewport={false}>
-                <NavigationMenuList className="bg-[#EAF7FD] px-2 rounded-full border border-[#ADE8F4]">
-                  {items.map((item) => (
-                    <NavigationMenuItem key={item.to}>
-                      <NavLink
-                        to={item.to}
-                        className={({ isActive }) =>
-                          `group inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all ${
-                            isActive
-                              ? "text-white shadow bg-gradient-to-r from-[#0077B6] to-[#00B4D8]"
-                              : "text-[#0077B6] hover:text-white hover:shadow hover:bg-gradient-to-r hover:from-[#0096C7] hover:to-[#00B4D8]"
-                          }`
-                        }
-                      >
-                        {({ isActive }) => (
-                          <NavigationMenuLink className="bg-transparent p-0 rounded-full hover:bg-transparent focus:bg-transparent data-[active=true]:bg-transparent pointer-events-none">
-                            <item.icon
-                              className={
-                                "w-4 h-4  hover:text-white" +
-                                (isActive
-                                  ? "text-white"
-                                  : "text-[#0077B6] hover:text-white ")
-                              }
-                            />
-                            <span
-                              className={"hover:text-white" + (
-                                isActive ? "text-white" : "text-[#0077B6] hover:text-white")
-                              }
-                            >
-                              {item.label}
-                            </span>
-                          </NavigationMenuLink>
-                        )}
-                      </NavLink>
-                    </NavigationMenuItem>
-                  ))}
-                </NavigationMenuList>
-              </NavigationMenu>
-            </div>
+            <NavigationMenu viewport={false}>
+              <NavigationMenuList className="bg-[#EAF7FD] px-2 rounded-full border border-[#ADE8F4]">
+                {items.map((item) => (
+                  <NavigationMenuItem key={item.to}>
+                    <NavLink
+                      to={item.to}
+                      className={({ isActive }) =>
+                        `group inline-flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all ${
+                          isActive
+                            ? "text-white shadow bg-gradient-to-r from-[#0077B6] to-[#00B4D8]"
+                            : "text-[#0077B6] hover:text-white hover:shadow hover:bg-gradient-to-r hover:from-[#0096C7] hover:to-[#00B4D8]"
+                        }`
+                      }
+                    >
+                      {({ isActive }) => (
+                        <NavigationMenuLink className="bg-transparent p-0 rounded-full hover:bg-transparent focus:bg-transparent data-[active=true]:bg-transparent pointer-events-none">
+                          <item.icon
+                            className={
+                              "w-4 h-4  hover:text-white" +
+                              (isActive
+                                ? "text-white"
+                                : "text-[#0077B6] hover:text-white ")
+                            }
+                          />
+                          <span
+                            className={"hover:text-white" + (
+                              isActive ? "text-white" : "text-[#0077B6] hover:text-white")
+                            }
+                          >
+                            {item.label}
+                          </span>
+                        </NavigationMenuLink>
+                      )}
+                    </NavLink>
+                  </NavigationMenuItem>
+                ))}
+              </NavigationMenuList>
+            </NavigationMenu>
+          </div>
 
           {/* Right: Actions */}
           <div className="flex items-center space-x-3">
@@ -204,7 +204,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ items }) => {
             </div>
           </div>
         </div>
-        </div>
+      </div>
       </header>
 
       <AlertDialog open={showLogoutDialog} onOpenChange={setShowLogoutDialog}>

@@ -183,7 +183,7 @@ export const registerUserForLeague = async (leagueId, userId) => {
     // Check if league exists and registration is enabled
     const { data: league, error: leagueError } = await supabase
       .from('leagues')
-      .select('id, registration_enabled, max_participants, registration_deadline, start_date')
+      .select('id, registration_enabled, max_participants, registration_deadline, start_date, registration_fee')
       .eq('id', leagueId)
       .single();
 
@@ -234,16 +234,25 @@ export const registerUserForLeague = async (leagueId, userId) => {
       }
     }
 
-    // Register user
+    // Register user (payment will be handled separately if fee > 0)
+    const registrationData = {
+      league_id: leagueId,
+      user_id: userId,
+      status: 'registered',
+      payment_status: league.registration_fee > 0 ? 'pending' : 'succeeded',
+      amount_paid: 0,
+    };
+
+    // If fee is 0, mark as paid immediately
+    if (league.registration_fee === 0) {
+      registrationData.payment_status = 'succeeded';
+      registrationData.status = 'confirmed';
+      registrationData.confirmed_at = new Date().toISOString();
+    }
+
     const { data, error } = await supabase
       .from('league_registrations')
-      .insert([
-        {
-          league_id: leagueId,
-          user_id: userId,
-          status: 'registered',
-        },
-      ])
+      .insert([registrationData])
       .select()
       .single();
 
@@ -252,7 +261,7 @@ export const registerUserForLeague = async (leagueId, userId) => {
       return { success: false, registration: null, error: error.message };
     }
 
-    return { success: true, registration: data };
+    return { success: true, registration: data, requiresPayment: league.registration_fee > 0, fee: league.registration_fee };
   } catch (error) {
     console.error('Error in registerUserForLeague:', error);
     return { success: false, registration: null, error: error.message };
@@ -268,7 +277,20 @@ export const getLeagueRegistrations = async (leagueId) => {
       .from('league_registrations')
       .select(`
         *,
-        user:users_metadata(id, name, email, cms_id, role, profile_picture_url)
+        user:users_metadata(
+          id,
+          name,
+          email,
+          cms_id,
+          role,
+          institution,
+          phone,
+          profile_picture_url,
+          gender,
+          date_of_birth,
+          address,
+          bio
+        )
       `)
       .eq('league_id', leagueId)
       .order('registered_at', { ascending: false });
@@ -330,6 +352,69 @@ export const cancelLeagueRegistration = async (leagueId, userId) => {
   } catch (error) {
     console.error('Error in cancelLeagueRegistration:', error);
     return { success: false, error: error.message };
+  }
+};
+
+/**
+ * Update league registration payment status
+ */
+export const updateLeagueRegistrationPayment = async (registrationId, paymentData) => {
+  try {
+    const updateData = {};
+    if (paymentData.payment_status !== undefined) updateData.payment_status = paymentData.payment_status;
+    if (paymentData.stripe_session_id !== undefined) updateData.stripe_session_id = paymentData.stripe_session_id;
+    if (paymentData.stripe_payment_intent_id !== undefined) updateData.stripe_payment_intent_id = paymentData.stripe_payment_intent_id;
+    if (paymentData.amount_paid !== undefined) updateData.amount_paid = paymentData.amount_paid;
+    if (paymentData.paid_at !== undefined) updateData.paid_at = paymentData.paid_at;
+    
+    // If payment succeeded, update status to confirmed
+    if (paymentData.payment_status === 'succeeded') {
+      updateData.status = 'confirmed';
+      updateData.confirmed_at = new Date().toISOString();
+    }
+
+    const { data, error } = await supabase
+      .from('league_registrations')
+      .update(updateData)
+      .eq('id', registrationId)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error updating league registration payment:', error);
+      return { success: false, registration: null, error: error.message };
+    }
+
+    return { success: true, registration: data };
+  } catch (error) {
+    console.error('Error in updateLeagueRegistrationPayment:', error);
+    return { success: false, registration: null, error: error.message };
+  }
+};
+
+/**
+ * Get league registration by ID
+ */
+export const getLeagueRegistrationById = async (registrationId) => {
+  try {
+    const { data, error } = await supabase
+      .from('league_registrations')
+      .select(`
+        *,
+        league:leagues(id, name, registration_fee)
+      `)
+      .eq('id', registrationId)
+      .single();
+
+    if (error) {
+      console.error('Error getting league registration:', error);
+      return { success: false, registration: null, error: error.message };
+    }
+
+    return { success: true, registration: data };
+  } catch (error) {
+    console.error('Error in getLeagueRegistrationById:', error);
+    return { success: false, registration: null, error: error.message };
   }
 };
 

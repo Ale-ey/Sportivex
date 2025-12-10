@@ -67,12 +67,17 @@ export interface LeagueRegistration {
   notes?: string;
   created_at?: string;
   updated_at?: string;
+  payment_status?: 'pending' | 'processing' | 'succeeded' | 'failed' | 'canceled' | 'refunded';
+  amount_paid?: number;
   user?: {
     id: string;
     name: string;
     email: string;
     cms_id: number;
     role: string;
+    institution?: string;
+    phone?: string;
+    gender?: string;
     profile_picture_url?: string;
   };
 }
