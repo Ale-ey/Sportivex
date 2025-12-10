@@ -1,6 +1,6 @@
 import { useMemo, useEffect } from "react";
 import { Outlet } from "react-router-dom";
-import { Activity, Trophy, MessageCircle, Home, Target, Shield } from "lucide-react";
+import { Activity, Trophy, MessageCircle, Home, Shield } from "lucide-react";
 import DashboardHeader from "../components/DashboardHeader";
 import { useGetProfile } from "../hooks/useAuth";
 

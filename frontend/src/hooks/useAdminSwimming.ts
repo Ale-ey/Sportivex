@@ -4,7 +4,6 @@ import { AxiosError } from 'axios';
 import { swimmingService } from '@/services/swimmingService';
 import { adminService } from '@/services/adminService';
 import useAdminSwimmingStore from '@/stores/adminSwimmingStore';
-import type { TimeSlot } from '@/services/swimmingService';
 import type { CreateTimeSlotRequest, UpdateTimeSlotRequest } from '@/services/adminService';
 
 /**
@@ -44,7 +43,7 @@ export const useAdminSwimming = () => {
         });
         setTimeSlots(sortedSlots);
       } else {
-        throw new Error(response.message || 'Failed to fetch time slots');
+        throw new Error('Failed to fetch time slots');
       }
     } catch (error) {
       const errorMessage =

@@ -12,7 +12,6 @@ import {
   Footprints,
   CircleDot,
   Users,
-  Anchor,
 } from "lucide-react";
 
 const SportsNavigation: React.FC = () => {

@@ -124,7 +124,7 @@ const QRCodeScanner: React.FC = () => {
                 onClick={() => {
                   // In a real implementation, you would use a QR code scanning library
                   // like html5-qrcode or jsQR here
-                  toast.info('QR scanning from camera requires a QR code library. Use manual entry for now.');
+                  toast('QR scanning from camera requires a QR code library. Use manual entry for now.');
                 }}
                 className="flex-1"
               >

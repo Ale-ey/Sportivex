@@ -17,7 +17,6 @@ import {
   ShoppingCart,
   Activity,
   CheckCircle2,
-  XCircle,
   AlertCircle,
 } from 'lucide-react';
 import { useHorseRiding } from '@/hooks/useHorseRiding';
@@ -101,7 +100,7 @@ const HorseRidingRoute: React.FC = () => {
         // Verify equipment purchase payment
         verifyEquipmentPurchasePayment({
           purchaseId,
-          sessionId,
+          sessionId: stripeSessionId,
         })
           .then(() => {
             fetchEquipment();
@@ -172,10 +171,12 @@ const HorseRidingRoute: React.FC = () => {
       for (const purchase of pendingPurchases) {
         try {
           console.log('Auto-verifying purchase:', purchase.id, 'with session:', purchase.stripe_session_id);
-          await verifyEquipmentPurchasePayment({
-            purchaseId: purchase.id,
-            sessionId: purchase.stripe_session_id,
-          });
+          if (purchase.stripe_session_id) {
+            await verifyEquipmentPurchasePayment({
+              purchaseId: purchase.id,
+              sessionId: purchase.stripe_session_id,
+            });
+          }
           // Refresh purchases after successful verification
           setTimeout(() => {
             fetchPurchases();
@@ -263,12 +264,6 @@ const HorseRidingRoute: React.FC = () => {
       // Error handled in hook
     }
   };
-
-  const isRegistered = registration && (
-    registration.status === 'paid' || 
-    registration.status === 'enrolled' ||
-    (registration.payment_status === 'succeeded' && registration.status !== 'pending')
-  );
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">

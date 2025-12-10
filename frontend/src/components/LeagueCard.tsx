@@ -5,7 +5,6 @@ import { Button } from "./ui/button";
 import { Calendar, Users, Trophy, Loader2 } from "lucide-react";
 import { useLeague } from "@/hooks/useLeague";
 import { type League } from "@/services/leagueService";
-import toast from "react-hot-toast";
 
 export interface LeagueCardProps {
   id?: string;
