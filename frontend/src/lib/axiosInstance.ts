@@ -27,9 +27,37 @@ axiosInstance.interceptors.request.use(
 axiosInstance.interceptors.response.use(
   (response) => response, // Just return the response if successful
   async (error) => {
-    if (error.response && error.response.status === 403) {
-      localStorage.clear();
-      window.location.href="/auth/signin"
+    // Handle token expiration (401) or forbidden (403)
+    if (error.response) {
+      const status = error.response.status;
+      const errorCode = error.response.data?.code;
+      const errorMessage = error.response.data?.message;
+
+      // Handle token expiration
+      if (status === 401 && (errorCode === 'TOKEN_EXPIRED' || errorMessage?.includes('expired') || errorMessage?.includes('Token has expired'))) {
+        // Clear all storage
+        localStorage.clear();
+        sessionStorage.clear();
+        // Redirect to sign-in page
+        window.location.href = '/auth/signin';
+        return Promise.reject(error);
+      }
+
+      // Handle forbidden access (403)
+      if (status === 403) {
+        localStorage.clear();
+        sessionStorage.clear();
+        window.location.href = '/auth/signin';
+        return Promise.reject(error);
+      }
+
+      // Handle any other 401 (invalid token, etc.)
+      if (status === 401) {
+        localStorage.clear();
+        sessionStorage.clear();
+        window.location.href = '/auth/signin';
+        return Promise.reject(error);
+      }
     }
     return Promise.reject(error);
   }

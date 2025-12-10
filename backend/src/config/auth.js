@@ -24,7 +24,7 @@ const generateToken = (user) => {
       cmsId: user.cms_id
     },
     JWT_SECRET,
-    { expiresIn: '1h' } // Token expires in 1 hour
+    { expiresIn: '24h' } // Token expires in 24 hours (1 day)
   );
 };
 
