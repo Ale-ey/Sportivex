@@ -29,66 +29,83 @@ export const getTimeSlots = async (req, res) => {
       .from('swimming_time_slots')
       .select('*');
 
-    // Filter by active status
-    if (active !== undefined) {
-      const isActive = active === 'true' || active === true;
-      console.log('Filtering by active:', isActive);
-      query = query.eq('is_active', isActive);
-    }
+    // Check if user is admin - admins see ALL slots without any filters
+    const userRole = user?.role?.toLowerCase();
+    const isAdmin = userRole === 'admin';
 
-    // Auto-filter based on user's gender and role
-    if (user) {
-      const userGender = user.gender?.toLowerCase();
-      const userRole = user.role?.toLowerCase();
-
-      // Build gender restrictions array based on user
-      const allowedGenderRestrictions = [];
-
-      if (userGender === 'male') {
-        allowedGenderRestrictions.push('male', 'mixed');
-      } else if (userGender === 'female') {
-        allowedGenderRestrictions.push('female', 'mixed');
-      } else if (userGender === 'other') {
-        // Other can access mixed slots only
-        allowedGenderRestrictions.push('mixed');
-      } else {
-        // No gender set - can only access mixed slots
-        allowedGenderRestrictions.push('mixed');
+    if (isAdmin) {
+      // Admin users: No filters applied - show ALL slots (active and inactive)
+      // Only apply active filter if explicitly requested via query param
+      if (active !== undefined) {
+        const isActive = active === 'true' || active === true;
+        console.log('Admin filtering by active:', isActive);
+        query = query.eq('is_active', isActive);
+      }
+      // No gender filtering for admin - they see everything
+      console.log('Admin user detected - showing all time slots without gender/role filters');
+    } else {
+      // Non-admin users: Apply filters based on gender and role
+      
+      // Filter by active status (only for non-admin users, or if admin explicitly requests it)
+      if (active !== undefined) {
+        const isActive = active === 'true' || active === true;
+        console.log('Filtering by active:', isActive);
+        query = query.eq('is_active', isActive);
       }
 
-      // Filter by role - UG students cannot access faculty_pg slots
-      if (userRole === 'ug') {
-        // UG students: male see [male, mixed], female see [female, mixed]
-        // Remove faculty_pg from allowed restrictions for UG students
-        const filtered = allowedGenderRestrictions.filter(r => r !== 'faculty_pg');
-        if (filtered.length > 0) {
-          query = query.in('gender_restriction', filtered);
+      // Auto-filter based on user's gender and role
+      if (user) {
+        const userGender = user.gender?.toLowerCase();
+
+        // Build gender restrictions array based on user
+        const allowedGenderRestrictions = [];
+
+        if (userGender === 'male') {
+          allowedGenderRestrictions.push('male', 'mixed');
+        } else if (userGender === 'female') {
+          allowedGenderRestrictions.push('female', 'mixed');
+        } else if (userGender === 'other') {
+          // Other can access mixed slots only
+          allowedGenderRestrictions.push('mixed');
         } else {
-          // If no allowed restrictions, return empty (shouldn't happen)
-          query = query.eq('gender_restriction', 'nonexistent');
+          // No gender set - can only access mixed slots
+          allowedGenderRestrictions.push('mixed');
         }
-      } else if (userRole === 'pg' || userRole === 'faculty' || userRole === 'alumni') {
-        // PG, Faculty, Alumni: 
-        // - Male see [male, mixed, faculty_pg]
-        // - Female see [female, mixed, faculty_pg]
-        // - Other see [mixed, faculty_pg]
-        if (!allowedGenderRestrictions.includes('faculty_pg')) {
-          allowedGenderRestrictions.push('faculty_pg');
-        }
-        query = query.in('gender_restriction', allowedGenderRestrictions);
-      } else {
-        // Unknown role - only mixed slots
-        query = query.eq('gender_restriction', 'mixed');
-      }
 
-      console.log('Filtered gender restrictions for user:', {
-        userGender,
-        userRole,
-        allowedRestrictions: allowedGenderRestrictions
-      });
-    } else if (gender) {
-      // Fallback to query param if no user (shouldn't happen with auth middleware)
-      query = query.eq('gender_restriction', gender.toLowerCase());
+        // Filter by role - UG students cannot access faculty_pg slots
+        if (userRole === 'ug') {
+          // UG students: male see [male, mixed], female see [female, mixed]
+          // Remove faculty_pg from allowed restrictions for UG students
+          const filtered = allowedGenderRestrictions.filter(r => r !== 'faculty_pg');
+          if (filtered.length > 0) {
+            query = query.in('gender_restriction', filtered);
+          } else {
+            // If no allowed restrictions, return empty (shouldn't happen)
+            query = query.eq('gender_restriction', 'nonexistent');
+          }
+        } else if (userRole === 'pg' || userRole === 'faculty' || userRole === 'alumni') {
+          // PG, Faculty, Alumni: 
+          // - Male see [male, mixed, faculty_pg]
+          // - Female see [female, mixed, faculty_pg]
+          // - Other see [mixed, faculty_pg]
+          if (!allowedGenderRestrictions.includes('faculty_pg')) {
+            allowedGenderRestrictions.push('faculty_pg');
+          }
+          query = query.in('gender_restriction', allowedGenderRestrictions);
+        } else {
+          // Unknown role - only mixed slots
+          query = query.eq('gender_restriction', 'mixed');
+        }
+
+        console.log('Filtered gender restrictions for user:', {
+          userGender,
+          userRole,
+          allowedRestrictions: allowedGenderRestrictions
+        });
+      } else if (gender) {
+        // Fallback to query param if no user (shouldn't happen with auth middleware)
+        query = query.eq('gender_restriction', gender.toLowerCase());
+      }
     }
 
     const { data, error } = await query.order('start_time');
@@ -119,7 +136,14 @@ export const getTimeSlots = async (req, res) => {
 
     // If no data but no error, log it
     if (!data || data.length === 0) {
-      console.log('No time slots found in database. Query params:', { gender, active });
+      console.log('No time slots found in database.', {
+        isAdmin,
+        userRole,
+        queryParams: { gender, active },
+        totalSlotsInDB: 'Check database directly'
+      });
+    } else {
+      console.log(`Found ${data.length} time slot(s) for ${isAdmin ? 'admin' : 'non-admin'} user`);
     }
 
     // For each time slot, get trainer info and current attendance count for today
@@ -151,6 +175,13 @@ export const getTimeSlots = async (req, res) => {
         };
       })
     );
+
+    // Set cache-control headers to prevent caching (especially for admin)
+    res.set({
+      'Cache-Control': 'no-store, no-cache, must-revalidate, private',
+      'Pragma': 'no-cache',
+      'Expires': '0'
+    });
 
     res.status(200).json({
       success: true,

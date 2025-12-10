@@ -3,13 +3,17 @@ import { Button } from "../../../components/ui/button";
 import LeagueCard from "../../../components/LeagueCard";
 import { Plus } from "lucide-react";
 
+import { type League } from "@/services/leagueService";
+
 export interface LeagueItem {
+  id?: string;
   name: string;
   date: string;
   participants: number;
   status: "Registered" | "Training" | "Upcoming" | "Registration Open";
   prize: string;
   myRank: number | null;
+  league?: League; // Full league object for registration
 }
 
 interface LeaguesTabProps {
@@ -29,20 +33,27 @@ const LeaguesTab: React.FC<LeaguesTabProps> = ({ leagues }) => {
         </Button>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {leagues.map((league, index) => (
-          <LeagueCard
-            key={index}
-            name={league.name}
-            date={league.date}
-            participants={league.participants}
-            status={league.status}
-            prize={league.prize}
-            myRank={league.myRank}
-            onClick={() => console.log(`League clicked: ${league.name}`)}
-          />
-        ))}
-      </div>
+      {leagues.length === 0 ? (
+        <div className="text-center py-12 text-muted-foreground">
+          <p>No leagues available at the moment.</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {leagues.map((league) => (
+            <LeagueCard
+              key={league.id || league.name}
+              id={league.id}
+              name={league.name}
+              date={league.date}
+              participants={league.participants}
+              status={league.status}
+              prize={league.prize}
+              myRank={league.myRank}
+              league={league.league}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 };

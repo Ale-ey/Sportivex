@@ -161,6 +161,38 @@ export const getCourts = async () => {
 };
 
 /**
+ * Update court status (admin only)
+ */
+export const updateCourtStatus = async (courtId, status) => {
+  try {
+    if (!['available', 'occupied', 'maintenance'].includes(status)) {
+      return { success: false, error: 'Invalid status. Must be: available, occupied, or maintenance' };
+    }
+
+    const { data, error } = await supabase
+      .from('badminton_courts')
+      .update({ status })
+      .eq('id', courtId)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error updating court status:', error);
+      return { success: false, error: error.message };
+    }
+
+    if (!data) {
+      return { success: false, error: 'Court not found' };
+    }
+
+    return { success: true, court: data };
+  } catch (error) {
+    console.error('Error in updateCourtStatus:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+/**
  * Check if court is available for a time slot
  */
 export const checkCourtAvailability = async (courtId, startTime, endTime) => {

@@ -25,13 +25,16 @@ import HomeRoute from "./pages/dashboard/routes/HomeRoute";
 import SportsRoute from "./pages/dashboard/routes/SportsRoute";
 import SwimmingRoute from "./pages/dashboard/routes/SwimmingRoute";
 import BadmintonRoute from "./pages/dashboard/routes/BadmintonRoute";
+import GymRoute from "./pages/dashboard/routes/GymRoute";
 import LeaguesRoute from "./pages/dashboard/routes/LeaguesRoute";
+import HorseRidingRoute from "./pages/dashboard/routes/HorseRidingRoute";
 import TrainingRoute from "./pages/dashboard/routes/TrainingRoute";
 import AiChatRoute from "./pages/dashboard/routes/AiChatRoute";
 import AccountRoute from "./pages/dashboard/routes/AccountRoute";
 import ProfileRoute from "./pages/dashboard/routes/ProfileRoute";
 import SettingsRoute from "./pages/dashboard/routes/SettingsRoute";
 import BillingRoute from "./pages/dashboard/routes/BillingRoute";
+import AdminRoute from "./routes/AdminRoute";
 import PublicRoute from "./routes/PulblicRoute";
 import PrivateRoute from "./routes/PrivateRoute";
 
@@ -73,13 +76,16 @@ function App() {
             <Route path="sports" element={<SportsRoute />} />
             <Route path="swimming" element={<SwimmingRoute />} />
             <Route path="badminton" element={<BadmintonRoute />} />
+            <Route path="gym" element={<GymRoute />} />
             <Route path="leagues" element={<LeaguesRoute />} />
+            <Route path="horse-riding" element={<HorseRidingRoute />} />
             <Route path="training" element={<TrainingRoute />} />
             <Route path="ai-chat" element={<AiChatRoute />} />
             <Route path="account" element={<AccountRoute />} />
             <Route path="profile" element={<ProfileRoute />} />
             <Route path="settings" element={<SettingsRoute />} />
             <Route path="billing" element={<BillingRoute />} />
+            <Route path="admin" element={<AdminRoute />} />
           </Route>
           </Route>
 

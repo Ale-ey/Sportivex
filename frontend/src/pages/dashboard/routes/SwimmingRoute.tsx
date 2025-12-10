@@ -301,12 +301,15 @@ const SwimmingRoute: React.FC = () => {
               const isReserving = reserving[slot.id] || false;
               const canReserve = canReserveSlot(slot);
               const isPast = isPastSlot(slot);
+              const isInactive = !(slot.is_active ?? true);
 
               return (
                 <Card
                   key={slot.id}
                   className={`relative overflow-hidden transition-all duration-300 hover:shadow-lg border ${
-                    status === 'current'
+                    isInactive
+                      ? 'border-gray-300 bg-gray-50 opacity-75'
+                      : status === 'current'
                       ? 'border-[#0077B6] bg-gradient-to-br from-blue-50 to-blue-100/50'
                       : status === 'ended'
                       ? 'border-gray-300 bg-gray-50 opacity-75'
@@ -317,28 +320,30 @@ const SwimmingRoute: React.FC = () => {
                   <CardHeader className="pb-3">
                     <div className="flex items-start justify-between">
                       <CardTitle className={`text-lg font-semibold flex items-center gap-2 ${
-                        status === 'ended' ? 'text-gray-500' : 'text-[#023E8A]'
+                        status === 'ended' || isInactive ? 'text-gray-500' : 'text-[#023E8A]'
                       }`}>
                         <Clock className={`w-5 h-5 ${
-                          status === 'ended' ? 'text-gray-400' : 'text-[#0077B6]'
+                          status === 'ended' || isInactive ? 'text-gray-400' : 'text-[#0077B6]'
                         }`} />
                         {formatTimeRange(slot.start_time, slot.end_time)}
                       </CardTitle>
-                      {status === 'current' && (
+                      {isInactive ? (
+                        <Badge variant="outline" className="bg-gray-100 text-gray-600 border-gray-300">
+                          Not Available
+                        </Badge>
+                      ) : status === 'current' ? (
                         <Badge className="bg-[#0077B6] text-white animate-pulse">
                           Current
                         </Badge>
-                      )}
-                      {status === 'ended' && (
+                      ) : status === 'ended' ? (
                         <Badge variant="outline" className="bg-gray-100 text-gray-600 border-gray-300">
                           Ended
                         </Badge>
-                      )}
-                      {status === 'upcoming' && (
+                      ) : status === 'upcoming' ? (
                         <Badge className="bg-blue-100 text-blue-700">
                           Upcoming
                         </Badge>
-                      )}
+                      ) : null}
                     </div>
                   </CardHeader>
 
@@ -396,7 +401,12 @@ const SwimmingRoute: React.FC = () => {
 
                     {/* Status Badge */}
                     <div className="flex items-center gap-2">
-                      {isPast ? (
+                      {isInactive ? (
+                        <Badge variant="outline" className="w-full justify-center bg-gray-100 text-gray-600 border-gray-300">
+                          <XCircle className="w-3 h-3 mr-1" />
+                          Not Available
+                        </Badge>
+                      ) : isPast ? (
                         <Badge variant="outline" className="w-full justify-center bg-gray-100 text-gray-600 border-gray-300">
                           <XCircle className="w-3 h-3 mr-1" />
                           Slot Ended
@@ -423,9 +433,9 @@ const SwimmingRoute: React.FC = () => {
                     {/* Action Button */}
                     <Button
                       onClick={() => handleReserve(slot)}
-                      disabled={isReserving || isPast || !canReserve}
+                      disabled={isReserving || isPast || !canReserve || isInactive}
                       className={`w-full transition-all duration-300 ${
-                        isPast
+                        isPast || isInactive
                           ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                           : isReserved
                           ? 'bg-red-500 hover:bg-red-600 text-white'
@@ -436,6 +446,11 @@ const SwimmingRoute: React.FC = () => {
                         <>
                           <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                           {isReserved ? 'Cancelling...' : 'Reserving...'}
+                        </>
+                      ) : isInactive ? (
+                        <>
+                          <XCircle className="w-4 h-4 mr-2" />
+                          Not Available
                         </>
                       ) : isPast ? (
                         <>
