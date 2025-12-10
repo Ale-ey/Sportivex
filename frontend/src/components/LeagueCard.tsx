@@ -1,28 +1,91 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent } from "./ui/card";
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
-import { Calendar, Users, Trophy } from "lucide-react";
+import { Calendar, Users, Trophy, Loader2 } from "lucide-react";
+import { useLeague } from "@/hooks/useLeague";
+import { type League } from "@/services/leagueService";
+import toast from "react-hot-toast";
 
 export interface LeagueCardProps {
+  id?: string;
   name: string;
   date: string;
   participants: number;
   status: "Registered" | "Training" | "Upcoming" | "Registration Open";
   prize: string;
   myRank?: number | null;
-  onClick?: () => void;
+  league?: League;
 }
 
 const LeagueCard: React.FC<LeagueCardProps> = ({
+  id,
   name,
   date,
   participants,
   status,
   prize,
   myRank,
-  onClick,
+  league,
 }) => {
+  const { registerForLeague, cancelRegistration, getUserRegistration } = useLeague();
+  const [isRegistered, setIsRegistered] = useState(false);
+  const [isRegistering, setIsRegistering] = useState(false);
+  const [isChecking, setIsChecking] = useState(true);
+
+  useEffect(() => {
+    if (id && league?.registration_enabled) {
+      checkRegistrationStatus();
+    } else {
+      setIsChecking(false);
+    }
+  }, [id, league]);
+
+  const checkRegistrationStatus = async () => {
+    if (!id) return;
+    setIsChecking(true);
+    try {
+      const registration = await getUserRegistration(id);
+      setIsRegistered(!!registration && registration.status !== 'cancelled');
+    } catch (error) {
+      console.error('Error checking registration:', error);
+    } finally {
+      setIsChecking(false);
+    }
+  };
+
+  const handleRegister = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!id || !league) return;
+
+    if (isRegistered) {
+      // Cancel registration
+      setIsRegistering(true);
+      try {
+        await cancelRegistration(id);
+        setIsRegistered(false);
+        toast.success('Registration cancelled');
+      } catch (error) {
+        // Error already handled in hook
+      } finally {
+        setIsRegistering(false);
+      }
+    } else {
+      // Register
+      setIsRegistering(true);
+      try {
+        await registerForLeague(id);
+        setIsRegistered(true);
+      } catch (error) {
+        // Error already handled in hook
+      } finally {
+        setIsRegistering(false);
+      }
+    }
+  };
+
+  const canRegister = league?.registration_enabled && status === "Registration Open";
+  const showRegisterButton = canRegister && !isChecking;
   const getStatusColor = (status: string) => {
     switch (status) {
       case "Registered":
@@ -39,8 +102,8 @@ const LeagueCard: React.FC<LeagueCardProps> = ({
   };
 
   return (
-    <Card className="bg-white border border-[#E2F5FB] hover:shadow-lg transition-all cursor-pointer group">
-      <CardContent className="p-6" onClick={onClick}>
+    <Card className="bg-white border border-[#E2F5FB] hover:shadow-lg transition-all group">
+      <CardContent className="p-6">
         <div className="flex items-start justify-between mb-4">
           <div className="flex-1">
             <h3 className="font-bold text-[#023E8A] text-lg mb-3 group-hover:text-[#0077B6] transition-colors">
@@ -69,27 +132,51 @@ const LeagueCard: React.FC<LeagueCardProps> = ({
 
           <div className="text-right ml-4">
             <Badge className={`mb-3 ${getStatusColor(status)} border`}>
-              {status}
+              {isRegistered && status === "Registration Open" ? "Registered" : status}
             </Badge>
             <p className="text-2xl font-bold text-[#023E8A]">{prize}</p>
             <p className="text-xs text-slate-500">Prize Pool</p>
           </div>
         </div>
 
-        <div className="flex gap-2 mt-4 pt-4 border-t border-[#E2F5FB]">
-          <Button
-            size="sm"
-            className="flex-1 bg-gradient-to-r from-[#00B4D8] to-[#0096C7] hover:from-[#0096C7] hover:to-[#00B4D8] text-white"
-          >
-            {status === "Registration Open" ? "Register" : "View Details"}
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            className="border-[#ADE8F4] text-[#0077B6] hover:bg-[#EAF7FD]"
-          >
-            Share
-          </Button>
+        <div className="flex gap-2 mt-4 pt-4 border-t border-[#E2F5FB]" onClick={(e) => e.stopPropagation()}>
+          {showRegisterButton ? (
+            <Button
+              type="button"
+              size="sm"
+              onClick={handleRegister}
+              disabled={isRegistering}
+              className={`flex-1 ${
+                isRegistered
+                  ? "bg-red-500 hover:bg-red-600 text-white"
+                  : "bg-gradient-to-r from-[#00B4D8] to-[#0096C7] hover:from-[#0096C7] hover:to-[#00B4D8] text-white"
+              }`}
+            >
+              {isRegistering ? (
+                <>
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                  {isRegistered ? "Cancelling..." : "Registering..."}
+                </>
+              ) : isRegistered ? (
+                "Cancel Registration"
+              ) : (
+                "Register Now"
+              )}
+            </Button>
+          ) : (
+            <Button
+              type="button"
+              size="sm"
+              className="flex-1 bg-gradient-to-r from-[#00B4D8] to-[#0096C7] hover:from-[#0096C7] hover:to-[#00B4D8] text-white"
+            >
+              View Details
+            </Button>
+          )}
+          {isRegistered && (
+            <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200">
+              Registered
+            </Badge>
+          )}
         </div>
       </CardContent>
     </Card>

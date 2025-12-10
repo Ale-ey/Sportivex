@@ -33,8 +33,11 @@ import {
   Loader2,
   X,
   Check,
+  Users,
+  ToggleLeft,
+  ToggleRight,
 } from 'lucide-react';
-import { adminService } from '@/services/adminService';
+import { adminService, type LeagueRegistration } from '@/services/adminService';
 import { type TimeSlot } from '@/services/swimmingService';
 import { badmintonService, type Court } from '@/services/badmintonService';
 import type { League, CreateLeagueRequest } from '@/services/adminService';
@@ -99,6 +102,12 @@ const AdminRoute: React.FC = () => {
   const [deleteSlotId, setDeleteSlotId] = useState<string | null>(null);
   const [deleteLeagueId, setDeleteLeagueId] = useState<string | null>(null);
   const [deleteQRCodeId, setDeleteQRCodeId] = useState<string | null>(null);
+
+  // League Registrations State
+  const [showRegistrationsDialog, setShowRegistrationsDialog] = useState(false);
+  const [selectedLeagueName, setSelectedLeagueName] = useState<string>('');
+  const [registrations, setRegistrations] = useState<LeagueRegistration[]>([]);
+  const [loadingRegistrations, setLoadingRegistrations] = useState(false);
 
   // Fetch data on mount and tab change
   useEffect(() => {
@@ -297,6 +306,35 @@ const AdminRoute: React.FC = () => {
       max_participants: undefined,
       prize: '',
     });
+  };
+
+  const handleToggleRegistration = async (leagueId: string, currentStatus: boolean) => {
+    try {
+      const response = await adminService.toggleLeagueRegistration(leagueId, !currentStatus);
+      if (response.success) {
+        toast.success(`Registration ${!currentStatus ? 'enabled' : 'disabled'} successfully`);
+        fetchLeagues();
+      }
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to toggle registration');
+    }
+  };
+
+  const handleViewRegistrations = async (leagueId: string) => {
+    const league = leagues.find(l => l.id === leagueId);
+    setSelectedLeagueName(league?.name || 'League');
+    setShowRegistrationsDialog(true);
+    setLoadingRegistrations(true);
+    try {
+      const response = await adminService.getLeagueRegistrations(leagueId);
+      if (response.success) {
+        setRegistrations(response.data.registrations);
+      }
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to fetch registrations');
+    } finally {
+      setLoadingRegistrations(false);
+    }
   };
 
   const openEditLeague = (league: League) => {
@@ -684,37 +722,91 @@ const AdminRoute: React.FC = () => {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {leagues.map((league) => (
-                <Card key={league.id}>
+                <Card key={league.id} className="hover:shadow-lg transition-shadow">
                   <CardHeader>
                     <div className="flex items-start justify-between">
                       <CardTitle className="text-lg">{league.name}</CardTitle>
-                      <Badge variant="outline">{league.status}</Badge>
+                      <div className="flex items-center gap-2">
+                        <Badge 
+                          variant={league.registration_enabled ? "default" : "secondary"}
+                          className={league.registration_enabled ? "bg-green-100 text-green-700" : ""}
+                        >
+                          {league.registration_enabled ? 'Registration Open' : 'Registration Closed'}
+                        </Badge>
+                        <Badge variant="outline">{league.status}</Badge>
+                      </div>
                     </div>
                   </CardHeader>
                   <CardContent>
-                    <div className="space-y-2">
+                    <div className="space-y-3">
                       {league.description && (
-                        <p className="text-sm text-muted-foreground">{league.description}</p>
+                        <p className="text-sm text-muted-foreground line-clamp-2">{league.description}</p>
                       )}
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-muted-foreground">Sport</span>
-                        <Badge variant="secondary">{league.sport_type}</Badge>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-muted-foreground">Start Date</span>
-                        <span className="text-sm">{new Date(league.start_date).toLocaleDateString()}</span>
-                      </div>
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-muted-foreground">End Date</span>
-                        <span className="text-sm">{new Date(league.end_date).toLocaleDateString()}</span>
+                      <div className="grid grid-cols-2 gap-2 text-sm">
+                        <div>
+                          <span className="text-muted-foreground">Sport:</span>
+                          <Badge variant="secondary" className="ml-2">{league.sport_type}</Badge>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Max Participants:</span>
+                          <span className="ml-2 font-medium">{league.max_participants || 'Unlimited'}</span>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Start:</span>
+                          <span className="ml-2">{new Date(league.start_date).toLocaleDateString()}</span>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">End:</span>
+                          <span className="ml-2">{new Date(league.end_date).toLocaleDateString()}</span>
+                        </div>
+                        <div className="col-span-2">
+                          <span className="text-muted-foreground">Registration Deadline:</span>
+                          <span className="ml-2">{new Date(league.registration_deadline).toLocaleDateString()}</span>
+                        </div>
                       </div>
                       {league.prize && (
-                        <div className="flex items-center justify-between">
-                          <span className="text-sm text-muted-foreground">Prize</span>
+                        <div className="flex items-center justify-between p-2 bg-orange-50 rounded-md">
+                          <span className="text-sm text-muted-foreground">Prize Pool:</span>
                           <span className="font-semibold text-orange-600">{league.prize}</span>
                         </div>
                       )}
-                      <div className="flex gap-2 mt-4">
+                      <div className="flex items-center justify-between p-3 border rounded-md bg-muted/50">
+                        <div>
+                          <Label className="text-xs">Registration Status</Label>
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {league.registration_enabled ? 'Registration is currently open' : 'Registration is currently closed'}
+                          </p>
+                        </div>
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant={league.registration_enabled ? 'default' : 'secondary'}
+                          onClick={() => handleToggleRegistration(league.id, league.registration_enabled ?? true)}
+                          className="flex items-center gap-2"
+                        >
+                          {league.registration_enabled ? (
+                            <>
+                              <ToggleRight className="w-4 h-4" />
+                              Enabled
+                            </>
+                          ) : (
+                            <>
+                              <ToggleLeft className="w-4 h-4" />
+                              Disabled
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                      <div className="flex gap-2 pt-2 border-t">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleViewRegistrations(league.id)}
+                          className="flex-1"
+                        >
+                          <Users className="w-4 h-4 mr-1" />
+                          View Registrations
+                        </Button>
                         <Button
                           size="sm"
                           variant="outline"
@@ -728,10 +820,8 @@ const AdminRoute: React.FC = () => {
                           size="sm"
                           variant="destructive"
                           onClick={() => handleDeleteLeague(league.id)}
-                          className="flex-1"
                         >
-                          <Trash2 className="w-4 h-4 mr-1" />
-                          Delete
+                          <Trash2 className="w-4 h-4" />
                         </Button>
                       </div>
                     </div>
@@ -846,6 +936,87 @@ const AdminRoute: React.FC = () => {
                   </Button>
                 </div>
               </div>
+            </DialogContent>
+          </Dialog>
+
+          {/* Registrations Dialog */}
+          <Dialog open={showRegistrationsDialog} onOpenChange={setShowRegistrationsDialog}>
+            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>League Registrations - {selectedLeagueName}</DialogTitle>
+                <DialogDescription>
+                  View all registrations for this league
+                </DialogDescription>
+              </DialogHeader>
+              {loadingRegistrations ? (
+                <div className="flex items-center justify-center h-64">
+                  <Loader2 className="w-8 h-8 animate-spin" />
+                </div>
+              ) : (
+                <div className="mt-4">
+                  {registrations.length === 0 ? (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <Users className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                      <p>No registrations yet</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <div className="mb-4 p-3 bg-muted rounded-md">
+                        <p className="text-sm font-medium">
+                          Total Registrations: <span className="text-primary">{registrations.length}</span>
+                        </p>
+                      </div>
+                      <div className="border rounded-lg overflow-hidden">
+                        <table className="w-full">
+                          <thead className="bg-muted">
+                            <tr>
+                              <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Name</th>
+                              <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Email</th>
+                              <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">CMS ID</th>
+                              <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Status</th>
+                              <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Registered At</th>
+                            </tr>
+                          </thead>
+                          <tbody className="divide-y">
+                            {registrations.map((registration) => (
+                              <tr key={registration.id} className="hover:bg-muted/50">
+                                <td className="px-4 py-3 text-sm">
+                                  <div className="flex items-center gap-2">
+                                    {registration.user?.profile_picture_url && (
+                                      <img
+                                        src={registration.user.profile_picture_url}
+                                        alt={registration.user.name}
+                                        className="w-8 h-8 rounded-full"
+                                      />
+                                    )}
+                                    <span className="font-medium">{registration.user?.name || 'Unknown'}</span>
+                                  </div>
+                                </td>
+                                <td className="px-4 py-3 text-sm text-muted-foreground">{registration.user?.email || 'N/A'}</td>
+                                <td className="px-4 py-3 text-sm text-muted-foreground">{registration.user?.cms_id || 'N/A'}</td>
+                                <td className="px-4 py-3">
+                                  <Badge
+                                    variant={
+                                      registration.status === 'registered' || registration.status === 'confirmed'
+                                        ? 'default'
+                                        : 'secondary'
+                                    }
+                                  >
+                                    {registration.status}
+                                  </Badge>
+                                </td>
+                                <td className="px-4 py-3 text-sm text-muted-foreground">
+                                  {new Date(registration.registered_at).toLocaleString()}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </DialogContent>
           </Dialog>
         </div>

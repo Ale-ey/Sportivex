@@ -4,6 +4,11 @@ import {
   createLeague,
   updateLeague,
   deleteLeague,
+  toggleLeagueRegistration,
+  registerUserForLeague,
+  getLeagueRegistrations,
+  getUserLeagueRegistration,
+  cancelLeagueRegistration,
 } from '../services/leagueService.js';
 
 /**
@@ -192,6 +197,171 @@ export const deleteLeagueController = async (req, res) => {
   }
 };
 
+/**
+ * Toggle registration enabled/disabled for a league (admin only)
+ */
+export const toggleLeagueRegistrationController = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { enabled } = req.body;
+
+    if (typeof enabled !== 'boolean') {
+      return res.status(400).json({
+        success: false,
+        message: 'enabled must be a boolean value'
+      });
+    }
+
+    const result = await toggleLeagueRegistration(id, enabled);
+
+    if (!result.success) {
+      return res.status(400).json({
+        success: false,
+        message: result.error || 'Failed to toggle registration'
+      });
+    }
+
+    res.json({
+      success: true,
+      message: `Registration ${enabled ? 'enabled' : 'disabled'} successfully`,
+      data: {
+        league: result.league
+      }
+    });
+  } catch (error) {
+    console.error('Error in toggleLeagueRegistrationController:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error'
+    });
+  }
+};
+
+/**
+ * Register user for a league
+ */
+export const registerForLeagueController = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const user = req.user;
+
+    const result = await registerUserForLeague(id, user.id);
+
+    if (!result.success) {
+      return res.status(400).json({
+        success: false,
+        message: result.error || 'Failed to register for league'
+      });
+    }
+
+    res.status(201).json({
+      success: true,
+      message: 'Successfully registered for league',
+      data: {
+        registration: result.registration
+      }
+    });
+  } catch (error) {
+    console.error('Error in registerForLeagueController:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error'
+    });
+  }
+};
+
+/**
+ * Get all registrations for a league (admin only)
+ */
+export const getLeagueRegistrationsController = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const result = await getLeagueRegistrations(id);
+
+    if (!result.success) {
+      return res.status(500).json({
+        success: false,
+        message: result.error || 'Failed to fetch registrations'
+      });
+    }
+
+    res.json({
+      success: true,
+      data: {
+        registrations: result.registrations,
+        count: result.registrations.length
+      }
+    });
+  } catch (error) {
+    console.error('Error in getLeagueRegistrationsController:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error'
+    });
+  }
+};
+
+/**
+ * Get user's registration status for a league
+ */
+export const getUserLeagueRegistrationController = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const user = req.user;
+
+    const result = await getUserLeagueRegistration(id, user.id);
+
+    if (!result.success) {
+      return res.status(500).json({
+        success: false,
+        message: result.error || 'Failed to fetch registration status'
+      });
+    }
+
+    res.json({
+      success: true,
+      data: {
+        registration: result.registration
+      }
+    });
+  } catch (error) {
+    console.error('Error in getUserLeagueRegistrationController:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error'
+    });
+  }
+};
+
+/**
+ * Cancel user's registration for a league
+ */
+export const cancelLeagueRegistrationController = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const user = req.user;
+
+    const result = await cancelLeagueRegistration(id, user.id);
+
+    if (!result.success) {
+      return res.status(400).json({
+        success: false,
+        message: result.error || 'Failed to cancel registration'
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'Registration cancelled successfully'
+    });
+  } catch (error) {
+    console.error('Error in cancelLeagueRegistrationController:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error'
+    });
+  }
+};
 
 
 

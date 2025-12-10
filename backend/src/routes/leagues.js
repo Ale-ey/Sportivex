@@ -40,7 +40,50 @@ router.delete(
   leagueController.deleteLeagueController
 );
 
+// ==================== LEAGUE REGISTRATION ROUTES ====================
+
+// Register user for a league (all authenticated users)
+router.post(
+  '/:id/register',
+  authenticateToken,
+  leagueController.registerForLeagueController
+);
+
+// Get user's registration status for a league (all authenticated users)
+router.get(
+  '/:id/registration',
+  authenticateToken,
+  leagueController.getUserLeagueRegistrationController
+);
+
+// Cancel user's registration for a league (all authenticated users)
+router.delete(
+  '/:id/registration',
+  authenticateToken,
+  leagueController.cancelLeagueRegistrationController
+);
+
+// Get all registrations for a league (admin only)
+router.get(
+  '/:id/registrations',
+  authenticateToken,
+  requireRole(ADMIN_ONLY),
+  leagueController.getLeagueRegistrationsController
+);
+
+// Toggle registration enabled/disabled for a league (admin only)
+router.put(
+  '/:id/registration-status',
+  authenticateToken,
+  requireRole(ADMIN_ONLY),
+  leagueController.toggleLeagueRegistrationController
+);
+
 export default router;
+
+
+
+
 
 
 

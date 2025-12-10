@@ -50,9 +50,38 @@ export interface League {
   max_participants?: number;
   prize?: string;
   status: 'upcoming' | 'registration_open' | 'in_progress' | 'completed' | 'cancelled';
+  registration_enabled?: boolean;
   created_by?: string;
   created_at?: string;
   updated_at?: string;
+}
+
+export interface LeagueRegistration {
+  id: string;
+  league_id: string;
+  user_id: string;
+  status: 'registered' | 'confirmed' | 'cancelled' | 'withdrawn';
+  registered_at: string;
+  confirmed_at?: string;
+  notes?: string;
+  created_at?: string;
+  updated_at?: string;
+  user?: {
+    id: string;
+    name: string;
+    email: string;
+    cms_id: number;
+    role: string;
+    profile_picture_url?: string;
+  };
+}
+
+export interface LeagueRegistrationsResponse {
+  success: boolean;
+  data: {
+    registrations: LeagueRegistration[];
+    count: number;
+  };
 }
 
 export interface CreateLeagueRequest {
@@ -207,6 +236,22 @@ export const adminService = {
     return response.data;
   },
 
+  /**
+   * Toggle registration enabled/disabled for a league
+   */
+  toggleLeagueRegistration: async (id: string, enabled: boolean): Promise<LeagueResponse> => {
+    const response = await axiosInstance.put(`/leagues/${id}/registration-status`, { enabled });
+    return response.data;
+  },
+
+  /**
+   * Get all registrations for a league
+   */
+  getLeagueRegistrations: async (id: string): Promise<LeagueRegistrationsResponse> => {
+    const response = await axiosInstance.get(`/leagues/${id}/registrations`);
+    return response.data;
+  },
+
   // ==================== QR CODES ====================
   
   /**
@@ -241,6 +286,10 @@ export const adminService = {
     return response.data;
   },
 };
+
+
+
+
 
 
 

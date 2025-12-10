@@ -18,7 +18,7 @@ const Dashboard: React.FC = () => {
         { to: "/dashboard/home", label: "Home", icon: Home },
         { to: "/dashboard/sports", label: "Sports", icon: Activity },
         { to: "/dashboard/leagues", label: "Leagues", icon: Trophy },
-        { to: "/dashboard/training", label: "Training", icon: Target },
+        // { to: "/dashboard/training", label: "Training", icon: Target },
         { to: "/dashboard/ai-chat", label: "AI Chat", icon: MessageCircle },
       ];
       

@@ -145,6 +145,191 @@ export const deleteLeague = async (id) => {
   }
 };
 
+/**
+ * Toggle registration enabled/disabled for a league
+ */
+export const toggleLeagueRegistration = async (leagueId, enabled) => {
+  try {
+    const { data, error } = await supabase
+      .from('leagues')
+      .update({ registration_enabled: enabled })
+      .eq('id', leagueId)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error toggling league registration:', error);
+      return { success: false, league: null, error: error.message };
+    }
+
+    if (!data) {
+      return { success: false, league: null, error: 'League not found' };
+    }
+
+    return { success: true, league: data };
+  } catch (error) {
+    console.error('Error in toggleLeagueRegistration:', error);
+    return { success: false, league: null, error: error.message };
+  }
+};
+
+/**
+ * Register user for a league
+ */
+export const registerUserForLeague = async (leagueId, userId) => {
+  try {
+    // Check if league exists and registration is enabled
+    const { data: league, error: leagueError } = await supabase
+      .from('leagues')
+      .select('id, registration_enabled, max_participants, registration_deadline, start_date')
+      .eq('id', leagueId)
+      .single();
+
+    if (leagueError || !league) {
+      return { success: false, registration: null, error: 'League not found' };
+    }
+
+    // Check if registration is enabled
+    if (!league.registration_enabled) {
+      return { success: false, registration: null, error: 'Registration is currently disabled for this league' };
+    }
+
+    // Check if registration deadline has passed
+    const today = new Date();
+    const deadline = new Date(league.registration_deadline);
+    if (today > deadline) {
+      return { success: false, registration: null, error: 'Registration deadline has passed' };
+    }
+
+    // Check if league has started
+    const startDate = new Date(league.start_date);
+    if (today >= startDate) {
+      return { success: false, registration: null, error: 'League has already started' };
+    }
+
+    // Check if user is already registered
+    const { data: existingRegistration } = await supabase
+      .from('league_registrations')
+      .select('id')
+      .eq('league_id', leagueId)
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    if (existingRegistration) {
+      return { success: false, registration: null, error: 'You are already registered for this league' };
+    }
+
+    // Check max participants if set
+    if (league.max_participants) {
+      const { count } = await supabase
+        .from('league_registrations')
+        .select('*', { count: 'exact', head: true })
+        .eq('league_id', leagueId)
+        .in('status', ['registered', 'confirmed']);
+
+      if (count >= league.max_participants) {
+        return { success: false, registration: null, error: 'League has reached maximum participants' };
+      }
+    }
+
+    // Register user
+    const { data, error } = await supabase
+      .from('league_registrations')
+      .insert([
+        {
+          league_id: leagueId,
+          user_id: userId,
+          status: 'registered',
+        },
+      ])
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error registering user for league:', error);
+      return { success: false, registration: null, error: error.message };
+    }
+
+    return { success: true, registration: data };
+  } catch (error) {
+    console.error('Error in registerUserForLeague:', error);
+    return { success: false, registration: null, error: error.message };
+  }
+};
+
+/**
+ * Get all registrations for a league (admin only)
+ */
+export const getLeagueRegistrations = async (leagueId) => {
+  try {
+    const { data, error } = await supabase
+      .from('league_registrations')
+      .select(`
+        *,
+        user:users_metadata(id, name, email, cms_id, role, profile_picture_url)
+      `)
+      .eq('league_id', leagueId)
+      .order('registered_at', { ascending: false });
+
+    if (error) {
+      console.error('Error getting league registrations:', error);
+      return { success: false, registrations: [], error: error.message };
+    }
+
+    return { success: true, registrations: data || [] };
+  } catch (error) {
+    console.error('Error in getLeagueRegistrations:', error);
+    return { success: false, registrations: [], error: error.message };
+  }
+};
+
+/**
+ * Get user's registration status for a league
+ */
+export const getUserLeagueRegistration = async (leagueId, userId) => {
+  try {
+    const { data, error } = await supabase
+      .from('league_registrations')
+      .select('*')
+      .eq('league_id', leagueId)
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    if (error) {
+      console.error('Error getting user league registration:', error);
+      return { success: false, registration: null, error: error.message };
+    }
+
+    return { success: true, registration: data };
+  } catch (error) {
+    console.error('Error in getUserLeagueRegistration:', error);
+    return { success: false, registration: null, error: error.message };
+  }
+};
+
+/**
+ * Cancel user's registration for a league
+ */
+export const cancelLeagueRegistration = async (leagueId, userId) => {
+  try {
+    const { error } = await supabase
+      .from('league_registrations')
+      .update({ status: 'cancelled' })
+      .eq('league_id', leagueId)
+      .eq('user_id', userId)
+      .eq('status', 'registered');
+
+    if (error) {
+      console.error('Error cancelling league registration:', error);
+      return { success: false, error: error.message };
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error('Error in cancelLeagueRegistration:', error);
+    return { success: false, error: error.message };
+  }
+};
 
 
 

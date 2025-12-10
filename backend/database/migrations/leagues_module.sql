@@ -31,6 +31,40 @@ BEFORE UPDATE ON leagues
 FOR EACH ROW 
 EXECUTE FUNCTION update_badminton_updated_at_column();
 
+-- Add registration_enabled field to leagues table (if not exists)
+DO $$ 
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM information_schema.columns 
+    WHERE table_name = 'leagues' AND column_name = 'registration_enabled'
+  ) THEN
+    ALTER TABLE leagues ADD COLUMN registration_enabled BOOLEAN DEFAULT true;
+  END IF;
+END $$;
+
+-- Create league_registrations table
+CREATE TABLE IF NOT EXISTS league_registrations (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  league_id UUID NOT NULL REFERENCES leagues(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES users_metadata(id) ON DELETE CASCADE,
+  status VARCHAR(20) DEFAULT 'registered' CHECK (status IN ('registered', 'confirmed', 'cancelled', 'withdrawn')),
+  registered_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  confirmed_at TIMESTAMP WITH TIME ZONE,
+  notes TEXT,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  CONSTRAINT unique_league_user_registration UNIQUE (league_id, user_id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_league_registrations_league_id ON league_registrations(league_id);
+CREATE INDEX IF NOT EXISTS idx_league_registrations_user_id ON league_registrations(user_id);
+CREATE INDEX IF NOT EXISTS idx_league_registrations_status ON league_registrations(status);
+
+-- Create trigger for auto-updating updated_at timestamp for league_registrations
+CREATE TRIGGER update_league_registrations_updated_at 
+BEFORE UPDATE ON league_registrations 
+FOR EACH ROW 
+EXECUTE FUNCTION update_badminton_updated_at_column();
 
 
 
