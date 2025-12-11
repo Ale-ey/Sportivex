@@ -389,16 +389,31 @@ export const saveGoalController = async (req, res) => {
     const goalData = req.body;
 
     // Validate required fields
-    if (!goalData.goal_type || !goalData.target_value || !goalData.start_date) {
+    if (!goalData.goal_type || goalData.target_value === undefined || goalData.target_value === null || !goalData.start_date) {
       return res.status(400).json({
         success: false,
-        message: 'Goal type, target value, and start date are required'
+        message: 'Goal type, target value, and start date are required',
+        received: {
+          goal_type: goalData.goal_type,
+          target_value: goalData.target_value,
+          start_date: goalData.start_date
+        }
+      });
+    }
+
+    // Validate goal_type is in allowed values
+    const allowedGoalTypes = ['calories_per_day', 'calories_per_week', 'workouts_per_week', 'weight_loss', 'muscle_gain', 'endurance', 'strength', 'custom'];
+    if (!allowedGoalTypes.includes(goalData.goal_type)) {
+      return res.status(400).json({
+        success: false,
+        message: `Invalid goal_type. Must be one of: ${allowedGoalTypes.join(', ')}`
       });
     }
 
     const result = await saveUserGoal(userId, goalData);
 
     if (!result.success) {
+      console.error('Failed to save goal:', result.error);
       return res.status(500).json({
         success: false,
         message: 'Failed to save goal',
@@ -417,7 +432,8 @@ export const saveGoalController = async (req, res) => {
     console.error('Error in saveGoalController:', error);
     res.status(500).json({
       success: false,
-      message: 'Internal server error'
+      message: 'Internal server error',
+      error: error.message
     });
   }
 };

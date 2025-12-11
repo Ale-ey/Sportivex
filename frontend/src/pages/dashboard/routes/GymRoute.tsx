@@ -172,11 +172,18 @@ const GymRoute: React.FC = () => {
   };
 
   const handleSaveGoal = async () => {
-    const result = await saveGoal({
-      ...goalForm,
-      user_id: '', // Will be set by backend
+    // Prepare goal data without user_id (backend will add it)
+    const goalData = {
+      goal_type: goalForm.goal_type,
+      target_value: goalForm.target_value,
+      unit: goalForm.unit || null,
+      start_date: goalForm.start_date,
+      end_date: goalForm.end_date && goalForm.end_date !== '' ? goalForm.end_date : undefined,
+      description: goalForm.description || undefined,
       is_active: true,
-    } as any);
+    };
+    
+    const result = await saveGoal(goalData as any);
     if (result.success) {
       setShowGoalDialog(false);
       setGoalForm({

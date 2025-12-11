@@ -380,13 +380,25 @@ export const getUserGoals = async (userId) => {
  */
 export const saveUserGoal = async (userId, goalData) => {
   try {
-    const { id, ...goalFields } = goalData;
+    const { id, user_id, ...goalFields } = goalData; // Remove user_id from goalFields if present
+
+    // Prepare clean goal data
+    const cleanGoalData = {
+      goal_type: goalFields.goal_type,
+      target_value: parseFloat(goalFields.target_value) || 0,
+      current_value: goalFields.current_value !== undefined ? parseFloat(goalFields.current_value) || 0 : 0,
+      unit: goalFields.unit || null,
+      start_date: goalFields.start_date,
+      end_date: goalFields.end_date && goalFields.end_date !== '' ? goalFields.end_date : null,
+      is_active: goalFields.is_active !== undefined ? goalFields.is_active : true,
+      description: goalFields.description || null,
+    };
 
     if (id) {
       // Update existing goal
       const { data, error } = await supabase
         .from('user_goals')
-        .update(goalFields)
+        .update(cleanGoalData)
         .eq('id', id)
         .eq('user_id', userId)
         .select()
@@ -404,7 +416,7 @@ export const saveUserGoal = async (userId, goalData) => {
         .from('user_goals')
         .insert([
           {
-            ...goalFields,
+            ...cleanGoalData,
             user_id: userId
           }
         ])
@@ -413,6 +425,7 @@ export const saveUserGoal = async (userId, goalData) => {
 
       if (error) {
         console.error('Error creating goal:', error);
+        console.error('Goal data attempted:', { ...cleanGoalData, user_id: userId });
         return { success: false, goal: null, error: error.message };
       }
 
