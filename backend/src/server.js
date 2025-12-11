@@ -28,8 +28,8 @@ const corsOptions = {
   origin: (origin, callback) => {
     // Allow requests with no origin (like mobile apps or curl requests)
     const allowedOrigins = [
-      process.env.FRONTEND_URL || "http://localhost:5173",
-      "http://localhost:5173",
+      process.env.FRONTEND_URL || "http://localhost:5174",
+      "http://localhost:5174",
       "http://127.0.0.1:5173",
       "https://sportivex.vercel.app",
       "https://sportivex-git-dev-ale-eys-projects.vercel.app"

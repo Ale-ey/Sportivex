@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -74,7 +75,11 @@ const GymRoute: React.FC = () => {
     end_date: '',
     description: '',
   });
-  const [activeTab, setActiveTab] = useState<'exercises' | 'workout' | 'progress' | 'goals'>('exercises');
+  const [searchParams] = useSearchParams();
+  const tabParam = searchParams.get('tab') as 'exercises' | 'workout' | 'progress' | 'goals' | null;
+  const [activeTab, setActiveTab] = useState<'exercises' | 'workout' | 'progress' | 'goals'>(
+    tabParam && ['exercises', 'workout', 'progress', 'goals'].includes(tabParam) ? tabParam : 'exercises'
+  );
 
   useEffect(() => {
     fetchExercises();
@@ -83,6 +88,12 @@ const GymRoute: React.FC = () => {
     fetchGoals();
     fetchProgress('week');
   }, []);
+
+  useEffect(() => {
+    if (tabParam && ['exercises', 'workout', 'progress', 'goals'].includes(tabParam)) {
+      setActiveTab(tabParam);
+    }
+  }, [tabParam]);
 
   useEffect(() => {
     if (activeWorkout) {
