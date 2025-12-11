@@ -7,10 +7,19 @@ import {
 } from '../utils/swimmingValidation.js';
 import {
   processQRScan,
+  processSwimmingQRScan,
   getAttendanceCount,
   addToWaitlist,
-  removeFromWaitlist
+  removeFromWaitlist,
+  getUserSwimmingRegistration,
+  checkSwimmingRegistrationStatus,
+  createSwimmingRegistration,
+  updateSwimmingRegistration,
+  createSwimmingMonthlyPayment,
+  updateSwimmingMonthlyPayment,
+  getUserSwimmingMonthlyPayments
 } from '../services/swimmingService.js';
+import * as stripeService from '../services/stripeService.js';
 import { getTodayDate } from '../utils/timeSlotDetermination.js';
 
 /**
@@ -437,8 +446,8 @@ export const scanQRCode = async (req, res) => {
       });
     }
 
-    // Process QR scan
-    const result = await processQRScan(qrCodeValue, user);
+    // Process QR scan with registration check
+    const result = await processSwimmingQRScan(qrCodeValue, user);
 
     if (!result.success) {
       const statusCode = result.capacityExceeded ? 409 : result.alreadyCheckedIn ? 409 : 400;
@@ -1102,6 +1111,487 @@ export const deleteQRCode = async (_req, res) => {
   }
 };
 
+// ==================== SWIMMING REGISTRATION ====================
+
+/**
+ * Get user's swimming registration
+ */
+export const getSwimmingRegistration = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const result = await getUserSwimmingRegistration(userId);
+
+    if (!result.success) {
+      return res.status(500).json({
+        success: false,
+        message: result.error || 'Failed to fetch registration'
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: {
+        registration: result.registration
+      }
+    });
+  } catch (error) {
+    console.error('Error in getSwimmingRegistration:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error'
+    });
+  }
+};
+
+/**
+ * Check swimming registration status
+ */
+export const checkSwimmingRegistrationStatusController = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const result = await checkSwimmingRegistrationStatus(userId);
+
+    res.status(200).json({
+      success: true,
+      data: result
+    });
+  } catch (error) {
+    console.error('Error in checkSwimmingRegistrationStatusController:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error'
+    });
+  }
+};
+
+/**
+ * Create swimming registration (initiate payment)
+ */
+export const createSwimmingRegistrationController = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { registration_fee } = req.body;
+
+    const fee = registration_fee !== undefined ? registration_fee : 1500;
+
+    const existing = await getUserSwimmingRegistration(userId);
+    if (existing.success && existing.registration) {
+      return res.status(400).json({
+        success: false,
+        message: 'User already has a swimming registration'
+      });
+    }
+
+    const expiresAt = new Date();
+    expiresAt.setHours(expiresAt.getHours() + 24);
+
+    const registrationResult = await createSwimmingRegistration({
+      user_id: userId,
+      registration_fee: fee,
+      amount_paid: 0,
+      payment_status: 'pending',
+      status: 'pending',
+      expires_at: expiresAt.toISOString(),
+    });
+
+    if (!registrationResult.success) {
+      return res.status(400).json({
+        success: false,
+        message: registrationResult.error || 'Failed to create registration'
+      });
+    }
+
+    if (fee === 0) {
+      const updateResult = await updateSwimmingRegistration(registrationResult.registration.id, {
+        payment_status: 'succeeded',
+        status: 'active',
+        amount_paid: 0,
+        activated_at: new Date().toISOString(),
+      });
+
+      return res.status(201).json({
+        success: true,
+        message: 'Registration created successfully (free)',
+        data: {
+          registration: updateResult.registration,
+          requiresPayment: false
+        }
+      });
+    }
+
+    const baseUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    const successUrl = `${baseUrl}/dashboard/swimming?payment=success&registrationId=${registrationResult.registration.id}`;
+    const cancelUrl = `${baseUrl}/dashboard/swimming?payment=cancelled`;
+
+    const stripeResult = await stripeService.createSwimmingRegistrationCheckoutSession(
+      fee,
+      userId,
+      registrationResult.registration.id,
+      successUrl,
+      cancelUrl
+    );
+
+    if (!stripeResult.success) {
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to create payment session',
+        error: stripeResult.error
+      });
+    }
+
+    await updateSwimmingRegistration(registrationResult.registration.id, {
+      stripe_session_id: stripeResult.session.id,
+    });
+
+    res.status(201).json({
+      success: true,
+      message: 'Registration created. Please complete payment.',
+      data: {
+        registration: registrationResult.registration,
+        requiresPayment: true,
+        checkoutUrl: stripeResult.session.url,
+        sessionId: stripeResult.session.id
+      }
+    });
+  } catch (error) {
+    console.error('Error in createSwimmingRegistrationController:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error'
+    });
+  }
+};
+
+/**
+ * Verify payment and update registration
+ */
+export const verifySwimmingRegistrationPayment = async (req, res) => {
+  try {
+    const { registrationId, sessionId } = req.body;
+    const userId = req.user.id;
+
+    if (!registrationId || !sessionId) {
+      return res.status(400).json({
+        success: false,
+        message: 'registrationId and sessionId are required'
+      });
+    }
+
+    const { data: registration, error: regError } = await supabase
+      .from('swimming_registrations')
+      .select('*')
+      .eq('id', registrationId)
+      .eq('user_id', userId)
+      .single();
+
+    if (regError || !registration) {
+      return res.status(404).json({
+        success: false,
+        message: 'Registration not found'
+      });
+    }
+
+    const stripeResult = await stripeService.verifyCheckoutSession(sessionId);
+    if (!stripeResult.success) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid payment session'
+      });
+    }
+
+    const session = stripeResult.session;
+    console.log('Swimming Registration Payment - Stripe session details:', {
+      sessionId: session.id,
+      status: session.status,
+      payment_status: session.payment_status,
+      payment_intent: session.payment_intent,
+      mode: session.mode,
+      amount_total: session.amount_total
+    });
+
+    const isPaymentComplete = session.status === 'complete' && 
+                             (session.payment_status === 'paid' || session.payment_status === 'no_payment_required');
+
+    console.log('Swimming Registration Payment - Payment complete check:', { 
+      isPaymentComplete, 
+      sessionStatus: session.status, 
+      paymentStatus: session.payment_status 
+    });
+
+    if (isPaymentComplete) {
+      const updateResult = await updateSwimmingRegistration(registrationId, {
+        payment_status: 'succeeded',
+        status: 'active',
+        amount_paid: registration.registration_fee,
+        stripe_payment_intent_id: session.payment_intent || null,
+        activated_at: new Date().toISOString(),
+      });
+
+      console.log('Swimming Registration Payment - Registration updated successfully:', updateResult.registration?.id);
+
+      return res.status(200).json({
+        success: true,
+        message: 'Payment verified successfully',
+        data: {
+          registration: updateResult.registration
+        }
+      });
+    }
+
+    console.warn('Swimming Registration Payment - Payment not completed:', {
+      sessionStatus: session.status,
+      paymentStatus: session.payment_status,
+      sessionId: session.id
+    });
+
+    res.status(200).json({
+      success: false,
+      message: `Payment not completed. Session status: ${session.status}, Payment status: ${session.payment_status}`,
+      data: {
+        sessionStatus: session.status,
+        paymentStatus: session.payment_status,
+        sessionId: session.id
+      }
+    });
+  } catch (error) {
+    console.error('Error in verifySwimmingRegistrationPayment:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error'
+    });
+  }
+};
+
+/**
+ * Create monthly payment
+ */
+export const createSwimmingMonthlyPaymentController = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { registrationId } = req.body;
+
+    if (!registrationId) {
+      return res.status(400).json({
+        success: false,
+        message: 'registrationId is required'
+      });
+    }
+
+    const registrationResult = await getUserSwimmingRegistration(userId);
+    if (!registrationResult.success || !registrationResult.registration) {
+      return res.status(404).json({
+        success: false,
+        message: 'Registration not found'
+      });
+    }
+
+    const registration = registrationResult.registration;
+
+    if (registration.id !== registrationId) {
+      return res.status(403).json({
+        success: false,
+        message: 'Unauthorized'
+      });
+    }
+
+    const now = new Date();
+    const paymentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    const { data: existingPayment } = await supabase
+      .from('swimming_monthly_payments')
+      .select('*')
+      .eq('registration_id', registrationId)
+      .eq('payment_month', paymentMonth.toISOString().split('T')[0])
+      .maybeSingle();
+
+    if (existingPayment && existingPayment.payment_status === 'succeeded') {
+      return res.status(400).json({
+        success: false,
+        message: 'Monthly payment already completed for this month'
+      });
+    }
+
+    let monthlyPayment;
+    if (existingPayment) {
+      monthlyPayment = existingPayment;
+    } else {
+      const paymentResult = await createSwimmingMonthlyPayment({
+        registration_id: registrationId,
+        user_id: userId,
+        amount: registration.monthly_fee,
+        payment_month: paymentMonth.toISOString().split('T')[0],
+        payment_status: 'pending',
+      });
+
+      if (!paymentResult.success) {
+        return res.status(500).json({
+          success: false,
+          message: 'Failed to create monthly payment record'
+        });
+      }
+
+      monthlyPayment = paymentResult.payment;
+    }
+
+    const baseUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    const successUrl = `${baseUrl}/dashboard/swimming?payment=success&paymentId=${monthlyPayment.id}`;
+    const cancelUrl = `${baseUrl}/dashboard/swimming?payment=cancelled`;
+
+    const stripeResult = await stripeService.createSwimmingMonthlyPaymentCheckoutSession(
+      registration.monthly_fee,
+      userId,
+      registrationId,
+      paymentMonth.toISOString().split('T')[0],
+      successUrl,
+      cancelUrl
+    );
+
+    if (!stripeResult.success) {
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to create payment session',
+        error: stripeResult.error
+      });
+    }
+
+    await updateSwimmingMonthlyPayment(monthlyPayment.id, {
+      stripe_session_id: stripeResult.session.id,
+    });
+
+    res.status(200).json({
+      success: true,
+      message: 'Monthly payment session created',
+      data: {
+        payment: monthlyPayment,
+        checkoutUrl: stripeResult.session.url,
+        sessionId: stripeResult.session.id
+      }
+    });
+  } catch (error) {
+    console.error('Error in createSwimmingMonthlyPaymentController:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error'
+    });
+  }
+};
+
+/**
+ * Verify monthly payment
+ */
+export const verifySwimmingMonthlyPayment = async (req, res) => {
+  try {
+    const { paymentId, sessionId } = req.body;
+    const userId = req.user.id;
+
+    if (!paymentId || !sessionId) {
+      return res.status(400).json({
+        success: false,
+        message: 'paymentId and sessionId are required'
+      });
+    }
+
+    const { data: payment, error: paymentError } = await supabase
+      .from('swimming_monthly_payments')
+      .select('*, registration:swimming_registrations(*)')
+      .eq('id', paymentId)
+      .eq('user_id', userId)
+      .single();
+
+    if (paymentError || !payment) {
+      return res.status(404).json({
+        success: false,
+        message: 'Payment not found'
+      });
+    }
+
+    const stripeResult = await stripeService.verifyCheckoutSession(sessionId);
+    if (!stripeResult.success) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid payment session'
+      });
+    }
+
+    const session = stripeResult.session;
+
+    const isPaymentComplete = session.status === 'complete' && 
+                             (session.payment_status === 'paid' || session.payment_status === 'no_payment_required');
+
+    if (isPaymentComplete) {
+      await updateSwimmingMonthlyPayment(paymentId, {
+        payment_status: 'succeeded',
+        stripe_payment_intent_id: session.payment_intent || null,
+        paid_at: new Date().toISOString(),
+      });
+
+      const nextPaymentDate = new Date(payment.payment_month);
+      nextPaymentDate.setMonth(nextPaymentDate.getMonth() + 1);
+      nextPaymentDate.setDate(8);
+
+      await updateSwimmingRegistration(payment.registration_id, {
+        next_payment_date: nextPaymentDate.toISOString().split('T')[0],
+        last_payment_date: payment.payment_month,
+        payment_due: false,
+      });
+
+      return res.status(200).json({
+        success: true,
+        message: 'Monthly payment verified successfully'
+      });
+    }
+
+    res.status(200).json({
+      success: false,
+      message: 'Payment not completed',
+      data: {
+        sessionStatus: session.status,
+        paymentStatus: session.payment_status
+      }
+    });
+  } catch (error) {
+    console.error('Error in verifySwimmingMonthlyPayment:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error'
+    });
+  }
+};
+
+/**
+ * Get monthly payment history
+ */
+export const getSwimmingMonthlyPayments = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { limit = 12 } = req.query;
+
+    const result = await getUserSwimmingMonthlyPayments(userId, parseInt(limit, 10));
+
+    if (!result.success) {
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to fetch monthly payments',
+        error: result.error
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: {
+        payments: result.payments,
+        count: result.payments.length
+      }
+    });
+  } catch (error) {
+    console.error('Error in getSwimmingMonthlyPayments:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error'
+    });
+  }
+};
+
 export default {
   // Time slots
   getTimeSlots,
@@ -1128,6 +1618,14 @@ export default {
   getQRCodes,
   createQRCode,
   updateQRCode,
-  deleteQRCode
+  deleteQRCode,
+  // Registration
+  getSwimmingRegistration,
+  checkSwimmingRegistrationStatus: checkSwimmingRegistrationStatusController,
+  createSwimmingRegistration: createSwimmingRegistrationController,
+  verifySwimmingRegistrationPayment,
+  createSwimmingMonthlyPayment: createSwimmingMonthlyPaymentController,
+  verifySwimmingMonthlyPayment,
+  getSwimmingMonthlyPayments
 };
 

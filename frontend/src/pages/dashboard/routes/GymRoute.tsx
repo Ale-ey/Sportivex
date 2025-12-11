@@ -7,6 +7,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useGym } from '@/hooks/useGym';
+import { gymService, type GymRegistrationStatus, type GymRegistration } from '@/services/gymService';
+import toast from 'react-hot-toast';
 import {
   Play,
   Square,
@@ -15,14 +17,14 @@ import {
   Flame,
   Target,
   TrendingUp,
-
   Clock,
   Dumbbell,
   Loader2,
   Search,
-
   CheckCircle2,
   BarChart3,
+  Lock,
+  CreditCard,
 } from 'lucide-react';
 import type { Exercise, WorkoutExercise } from '@/services/gymService';
 import {
@@ -80,14 +82,139 @@ const GymRoute: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'exercises' | 'workout' | 'progress' | 'goals'>(
     tabParam && ['exercises', 'workout', 'progress', 'goals'].includes(tabParam) ? tabParam : 'exercises'
   );
+  
+  // Gym registration state
+  const [registrationStatus, setRegistrationStatus] = useState<GymRegistrationStatus | null>(null);
+  const [loadingRegistration, setLoadingRegistration] = useState(true);
+  const [processingPayment, setProcessingPayment] = useState(false);
 
+  // Check registration status on mount and handle payment verification
   useEffect(() => {
-    fetchExercises();
-    fetchActiveWorkout();
-    fetchStats();
-    fetchGoals();
-    fetchProgress('week');
+    const checkRegistration = async () => {
+      try {
+        setLoadingRegistration(true);
+        const response = await gymService.checkRegistrationStatus();
+        if (response.success) {
+          setRegistrationStatus(response.data);
+        }
+      } catch (error: any) {
+        // Handle 402 Payment Required gracefully
+        if (error.response?.status === 402 || error.response?.data?.code === 'GYM_REGISTRATION_REQUIRED') {
+          setRegistrationStatus({
+            success: false,
+            isRegistered: error.response.data.requiresRegistration === false,
+            isActive: false,
+            isPaymentDue: error.response.data.requiresPayment || false,
+            message: error.response.data.message || 'Gym registration is required',
+            registration: error.response.data.registration || null
+          });
+        } else {
+          console.error('Error checking gym registration:', error);
+        }
+      } finally {
+        setLoadingRegistration(false);
+      }
+    };
+    checkRegistration();
   }, []);
+
+  // Handle payment verification when returning from Stripe
+  useEffect(() => {
+    const verifyPayment = async () => {
+      const payment = searchParams.get('payment');
+      const registrationId = searchParams.get('registrationId');
+      const paymentId = searchParams.get('paymentId');
+      // Stripe redirects with session_id in the URL
+      const sessionId = searchParams.get('session_id');
+
+      if (payment === 'success') {
+        try {
+          // If we have session_id, use it directly
+          if (sessionId) {
+            if (registrationId) {
+              // Verify registration payment
+              const result = await gymService.verifyRegistrationPayment(registrationId, sessionId);
+              if (result.success) {
+                toast.success('Registration payment verified!');
+              } else {
+                toast.error(result.message || 'Payment verification failed');
+              }
+            } else if (paymentId) {
+              // Verify monthly payment
+              const result = await gymService.verifyMonthlyPayment(paymentId, sessionId);
+              if (result.success) {
+                toast.success('Monthly payment verified!');
+              } else {
+                toast.error(result.message || 'Payment verification failed');
+              }
+            }
+          } else {
+            // If no session_id in URL, try to get it from registration
+            if (registrationId) {
+              const regResponse = await gymService.getRegistration();
+              if (regResponse.success && regResponse.data.registration?.stripe_session_id) {
+                const result = await gymService.verifyRegistrationPayment(
+                  registrationId, 
+                  regResponse.data.registration.stripe_session_id
+                );
+                if (result.success) {
+                  toast.success('Registration payment verified!');
+                } else {
+                  toast.error(result.message || 'Payment verification failed');
+                }
+              } else {
+                toast.error('Payment session not found. Please try again.');
+              }
+            } else {
+              toast.error('Payment session ID not found');
+            }
+          }
+          
+          // Refresh registration status after a short delay
+          setTimeout(async () => {
+            const statusResponse = await gymService.checkRegistrationStatus();
+            if (statusResponse.success) {
+              setRegistrationStatus(statusResponse.data);
+            }
+          }, 1000);
+          
+          // Clean up URL
+          window.history.replaceState({}, '', window.location.pathname);
+        } catch (error: any) {
+          console.error('Payment verification error:', error);
+          const errorMessage = error.response?.data?.message || error.message || 'Payment verification failed';
+          toast.error(errorMessage);
+          
+          // Still refresh status in case payment went through
+          setTimeout(async () => {
+            const statusResponse = await gymService.checkRegistrationStatus();
+            if (statusResponse.success) {
+              setRegistrationStatus(statusResponse.data);
+            }
+          }, 2000);
+        }
+      } else if (payment === 'cancelled') {
+        toast.error('Payment was cancelled');
+        // Clean up URL
+        window.history.replaceState({}, '', window.location.pathname);
+      }
+    };
+    verifyPayment();
+  }, [searchParams]);
+
+  // Only fetch protected data if registration is active
+  useEffect(() => {
+    if (registrationStatus?.isActive) {
+      fetchExercises();
+      fetchActiveWorkout();
+      fetchStats();
+      fetchGoals();
+      fetchProgress('week');
+    } else {
+      // Still fetch exercises (they're public)
+      fetchExercises();
+    }
+  }, [registrationStatus?.isActive]);
 
   useEffect(() => {
     if (tabParam && ['exercises', 'workout', 'progress', 'goals'].includes(tabParam)) {
@@ -211,6 +338,149 @@ const GymRoute: React.FC = () => {
       minute: '2-digit',
     });
   };
+
+  const handleRegister = async () => {
+    try {
+      setProcessingPayment(true);
+      const response = await gymService.createRegistration();
+      if (response.success && response.data.checkoutUrl) {
+        // Redirect to Stripe checkout
+        window.location.href = response.data.checkoutUrl;
+      } else if (response.success && !response.data.requiresPayment) {
+        // Free registration
+        toast.success('Registration successful!');
+        // Refresh registration status
+        const statusResponse = await gymService.checkRegistrationStatus();
+        if (statusResponse.success) {
+          setRegistrationStatus(statusResponse.data);
+        }
+      }
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to create registration');
+    } finally {
+      setProcessingPayment(false);
+    }
+  };
+
+  const handlePayMonthly = async () => {
+    if (!registrationStatus?.registration?.id) return;
+    try {
+      setProcessingPayment(true);
+      const response = await gymService.createMonthlyPayment(registrationStatus.registration.id);
+      if (response.success && response.data.checkoutUrl) {
+        // Redirect to Stripe checkout
+        window.location.href = response.data.checkoutUrl;
+      }
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to create payment');
+    } finally {
+      setProcessingPayment(false);
+    }
+  };
+
+  // Show registration/payment UI if not active
+  if (loadingRegistration) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="w-8 h-8 animate-spin text-[#023E8A]" />
+      </div>
+    );
+  }
+
+  if (!registrationStatus?.isActive) {
+    return (
+      <div className="space-y-6 animate-in fade-in duration-500">
+        {/* Header */}
+        <div>
+          <h2 className="text-3xl font-bold text-[#023E8A] mb-2">Gym & Fitness</h2>
+          <p className="text-muted-foreground">Track your workouts, monitor progress, and achieve your fitness goals</p>
+        </div>
+
+        {/* Registration Required Card */}
+        <Card className="border-2 border-orange-200 bg-orange-50">
+          <CardContent className="p-8">
+            <div className="flex flex-col items-center text-center space-y-4">
+              <div className="w-16 h-16 rounded-full bg-orange-100 flex items-center justify-center">
+                <Lock className="w-8 h-8 text-orange-600" />
+              </div>
+              <div>
+                <h3 className="text-2xl font-bold text-[#023E8A] mb-2">
+                  {registrationStatus.isPaymentDue ? 'Monthly Payment Required' : 'Gym Registration Required'}
+                </h3>
+                <p className="text-muted-foreground max-w-md">
+                  {registrationStatus.message || 
+                    (registrationStatus.isPaymentDue 
+                      ? 'Your monthly gym membership payment is due. Please complete the payment to continue using gym facilities.'
+                      : 'To access gym features, you need to register and pay the monthly fee of 2000 PKR.')}
+                </p>
+              </div>
+              <div className="flex gap-4 mt-4">
+                {!registrationStatus.isRegistered ? (
+                  <Button
+                    onClick={handleRegister}
+                    disabled={processingPayment}
+                    size="lg"
+                    className="bg-[#023E8A] hover:bg-[#023E8A]/90"
+                  >
+                    {processingPayment ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Processing...
+                      </>
+                    ) : (
+                      <>
+                        <CreditCard className="w-4 h-4 mr-2" />
+                        Register & Pay (2000 PKR)
+                      </>
+                    )}
+                  </Button>
+                ) : registrationStatus.isPaymentDue ? (
+                  <Button
+                    onClick={handlePayMonthly}
+                    disabled={processingPayment}
+                    size="lg"
+                    className="bg-[#023E8A] hover:bg-[#023E8A]/90"
+                  >
+                    {processingPayment ? (
+                      <>
+                        <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        Processing...
+                      </>
+                    ) : (
+                      <>
+                        <CreditCard className="w-4 h-4 mr-2" />
+                        Pay Monthly Fee (2000 PKR)
+                      </>
+                    )}
+                  </Button>
+                ) : null}
+              </div>
+              {registrationStatus.registration?.next_payment_date && (
+                <p className="text-sm text-muted-foreground mt-2">
+                  Next payment due: {new Date(registrationStatus.registration.next_payment_date).toLocaleDateString()}
+                </p>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Exercises Preview (Public) */}
+        <div>
+          <h3 className="text-xl font-semibold mb-4">Exercise Library (Preview)</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {exercises.slice(0, 6).map((exercise) => (
+              <Card key={exercise.id}>
+                <CardContent className="p-4">
+                  <h4 className="font-semibold">{exercise.name}</h4>
+                  <p className="text-sm text-muted-foreground">{exercise.body_part}</p>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 animate-in fade-in duration-500">

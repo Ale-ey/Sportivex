@@ -277,9 +277,18 @@ export const useGym = () => {
           error instanceof AxiosError
             ? error.response?.data?.message || error.response?.data?.error || error.message
             : 'Failed to fetch workout history';
+        
+        // Don't show toast for gym registration errors (402) - these are handled in the gym module
+        const isGymRegistrationError = error instanceof AxiosError && 
+          (error.response?.status === 402 || error.response?.data?.code === 'GYM_REGISTRATION_REQUIRED');
+        
         setWorkoutError(errorMessage);
         console.error('Error fetching workout history:', error);
-        toast.error(errorMessage);
+        
+        if (!isGymRegistrationError) {
+          toast.error(errorMessage);
+        }
+        
         return { success: false, error: errorMessage };
       } finally {
         setLoadingWorkout(false);
@@ -311,9 +320,18 @@ export const useGym = () => {
           error instanceof AxiosError
             ? error.response?.data?.message || error.response?.data?.error || error.message
             : 'Failed to fetch progress';
+        
+        // Don't show toast for gym registration errors (402) - these are handled in the gym module
+        const isGymRegistrationError = error instanceof AxiosError && 
+          (error.response?.status === 402 || error.response?.data?.code === 'GYM_REGISTRATION_REQUIRED');
+        
         setProgressError(errorMessage);
         console.error('Error fetching progress:', error);
-        toast.error(errorMessage);
+        
+        if (!isGymRegistrationError) {
+          toast.error(errorMessage);
+        }
+        
         return { success: false, error: errorMessage };
       } finally {
         setLoadingProgress(false);
@@ -343,9 +361,18 @@ export const useGym = () => {
         error instanceof AxiosError
           ? error.response?.data?.message || error.response?.data?.error || error.message
           : 'Failed to fetch statistics';
+      
+      // Don't show toast for gym registration errors (402) - these are handled in the gym module
+      const isGymRegistrationError = error instanceof AxiosError && 
+        (error.response?.status === 402 || error.response?.data?.code === 'GYM_REGISTRATION_REQUIRED');
+      
       setStatsError(errorMessage);
       console.error('Error fetching stats:', error);
-      toast.error(errorMessage);
+      
+      if (!isGymRegistrationError) {
+        toast.error(errorMessage);
+      }
+      
       return { success: false, error: errorMessage };
     } finally {
       setLoadingStats(false);
@@ -373,9 +400,18 @@ export const useGym = () => {
         error instanceof AxiosError
           ? error.response?.data?.message || error.response?.data?.error || error.message
           : 'Failed to fetch goals';
+      
+      // Don't show toast for gym registration errors (402) - these are handled in the gym module
+      const isGymRegistrationError = error instanceof AxiosError && 
+        (error.response?.status === 402 || error.response?.data?.code === 'GYM_REGISTRATION_REQUIRED');
+      
       setGoalsError(errorMessage);
       console.error('Error fetching goals:', error);
-      toast.error(errorMessage);
+      
+      if (!isGymRegistrationError) {
+        toast.error(errorMessage);
+      }
+      
       return { success: false, error: errorMessage };
     } finally {
       setLoadingGoals(false);

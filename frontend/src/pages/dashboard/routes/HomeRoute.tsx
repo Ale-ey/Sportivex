@@ -16,8 +16,19 @@ const HomeRoute: React.FC = () => {
   const [upcomingEvents, setUpcomingEvents] = useState<EventItem[]>([]);
 
   useEffect(() => {
-    fetchStats();
-    fetchWorkoutHistory(5); // Get last 5 workouts
+    // Fetch gym stats and history - errors are handled silently if gym registration is not paid
+    fetchStats().catch((err) => {
+      // Silently handle gym registration errors (402) - these are expected if payment not done
+      if (err.response?.status !== 402 && err.response?.data?.code !== 'GYM_REGISTRATION_REQUIRED') {
+        console.error('Error fetching gym stats:', err);
+      }
+    });
+    fetchWorkoutHistory(5).catch((err) => {
+      // Silently handle gym registration errors (402) - these are expected if payment not done
+      if (err.response?.status !== 402 && err.response?.data?.code !== 'GYM_REGISTRATION_REQUIRED') {
+        console.error('Error fetching workout history:', err);
+      }
+    });
     fetchLeagues().catch((err) => {
       console.error('Error fetching leagues:', err);
     });

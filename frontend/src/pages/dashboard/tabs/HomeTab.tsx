@@ -9,6 +9,7 @@ import {
   CardTitle,
 } from "../../../components/ui/card";
 import { Activity, Target, Trophy, Play } from "lucide-react";
+import QRCodeScanner from "../../../components/QRCodeScanner";
 
 export interface StatItem {
   title: string;
@@ -139,6 +140,19 @@ const HomeTab: React.FC<HomeTabProps> = ({
           </Card>
         ))}
       </div>
+
+      {/* QR Code Scanner */}
+      <Card className="bg-white border border-[#E2F5FB]">
+        <CardHeader>
+          <CardTitle className="text-[#023E8A]">Scan QR Code</CardTitle>
+          <CardDescription className="text-slate-600">
+            Scan gym or swimming QR code to mark your attendance
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <QRCodeScanner />
+        </CardContent>
+      </Card>
 
       {/* Progress Overview */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">

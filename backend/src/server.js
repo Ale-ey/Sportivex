@@ -12,6 +12,7 @@ import badmintonRoutes from "./routes/badminton.js";
 import gymRoutes from "./routes/gym.js";
 import leagueRoutes from "./routes/leagues.js";
 import horseRidingRoutes from "./routes/horseRiding.js";
+import qrRoutes from "./routes/qr.js";
 import { initializeSocketServer } from "./socket/socketServer.js";
 
 const app = express();
@@ -76,6 +77,7 @@ app.use('/api/badminton', badmintonRoutes);
 app.use('/api/gym', gymRoutes);
 app.use('/api/leagues', leagueRoutes);
 app.use('/api/horse-riding', horseRidingRoutes);
+app.use('/api/qr', qrRoutes);
 
 // 404 handler
 app.use((_req, res) => {

@@ -47,9 +47,12 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ items }) => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Fetch profile on mount
+  // Fetch profile on mount (only if token exists)
   useEffect(() => {
-    getProfile();
+    const token = localStorage.getItem('authToken');
+    if (token) {
+      getProfile();
+    }
   }, [getProfile]);
 
   // Close mobile menu when route changes
