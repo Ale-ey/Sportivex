@@ -96,74 +96,36 @@ const HomeRoute: React.FC = () => {
   }, [workoutHistory]);
 
   useEffect(() => {
-    console.log('HomeRoute - Leagues effect triggered:', { 
-      leaguesCount: leagues?.length, 
-      leaguesLoading, 
-      leaguesError,
-      leagues: leagues 
-    });
-    
     if (leaguesLoading) {
-      console.log('HomeRoute - Still loading leagues...');
       return;
     }
     
     if (leaguesError) {
-      console.error('HomeRoute - Error loading leagues:', leaguesError);
       setUpcomingEvents([]);
       return;
     }
     
     if (leagues && leagues.length > 0) {
-      console.log('HomeRoute - Processing leagues:', leagues.length);
-      const now = new Date();
-      now.setHours(0, 0, 0, 0); // Reset to start of day for comparison
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
       
-      // First, try to get upcoming leagues
-      let filteredLeagues = leagues.filter((league) => {
-        // Exclude cancelled leagues
-        if (league.status === 'cancelled') {
+      // Only show leagues that are upcoming, registration_open, or in_progress (not completed or cancelled)
+      const filteredLeagues = leagues.filter((league) => {
+        // Exclude cancelled and completed leagues
+        if (league.status === 'cancelled' || league.status === 'completed') {
           return false;
         }
         
         // Must have a start_date
         if (!league.start_date) {
-          console.warn('League missing start_date:', league.name);
           return false;
         }
         
-        // Show if registration is open, upcoming, or in progress
-        if (['registration_open', 'upcoming', 'in_progress'].includes(league.status)) {
-          console.log(`League "${league.name}" included (status: ${league.status})`);
-          return true;
-        }
-        
-        // For completed leagues, only show if end_date is in the future
-        if (league.status === 'completed' && league.end_date) {
-          const endDate = new Date(league.end_date);
-          endDate.setHours(0, 0, 0, 0);
-          const include = endDate >= now;
-          console.log(`League "${league.name}" (completed): endDate=${endDate.toISOString()}, now=${now.toISOString()}, include=${include}`);
-          return include;
-        }
-        
-        // Default: show if start_date is today or in the future
+        // Only show if start_date is today or in the future
         const startDate = new Date(league.start_date);
         startDate.setHours(0, 0, 0, 0);
-        const include = startDate >= now;
-        console.log(`League "${league.name}": startDate=${startDate.toISOString()}, now=${now.toISOString()}, include=${include}`);
-        return include;
+        return startDate >= today;
       });
-      
-      console.log('HomeRoute - Filtered leagues:', filteredLeagues.length);
-      
-      // If no upcoming leagues found, show all non-cancelled leagues (as fallback)
-      if (filteredLeagues.length === 0) {
-        console.log('HomeRoute - No upcoming leagues, showing all non-cancelled as fallback');
-        filteredLeagues = leagues.filter((league) => 
-          league.status !== 'cancelled' && league.start_date
-        );
-      }
       
       const events: EventItem[] = filteredLeagues
         .sort((a, b) => {
@@ -173,8 +135,8 @@ const HomeRoute: React.FC = () => {
         })
         .slice(0, 4)
         .map((league) => {
-          const startDate = new Date(league.start_date);
           // Format date nicely
+          const startDate = new Date(league.start_date);
           const dateString = startDate.toLocaleDateString('en-US', {
             weekday: 'long',
             month: 'short',
@@ -187,14 +149,29 @@ const HomeRoute: React.FC = () => {
             minute: '2-digit',
           });
 
-          // Determine status based on league status
-          let eventStatus = "registered";
-          if (league.status === 'registration_open') {
-            eventStatus = "registration open";
-          } else if (league.status === 'in_progress') {
-            eventStatus = "in progress";
-          } else if (league.status === 'upcoming') {
-            eventStatus = "upcoming";
+          // Map backend status directly to display status
+          let eventStatus: string;
+          switch (league.status) {
+            case 'registration_open':
+              eventStatus = "registration open";
+              break;
+            case 'in_progress':
+              // Use backend status directly - show "in progress"
+              eventStatus = "in progress";
+              break;
+            case 'upcoming':
+              eventStatus = "upcoming";
+              break;
+            case 'completed':
+              eventStatus = "completed";
+              break;
+            case 'cancelled':
+              eventStatus = "cancelled";
+              break;
+            default:
+              // Use backend status as-is
+              eventStatus = league.status.replace(/_/g, ' ');
+              break;
           }
 
           return {
@@ -205,10 +182,8 @@ const HomeRoute: React.FC = () => {
           };
         });
       
-      console.log('HomeRoute - Final events:', events);
       setUpcomingEvents(events);
     } else {
-      console.log('HomeRoute - No leagues available');
       setUpcomingEvents([]);
     }
   }, [leagues, leaguesLoading, leaguesError]);

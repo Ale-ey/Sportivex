@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "../../../components/ui/button";
 import {
@@ -45,9 +45,34 @@ const HomeTab: React.FC<HomeTabProps> = ({
   upcomingEvents,
 }) => {
   const navigate = useNavigate();
+  const [currentDateTime, setCurrentDateTime] = useState(new Date());
+
+  // Update date and time every second
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentDateTime(new Date());
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, []);
 
   const handleStartWorkout = () => {
     navigate("/dashboard/gym?tab=workout");
+  };
+
+  // Format date and time
+  const formatDateTime = (date: Date) => {
+    const dateStr = date.toLocaleDateString('en-US', {
+      day: 'numeric',
+      month: 'short',
+      year: 'numeric'
+    });
+    const timeStr = date.toLocaleTimeString('en-US', {
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true
+    });
+    return `${dateStr}, ${timeStr}`;
   };
 
   return (
@@ -73,10 +98,9 @@ const HomeTab: React.FC<HomeTabProps> = ({
             </div>
           </div>
           <div className="text-right">
-            <p className="text-slate-500 text-sm">Today's Date</p>
-            {/* Ideally replace with dynamic date */}
+            <p className="text-slate-500 text-sm">Current Date & Time</p>
             <p className="text-2xl font-bold text-[#023E8A]">
-              6 Aug 2024, 07:20am
+              {formatDateTime(currentDateTime)}
             </p>
           </div>
         </div>
