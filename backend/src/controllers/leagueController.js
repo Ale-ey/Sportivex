@@ -91,6 +91,27 @@ export const createLeagueController = async (req, res) => {
       });
     }
 
+    // Date validation
+    const startDate = new Date(start_date);
+    const endDate = new Date(end_date);
+    const registrationDeadline = new Date(registration_deadline);
+
+    // Check if registration_deadline is before or equal to start_date
+    if (registrationDeadline > startDate) {
+      return res.status(400).json({
+        success: false,
+        message: 'Registration deadline must be before or equal to the start date'
+      });
+    }
+
+    // Check if end_date is after or equal to start_date
+    if (endDate < startDate) {
+      return res.status(400).json({
+        success: false,
+        message: 'End date must be after or equal to the start date'
+      });
+    }
+
     const result = await createLeague(
       {
         name,

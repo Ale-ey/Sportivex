@@ -51,7 +51,7 @@ const DashboardHeader: React.FC<DashboardHeaderProps> = ({ items }) => {
   useEffect(() => {
     const token = localStorage.getItem('authToken');
     if (token) {
-      getProfile();
+    getProfile();
     }
   }, [getProfile]);
 
