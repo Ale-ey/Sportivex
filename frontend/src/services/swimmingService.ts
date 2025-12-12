@@ -298,4 +298,88 @@ export const swimmingService = {
     const response = await axiosInstance.get('/swimming/rules');
     return response.data;
   },
+
+  /**
+   * Check swimming registration status
+   */
+  checkRegistrationStatus: async (): Promise<{
+    success: boolean;
+    data: {
+      isRegistered: boolean;
+      isActive: boolean;
+      isPaymentDue: boolean;
+      message?: string;
+      registration?: any;
+    };
+  }> => {
+    const response = await axiosInstance.get('/swimming/registration/status');
+    return response.data;
+  },
+
+  /**
+   * Create swimming registration (initiate payment)
+   */
+  createRegistration: async (data?: { registration_fee?: number }): Promise<{
+    success: boolean;
+    message?: string;
+    data: {
+      registration?: any;
+      checkoutUrl?: string;
+      requiresPayment: boolean;
+    };
+  }> => {
+    const response = await axiosInstance.post('/swimming/registration', data || {});
+    return response.data;
+  },
+
+  /**
+   * Verify swimming registration payment
+   */
+  verifyRegistrationPayment: async (data: {
+    registrationId: string;
+    sessionId: string;
+  }): Promise<{
+    success: boolean;
+    message?: string;
+    data?: {
+      registration: any;
+    };
+  }> => {
+    const response = await axiosInstance.post('/swimming/registration/verify-payment', data);
+    return response.data;
+  },
+
+  /**
+   * Create monthly payment
+   */
+  createMonthlyPayment: async (registrationId: string): Promise<{
+    success: boolean;
+    message?: string;
+    data: {
+      checkoutUrl: string;
+      paymentId: string;
+    };
+  }> => {
+    const response = await axiosInstance.post('/swimming/registration/monthly-payment', {
+      registrationId,
+    });
+    return response.data;
+  },
+
+  /**
+   * Verify monthly payment
+   */
+  verifyMonthlyPayment: async (data: {
+    paymentId: string;
+    sessionId: string;
+  }): Promise<{
+    success: boolean;
+    message?: string;
+    data?: {
+      payment: any;
+    };
+  }> => {
+    const response = await axiosInstance.post('/swimming/registration/verify-monthly-payment', data);
+    return response.data;
+  },
 };

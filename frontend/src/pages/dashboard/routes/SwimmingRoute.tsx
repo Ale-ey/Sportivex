@@ -1,9 +1,18 @@
 import React, { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
 import QRScanner from '@/components/QRScanner';
 import { useSwimming } from '@/hooks/useSwimming';
+import { swimmingService } from '@/services/swimmingService';
+import toast from 'react-hot-toast';
 import {
   Clock,
   Users,
@@ -13,6 +22,9 @@ import {
   Loader2,
   History,
   BookOpen,
+  Lock,
+  CreditCard,
+  Menu,
 } from 'lucide-react';
 import type { TimeSlot } from '@/services/swimmingService';
 
@@ -41,8 +53,100 @@ const SwimmingRoute: React.FC = () => {
 
   const [scanning, setScanning] = useState(false);
   const [reserving, setReserving] = useState<Record<string, boolean>>({});
-  const [showHistory, setShowHistory] = useState(false);
-  const [showRules, setShowRules] = useState(false);
+  const [activeView, setActiveView] = useState<'slots' | 'history' | 'rules'>('slots');
+  const [registrationStatus, setRegistrationStatus] = useState<{
+    isRegistered: boolean;
+    isActive: boolean;
+    isPaymentDue: boolean;
+    message?: string;
+    registration?: any;
+  } | null>(null);
+  const [loadingRegistration, setLoadingRegistration] = useState(true);
+  const [processingPayment, setProcessingPayment] = useState(false);
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  // Check registration status on mount and handle payment verification
+  useEffect(() => {
+    const checkRegistration = async () => {
+      try {
+        setLoadingRegistration(true);
+        const response = await swimmingService.checkRegistrationStatus();
+        if (response.success) {
+          setRegistrationStatus(response.data);
+        }
+      } catch (error: any) {
+        // Silently handle 402 errors (registration required)
+        if (error.response?.status !== 402) {
+          console.error('Error checking registration status:', error);
+        }
+      } finally {
+        setLoadingRegistration(false);
+      }
+    };
+
+    checkRegistration();
+  }, []);
+
+  // Handle payment verification on return from Stripe
+  useEffect(() => {
+    const payment = searchParams.get('payment');
+    const registrationId = searchParams.get('registrationId');
+    const paymentId = searchParams.get('paymentId');
+    const sessionId = searchParams.get('session_id');
+
+    if (payment === 'success') {
+      if (registrationId && sessionId) {
+        // Verify registration payment
+        swimmingService
+          .verifyRegistrationPayment({ registrationId, sessionId })
+          .then((response) => {
+            if (response.success) {
+              toast.success('Registration payment verified successfully!');
+              // Refresh registration status
+              swimmingService.checkRegistrationStatus().then((statusResponse) => {
+                if (statusResponse.success) {
+                  setRegistrationStatus(statusResponse.data);
+                }
+              });
+            } else {
+              toast.error(response.message || 'Failed to verify payment');
+            }
+            setSearchParams({});
+          })
+          .catch((error: any) => {
+            const errorMessage = error.response?.data?.message || error.message || 'Failed to verify payment';
+            toast.error(errorMessage);
+            setSearchParams({});
+          });
+      } else if (paymentId && sessionId) {
+        // Verify monthly payment
+        swimmingService
+          .verifyMonthlyPayment({ paymentId, sessionId })
+          .then((response) => {
+            if (response.success) {
+              toast.success('Monthly payment verified successfully!');
+              // Refresh registration status
+              swimmingService.checkRegistrationStatus().then((statusResponse) => {
+                if (statusResponse.success) {
+                  setRegistrationStatus(statusResponse.data);
+                }
+              });
+            } else {
+              toast.error(response.message || 'Failed to verify payment');
+            }
+            setSearchParams({});
+          })
+          .catch((error: any) => {
+            const errorMessage = error.response?.data?.message || error.message || 'Failed to verify payment';
+            toast.error(errorMessage);
+            setSearchParams({});
+          });
+      }
+    } else if (payment === 'cancelled') {
+      toast.error('Payment was cancelled');
+      setSearchParams({});
+    }
+  }, [searchParams, setSearchParams]);
 
   useEffect(() => {
     // Fetch initial data - try without filter first, then with active filter
@@ -72,14 +176,36 @@ const SwimmingRoute: React.FC = () => {
   const handleQRScan = async (qrCode: string) => {
     try {
       setScanning(true);
-      await scanQRCode(qrCode);
-      // Time slots will be refreshed automatically by the hook
+      const result = await scanQRCode(qrCode);
+      // Refresh time slots and history after successful scan
+      if (result.success) {
+        await fetchTimeSlots({ active: true });
+        if (activeView === 'history') {
+          await fetchUserHistory(50);
+        }
+      }
     } catch (error) {
       console.error('Error scanning QR code:', error);
     } finally {
       setScanning(false);
     }
   };
+
+  // Listen for QR scans from home screen
+  useEffect(() => {
+    const handleSwimmingQRScanned = () => {
+      // Refresh time slots and history when QR is scanned from home
+      fetchTimeSlots({ active: true });
+      if (activeView === 'history') {
+        fetchUserHistory(50);
+      }
+    };
+
+    window.addEventListener('swimmingQRScanned', handleSwimmingQRScanned);
+    return () => {
+      window.removeEventListener('swimmingQRScanned', handleSwimmingQRScanned);
+    };
+  }, [fetchTimeSlots, fetchUserHistory, activeView]);
 
   const handleReserve = async (slot: TimeSlot) => {
     try {
@@ -98,12 +224,62 @@ const SwimmingRoute: React.FC = () => {
     }
   };
 
-  const handleViewHistory = async () => {
-    if (!showHistory && attendanceHistory.length === 0) {
-      await fetchUserHistory(50);
+  // Load history when switching to history view
+  useEffect(() => {
+    if (activeView === 'history' && attendanceHistory.length === 0) {
+      fetchUserHistory(50);
     }
-    setShowHistory(!showHistory);
+  }, [activeView, attendanceHistory.length, fetchUserHistory]);
+
+  const handleRegister = async () => {
+    try {
+      setProcessingPayment(true);
+      const response = await swimmingService.createRegistration();
+      if (response.success && response.data.checkoutUrl) {
+        // Redirect to Stripe checkout
+        window.location.href = response.data.checkoutUrl;
+      } else if (response.success && !response.data.requiresPayment) {
+        // Free registration
+        toast.success('Registration successful!');
+        // Refresh registration status
+        const statusResponse = await swimmingService.checkRegistrationStatus();
+        if (statusResponse.success) {
+          setRegistrationStatus(statusResponse.data);
+        }
+      }
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to create registration');
+    } finally {
+      setProcessingPayment(false);
+    }
   };
+
+  const handlePayMonthly = async () => {
+    if (!registrationStatus?.registration?.id) return;
+    try {
+      setProcessingPayment(true);
+      const response = await swimmingService.createMonthlyPayment(registrationStatus.registration.id);
+      if (response.success && response.data.checkoutUrl) {
+        // Redirect to Stripe checkout
+        window.location.href = response.data.checkoutUrl;
+      }
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to create payment');
+    } finally {
+      setProcessingPayment(false);
+    }
+  };
+
+  if (loadingRegistration) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="w-8 h-8 animate-spin text-[#0077B6]" />
+      </div>
+    );
+  }
+
+  // Show registration lock only for reserve/attendance, allow viewing slots and rules
+  const isRegistrationLocked = !registrationStatus?.isActive;
 
   if (loadingTimeSlots && timeSlots.length === 0) {
     return (
@@ -123,27 +299,68 @@ const SwimmingRoute: React.FC = () => {
         </p>
       </div>
 
-      {/* Action Buttons */}
-      <div className="flex gap-2 flex-wrap">
-        <Button
-          onClick={handleViewHistory}
-          variant="outline"
-          className="border-[#ADE8F4] text-[#0077B6] hover:bg-[#EAF7FD]"
-        >
-          <History className="w-4 h-4 mr-2" />
-          {showHistory ? 'Hide' : 'View'} History
-        </Button>
-        <Button
-          onClick={() => {
-            setShowRules(!showRules);
-          }}
-          variant="outline"
-          className="border-[#ADE8F4] text-[#0077B6] hover:bg-[#EAF7FD]"
-        >
-          <BookOpen className="w-4 h-4 mr-2" />
-          {showRules ? 'Hide' : 'View'} Rules
-        </Button>
-        <div className="flex gap-2">
+      {/* Tabs - Dropdown on mobile, buttons on desktop */}
+      <div className="flex items-center gap-2 border-b">
+        {/* Mobile Dropdown */}
+        <div className="md:hidden">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="w-full justify-between">
+                <span>
+                  {activeView === 'slots' && 'Time Slots'}
+                  {activeView === 'history' && 'History'}
+                  {activeView === 'rules' && 'Rules'}
+                </span>
+                <Menu className="w-4 h-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="w-56">
+              <DropdownMenuItem onClick={() => setActiveView('slots')}>
+                <Calendar className="w-4 h-4 mr-2" />
+                Time Slots
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setActiveView('history')}>
+                <History className="w-4 h-4 mr-2" />
+                History
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setActiveView('rules')}>
+                <BookOpen className="w-4 h-4 mr-2" />
+                Rules
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+
+        {/* Desktop Tabs */}
+        <div className="hidden md:flex gap-2">
+          <Button
+            variant={activeView === 'slots' ? 'default' : 'ghost'}
+            onClick={() => setActiveView('slots')}
+            className="rounded-b-none"
+          >
+            <Calendar className="w-4 h-4 mr-2" />
+            Time Slots
+          </Button>
+          <Button
+            variant={activeView === 'history' ? 'default' : 'ghost'}
+            onClick={() => setActiveView('history')}
+            className="rounded-b-none"
+          >
+            <History className="w-4 h-4 mr-2" />
+            History
+          </Button>
+          <Button
+            variant={activeView === 'rules' ? 'default' : 'ghost'}
+            onClick={() => setActiveView('rules')}
+            className="rounded-b-none"
+          >
+            <BookOpen className="w-4 h-4 mr-2" />
+            Rules
+          </Button>
+        </div>
+
+        {/* Refresh Button */}
+        <div className="ml-auto">
           <Button
             onClick={() => fetchTimeSlots({ active: true })}
             variant="outline"
@@ -156,21 +373,67 @@ const SwimmingRoute: React.FC = () => {
             ) : null}
             Refresh
           </Button>
-          <Button
-            onClick={() => fetchTimeSlots()}
-            variant="outline"
-            size="sm"
-            className="border-[#ADE8F4] text-[#0077B6] hover:bg-[#EAF7FD]"
-            disabled={loadingTimeSlots}
-            title="Fetch all slots (including inactive)"
-          >
-            All Slots
-          </Button>
         </div>
       </div>
 
+      {/* Registration Lock Banner */}
+      {isRegistrationLocked && (
+        <Card className="border-2 border-orange-200 bg-orange-50">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Lock className="w-5 h-5 text-orange-600" />
+                <div>
+                  <h3 className="font-semibold text-[#023E8A]">
+                    {registrationStatus?.isPaymentDue ? 'Monthly Payment Required' : 'Registration Required'}
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    Register to reserve slots and mark attendance
+                  </p>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                {!registrationStatus?.isRegistered ? (
+                  <Button
+                    onClick={handleRegister}
+                    disabled={processingPayment}
+                    size="sm"
+                    className="bg-[#023E8A] hover:bg-[#023E8A]/90"
+                  >
+                    {processingPayment ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <>
+                        <CreditCard className="w-4 h-4 mr-2" />
+                        Register (1500 PKR)
+                      </>
+                    )}
+                  </Button>
+                ) : registrationStatus?.isPaymentDue ? (
+                  <Button
+                    onClick={handlePayMonthly}
+                    disabled={processingPayment}
+                    size="sm"
+                    className="bg-[#023E8A] hover:bg-[#023E8A]/90"
+                  >
+                    {processingPayment ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <>
+                        <CreditCard className="w-4 h-4 mr-2" />
+                        Pay (1500 PKR)
+                      </>
+                    )}
+                  </Button>
+                ) : null}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Rules Section */}
-      {showRules && (
+      {activeView === 'rules' && (
         <Card className="border border-[#E2F5FB]">
           <CardHeader>
             <CardTitle className="text-xl text-[#023E8A] flex items-center gap-2">
@@ -212,7 +475,7 @@ const SwimmingRoute: React.FC = () => {
       )}
 
       {/* Attendance History Section */}
-      {showHistory && (
+      {activeView === 'history' && (
         <Card className="border border-[#E2F5FB]">
           <CardHeader>
             <CardTitle className="text-xl text-[#023E8A] flex items-center gap-2">
@@ -270,13 +533,16 @@ const SwimmingRoute: React.FC = () => {
         </Card>
       )}
 
-      {/* QR Scanner Card */}
-      <div className="animate-in slide-in-from-top duration-500">
-        <QRScanner onScan={handleQRScan} isScanning={scanning} />
-      </div>
+      {/* QR Scanner Card - Only show if registered */}
+      {!isRegistrationLocked && (
+        <div className="animate-in slide-in-from-top duration-500">
+          <QRScanner onScan={handleQRScan} isScanning={scanning} />
+        </div>
+      )}
 
       {/* Time Slots Section */}
-      <div className="space-y-4">
+      {activeView === 'slots' && (
+        <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h3 className="text-2xl font-semibold text-[#023E8A] flex items-center gap-2">
             <Calendar className="w-6 h-6" />
@@ -433,9 +699,9 @@ const SwimmingRoute: React.FC = () => {
                     {/* Action Button */}
                     <Button
                       onClick={() => handleReserve(slot)}
-                      disabled={isReserving || isPast || !canReserve || isInactive}
+                      disabled={isReserving || isPast || !canReserve || isInactive || isRegistrationLocked}
                       className={`w-full transition-all duration-300 ${
-                        isPast || isInactive
+                        isPast || isInactive || isRegistrationLocked
                           ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
                           : isReserved
                           ? 'bg-red-500 hover:bg-red-600 text-white'
@@ -446,6 +712,11 @@ const SwimmingRoute: React.FC = () => {
                         <>
                           <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                           {isReserved ? 'Cancelling...' : 'Reserving...'}
+                        </>
+                      ) : isRegistrationLocked ? (
+                        <>
+                          <Lock className="w-4 h-4 mr-2" />
+                          Registration Required
                         </>
                       ) : isInactive ? (
                         <>
@@ -480,7 +751,8 @@ const SwimmingRoute: React.FC = () => {
             })}
           </div>
         )}
-      </div>
+        </div>
+      )}
     </div>
   );
 };

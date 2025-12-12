@@ -170,33 +170,33 @@ const HomeTab: React.FC<HomeTabProps> = ({
                 <p>No recent activities. Start a workout to see your progress!</p>
               </div>
             ) : (
-              <div className="space-y-4">
-                {recentActivities.slice(0, 3).map((activity, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center justify-between p-4 bg-[#EAF7FD] rounded-lg border border-[#ADE8F4]"
-                  >
-                    <div className="flex items-center">
-                      <div className="w-10 h-10 bg-[#00B4D8] rounded-lg flex items-center justify-center mr-3">
-                        <Activity className="w-5 h-5 text-white" />
-                      </div>
-                      <div>
-                        <p className="font-medium text-[#023E8A]">
-                          {activity.activity}
-                        </p>
-                        <p className="text-sm text-slate-600">
-                          {activity.time} • {activity.duration}
-                        </p>
-                      </div>
+            <div className="space-y-4">
+              {recentActivities.slice(0, 3).map((activity, index) => (
+                <div
+                  key={index}
+                  className="flex items-center justify-between p-4 bg-[#EAF7FD] rounded-lg border border-[#ADE8F4]"
+                >
+                  <div className="flex items-center">
+                    <div className="w-10 h-10 bg-[#00B4D8] rounded-lg flex items-center justify-center mr-3">
+                      <Activity className="w-5 h-5 text-white" />
                     </div>
-                    <div className="text-right">
-                      <span className="text-sm text-emerald-600 font-medium">
-                        {activity.calories} cal
-                      </span>
+                    <div>
+                      <p className="font-medium text-[#023E8A]">
+                        {activity.activity}
+                      </p>
+                      <p className="text-sm text-slate-600">
+                        {activity.time} • {activity.duration}
+                      </p>
                     </div>
                   </div>
-                ))}
-              </div>
+                  <div className="text-right">
+                    <span className="text-sm text-emerald-600 font-medium">
+                      {activity.calories} cal
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
             )}
           </CardContent>
         </Card>
@@ -215,45 +215,45 @@ const HomeTab: React.FC<HomeTabProps> = ({
                 <p>No upcoming events. Check back later for new competitions!</p>
               </div>
             ) : (
-              <div className="space-y-4">
+            <div className="space-y-4">
                 {upcomingEvents.slice(0, 4).map((event, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center justify-between p-4 bg-[#EAF7FD] rounded-lg border border-[#ADE8F4]"
-                  >
-                    <div className="flex items-center">
-                      <div
-                        className={`w-10 h-10 ${
-                          event.type === "Competition"
-                            ? "bg-[#0096C7]"
-                            : "bg-[#48CAE4]"
-                        } rounded-lg flex items-center justify-center mr-3`}
-                      >
-                        {event.type === "Competition" ? (
-                          <Trophy className="w-5 h-5 text-white" />
-                        ) : (
-                          <Target className="w-5 h-5 text-white" />
-                        )}
-                      </div>
-                      <div>
-                        <p className="font-medium text-[#023E8A]">
-                          {event.event}
-                        </p>
-                        <p className="text-sm text-slate-600">{event.date}</p>
-                      </div>
-                    </div>
-                    <span
-                      className={`text-sm font-medium ${
-                        event.status === "registered"
-                          ? "text-[#0077B6]"
-                          : "text-emerald-600"
-                      }`}
+                <div
+                  key={index}
+                  className="flex items-center justify-between p-4 bg-[#EAF7FD] rounded-lg border border-[#ADE8F4]"
+                >
+                  <div className="flex items-center">
+                    <div
+                      className={`w-10 h-10 ${
+                        event.type === "Competition"
+                          ? "bg-[#0096C7]"
+                          : "bg-[#48CAE4]"
+                      } rounded-lg flex items-center justify-center mr-3`}
                     >
-                      {event.status}
-                    </span>
+                      {event.type === "Competition" ? (
+                        <Trophy className="w-5 h-5 text-white" />
+                      ) : (
+                        <Target className="w-5 h-5 text-white" />
+                      )}
+                    </div>
+                    <div>
+                      <p className="font-medium text-[#023E8A]">
+                        {event.event}
+                      </p>
+                      <p className="text-sm text-slate-600">{event.date}</p>
+                    </div>
                   </div>
-                ))}
-              </div>
+                  <span
+                    className={`text-sm font-medium ${
+                      event.status === "registered"
+                        ? "text-[#0077B6]"
+                        : "text-emerald-600"
+                    }`}
+                  >
+                    {event.status}
+                  </span>
+                </div>
+              ))}
+            </div>
             )}
           </CardContent>
         </Card>

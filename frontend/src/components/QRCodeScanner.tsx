@@ -185,7 +185,17 @@ const QRCodeScanner: React.FC = () => {
             </div>
 
             {!scanning && (
-              <Button onClick={startCamera} variant="outline" className="w-full">
+              <Button 
+                onClick={async () => {
+                  try {
+                    await startCamera();
+                  } catch (error) {
+                    console.error('Error starting camera:', error);
+                  }
+                }} 
+                variant="outline" 
+                className="w-full"
+              >
                 <Camera className="w-4 h-4 mr-2" />
                 Open Camera Scanner
               </Button>
