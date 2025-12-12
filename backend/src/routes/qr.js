@@ -9,3 +9,4 @@ router.post('/scan', authenticateToken, qrController.scanUnifiedQR);
 
 export default router;
 
+

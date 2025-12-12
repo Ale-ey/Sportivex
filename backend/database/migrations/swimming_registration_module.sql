@@ -121,3 +121,4 @@ BEFORE UPDATE ON swimming_monthly_payments
 FOR EACH ROW 
 EXECUTE FUNCTION update_swimming_registration_updated_at_column();
 
+

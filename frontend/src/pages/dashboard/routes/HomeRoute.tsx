@@ -181,7 +181,7 @@ const HomeRoute: React.FC = () => {
               break;
             default:
               // Use backend status as-is
-              eventStatus = league.status.replace(/_/g, ' ');
+              eventStatus = String(league.status).replace(/_/g, ' ');
               break;
           }
 

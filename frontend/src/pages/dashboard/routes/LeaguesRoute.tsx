@@ -75,8 +75,8 @@ const LeaguesRoute: React.FC = () => {
           displayStatus = "Upcoming";
           break;
         default:
-          // Fallback: use backend status as-is (capitalize first letter)
-          displayStatus = league.status.charAt(0).toUpperCase() + league.status.slice(1).replace(/_/g, ' ') as any;
+          // Fallback: default to "Upcoming" for unknown statuses
+          displayStatus = "Upcoming";
           break;
       }
 

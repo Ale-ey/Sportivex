@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { useGym } from '@/hooks/useGym';
-import { gymService, type GymRegistrationStatus, type GymRegistration } from '@/services/gymService';
+import { gymService, type GymRegistrationStatus } from '@/services/gymService';
 import toast from 'react-hot-toast';
 import {
   Play,
@@ -405,17 +405,17 @@ const GymRoute: React.FC = () => {
               </div>
               <div>
                 <h3 className="text-2xl font-bold text-[#023E8A] mb-2">
-                  {registrationStatus.isPaymentDue ? 'Monthly Payment Required' : 'Gym Registration Required'}
+                  {registrationStatus?.isPaymentDue ? 'Monthly Payment Required' : 'Gym Registration Required'}
                 </h3>
                 <p className="text-muted-foreground max-w-md">
-                  {registrationStatus.message || 
-                    (registrationStatus.isPaymentDue 
+                  {registrationStatus?.message || 
+                    (registrationStatus?.isPaymentDue 
                       ? 'Your monthly gym membership payment is due. Please complete the payment to continue using gym facilities.'
                       : 'To access gym features, you need to register and pay the monthly fee of 2000 PKR.')}
                 </p>
               </div>
               <div className="flex gap-4 mt-4">
-                {!registrationStatus.isRegistered ? (
+                {!registrationStatus?.isRegistered ? (
                   <Button
                     onClick={handleRegister}
                     disabled={processingPayment}
@@ -434,7 +434,7 @@ const GymRoute: React.FC = () => {
                       </>
                     )}
                   </Button>
-                ) : registrationStatus.isPaymentDue ? (
+                ) : registrationStatus?.isPaymentDue ? (
                   <Button
                     onClick={handlePayMonthly}
                     disabled={processingPayment}
@@ -455,7 +455,7 @@ const GymRoute: React.FC = () => {
                   </Button>
                 ) : null}
               </div>
-              {registrationStatus.registration?.next_payment_date && (
+              {registrationStatus?.registration?.next_payment_date && (
                 <p className="text-sm text-muted-foreground mt-2">
                   Next payment due: {new Date(registrationStatus.registration.next_payment_date).toLocaleDateString()}
                 </p>

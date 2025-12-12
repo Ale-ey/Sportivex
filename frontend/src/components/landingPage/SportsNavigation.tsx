@@ -10,7 +10,6 @@ import {
   Trophy,
   Bike,
   Footprints,
-  CircleDot,
   Users,
 } from "lucide-react";
 
