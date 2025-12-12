@@ -1,10 +1,164 @@
 import { supabaseAdmin as supabase } from '../config/supabase.js';
 
 /**
- * Get all leagues
+ * Calculate league status based on dates
+ * @param {Object} league - League object with start_date, end_date, registration_deadline, registration_enabled
+ * @returns {string} - Status: 'upcoming', 'registration_open', 'in_progress', 'completed', 'cancelled'
+ */
+const calculateLeagueStatus = (league) => {
+  // Don't change cancelled status
+  if (league.status === 'cancelled') {
+    return 'cancelled';
+  }
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  
+  const startDate = new Date(league.start_date);
+  startDate.setHours(0, 0, 0, 0);
+  
+  const endDate = league.end_date ? new Date(league.end_date) : null;
+  if (endDate) {
+    endDate.setHours(23, 59, 59, 999); // End of day
+  }
+  
+  const registrationDeadline = league.registration_deadline ? new Date(league.registration_deadline) : null;
+  if (registrationDeadline) {
+    registrationDeadline.setHours(23, 59, 59, 999); // End of day
+  }
+
+  // If start date is in the future
+  if (startDate > today) {
+    // Check if registration is open
+    if (league.registration_enabled && registrationDeadline && today <= registrationDeadline) {
+      return 'registration_open';
+    }
+    return 'upcoming';
+  }
+  
+  // If start date is today or in the past
+  if (startDate <= today) {
+    // If end date exists and is in the past, league is completed
+    if (endDate && endDate < today) {
+      return 'completed';
+    }
+    // Otherwise, league is in progress
+    return 'in_progress';
+  }
+
+  // Default fallback
+  return 'upcoming';
+};
+
+/**
+ * Update league status based on dates (auto-update)
+ * @param {string} leagueId - League ID
+ * @returns {Promise<Object>} - Result object
+ */
+const updateLeagueStatus = async (leagueId) => {
+  try {
+    // Get current league data
+    const { data: league, error: fetchError } = await supabase
+      .from('leagues')
+      .select('*')
+      .eq('id', leagueId)
+      .single();
+
+    if (fetchError || !league) {
+      return { success: false, error: 'League not found' };
+    }
+
+    // Calculate new status
+    const newStatus = calculateLeagueStatus(league);
+
+    // Only update if status has changed
+    if (league.status !== newStatus) {
+      const { error: updateError } = await supabase
+        .from('leagues')
+        .update({ status: newStatus })
+        .eq('id', leagueId);
+
+      if (updateError) {
+        console.error('Error updating league status:', updateError);
+        return { success: false, error: updateError.message };
+      }
+
+      return { success: true, oldStatus: league.status, newStatus };
+    }
+
+    return { success: true, status: league.status, unchanged: true };
+  } catch (error) {
+    console.error('Error in updateLeagueStatus:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+/**
+ * Update all leagues statuses based on dates
+ * @returns {Promise<Object>} - Result object
+ */
+const updateAllLeaguesStatus = async () => {
+  try {
+    // Get all non-cancelled leagues
+    const { data: leagues, error: fetchError } = await supabase
+      .from('leagues')
+      .select('id, start_date, end_date, registration_deadline, registration_enabled, status')
+      .neq('status', 'cancelled');
+
+    if (fetchError) {
+      console.error('Error fetching leagues for status update:', fetchError);
+      return { success: false, error: fetchError.message };
+    }
+
+    if (!leagues || leagues.length === 0) {
+      return { success: true, updated: 0 };
+    }
+
+    let updatedCount = 0;
+    const updates = [];
+
+    // Calculate new status for each league
+    for (const league of leagues) {
+      const newStatus = calculateLeagueStatus(league);
+      if (league.status !== newStatus) {
+        updates.push({
+          id: league.id,
+          status: newStatus
+        });
+        updatedCount++;
+      }
+    }
+
+    // Batch update all leagues that need status changes
+    if (updates.length > 0) {
+      for (const update of updates) {
+        const { error: updateError } = await supabase
+          .from('leagues')
+          .update({ status: update.status })
+          .eq('id', update.id);
+
+        if (updateError) {
+          console.error(`Error updating league ${update.id}:`, updateError);
+        }
+      }
+    }
+
+    return { success: true, updated: updatedCount, total: leagues.length };
+  } catch (error) {
+    console.error('Error in updateAllLeaguesStatus:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+/**
+ * Get all leagues (with auto-updated statuses)
  */
 export const getLeagues = async () => {
   try {
+    // First, update all league statuses based on dates
+    await updateAllLeaguesStatus();
+
+    // Then fetch all leagues
     const { data, error } = await supabase
       .from('leagues')
       .select('*')
@@ -26,10 +180,14 @@ export const getLeagues = async () => {
 };
 
 /**
- * Get league by ID
+ * Get league by ID (with auto-updated status)
  */
 export const getLeagueById = async (id) => {
   try {
+    // First, update this league's status based on dates
+    await updateLeagueStatus(id);
+
+    // Then fetch the league
     const { data, error } = await supabase
       .from('leagues')
       .select('*')
@@ -354,6 +512,11 @@ export const cancelLeagueRegistration = async (leagueId, userId) => {
     return { success: false, error: error.message };
   }
 };
+
+/**
+ * Export status update functions for use in controllers or scheduled tasks
+ */
+export { calculateLeagueStatus, updateLeagueStatus, updateAllLeaguesStatus };
 
 /**
  * Update league registration payment status

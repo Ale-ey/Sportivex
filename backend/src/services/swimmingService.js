@@ -1,4 +1,4 @@
-import { supabase } from '../config/supabase.js';
+import { supabaseAdmin as supabase } from '../config/supabase.js';
 import { determineTimeSlot, getTodayDate } from '../utils/timeSlotDetermination.js';
 import { validateUserEligibility } from '../utils/swimmingValidation.js';
 
@@ -345,6 +345,380 @@ const reorderWaitlist = async (timeSlotId, sessionDate) => {
     }
   } catch (error) {
     console.error('Error reordering waitlist:', error);
+  }
+};
+
+// ==================== SWIMMING REGISTRATION ====================
+
+/**
+ * Get user's swimming registration
+ */
+export const getUserSwimmingRegistration = async (userId) => {
+  try {
+    const { data, error } = await supabase
+      .from('swimming_registrations')
+      .select('*')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    if (error) {
+      console.error('Error getting user swimming registration:', error);
+      return { success: false, registration: null, error: error.message };
+    }
+
+    return { success: true, registration: data };
+  } catch (error) {
+    console.error('Error in getUserSwimmingRegistration:', error);
+    return { success: false, registration: null, error: error.message };
+  }
+};
+
+/**
+ * Check if user has active swimming registration (paid and not expired)
+ */
+export const checkSwimmingRegistrationStatus = async (userId) => {
+  try {
+    const { success, registration } = await getUserSwimmingRegistration(userId);
+
+    if (!success || !registration) {
+      return {
+        success: false,
+        isRegistered: false,
+        isActive: false,
+        message: 'No swimming registration found. Please register first.',
+        registration: null
+      };
+    }
+
+    // Check if registration is active and payment is up to date
+    const today = new Date();
+    const todayStr = today.toISOString().split('T')[0];
+    const isPaymentDue = registration.payment_due || 
+      (registration.next_payment_date && registration.next_payment_date <= todayStr);
+
+    const isActive = registration.status === 'active' && 
+                     registration.payment_status === 'succeeded' &&
+                     !isPaymentDue;
+
+    return {
+      success: true,
+      isRegistered: true,
+      isActive,
+      isPaymentDue,
+      message: isActive 
+        ? 'Swimming registration is active' 
+        : isPaymentDue 
+          ? 'Monthly payment is due. Please pay to continue using swimming facilities.'
+          : 'Swimming registration is not active',
+      registration
+    };
+  } catch (error) {
+    console.error('Error in checkSwimmingRegistrationStatus:', error);
+    return {
+      success: false,
+      isRegistered: false,
+      isActive: false,
+      message: 'Error checking registration status',
+      registration: null
+    };
+  }
+};
+
+/**
+ * Calculate next payment date (8th of next month)
+ */
+const calculateNextSwimmingPaymentDate = () => {
+  const now = new Date();
+  const currentMonth = now.getMonth();
+  const currentYear = now.getFullYear();
+  
+  if (now.getDate() < 8) {
+    return new Date(currentYear, currentMonth, 8);
+  } else {
+    const nextMonth = currentMonth === 11 ? 0 : currentMonth + 1;
+    const nextYear = currentMonth === 11 ? currentYear + 1 : currentYear;
+    return new Date(nextYear, nextMonth, 8);
+  }
+};
+
+/**
+ * Create swimming registration (pending payment)
+ */
+export const createSwimmingRegistration = async (registrationData) => {
+  try {
+    // Check if user already has a registration
+    const existing = await getUserSwimmingRegistration(registrationData.user_id);
+    if (existing.success && existing.registration) {
+      return { success: false, registration: null, error: 'User already has a swimming registration' };
+    }
+
+    // Set up monthly payment tracking
+    const nextPaymentDate = calculateNextSwimmingPaymentDate();
+    const registrationWithMonthly = {
+      ...registrationData,
+      monthly_fee: 1500.00, // Default monthly fee
+      next_payment_date: nextPaymentDate.toISOString().split('T')[0],
+      payment_due: false,
+    };
+
+    const { data, error } = await supabase
+      .from('swimming_registrations')
+      .insert([registrationWithMonthly])
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error creating swimming registration:', error);
+      return { success: false, registration: null, error: error.message };
+    }
+
+    return { success: true, registration: data };
+  } catch (error) {
+    console.error('Error in createSwimmingRegistration:', error);
+    return { success: false, registration: null, error: error.message };
+  }
+};
+
+/**
+ * Update swimming registration
+ */
+export const updateSwimmingRegistration = async (registrationId, updateData) => {
+  try {
+    const { data, error } = await supabase
+      .from('swimming_registrations')
+      .update(updateData)
+      .eq('id', registrationId)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error updating swimming registration:', error);
+      return { success: false, registration: null, error: error.message };
+    }
+
+    return { success: true, registration: data };
+  } catch (error) {
+    console.error('Error in updateSwimmingRegistration:', error);
+    return { success: false, registration: null, error: error.message };
+  }
+};
+
+/**
+ * Create monthly payment record
+ */
+export const createSwimmingMonthlyPayment = async (paymentData) => {
+  try {
+    const { data, error } = await supabase
+      .from('swimming_monthly_payments')
+      .insert([paymentData])
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error creating swimming monthly payment:', error);
+      return { success: false, payment: null, error: error.message };
+    }
+
+    return { success: true, payment: data };
+  } catch (error) {
+    console.error('Error in createSwimmingMonthlyPayment:', error);
+    return { success: false, payment: null, error: error.message };
+  }
+};
+
+/**
+ * Update monthly payment status
+ */
+export const updateSwimmingMonthlyPayment = async (paymentId, paymentData) => {
+  try {
+    const { data, error } = await supabase
+      .from('swimming_monthly_payments')
+      .update(paymentData)
+      .eq('id', paymentId)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error updating swimming monthly payment:', error);
+      return { success: false, payment: null, error: error.message };
+    }
+
+    return { success: true, payment: data };
+  } catch (error) {
+    console.error('Error in updateSwimmingMonthlyPayment:', error);
+    return { success: false, payment: null, error: error.message };
+  }
+};
+
+/**
+ * Get user's monthly payment history
+ */
+export const getUserSwimmingMonthlyPayments = async (userId, limit = 12) => {
+  try {
+    const { data, error } = await supabase
+      .from('swimming_monthly_payments')
+      .select('*')
+      .eq('user_id', userId)
+      .order('payment_month', { ascending: false })
+      .limit(limit);
+
+    if (error) {
+      console.error('Error getting swimming monthly payments:', error);
+      return { success: false, payments: [], error: error.message };
+    }
+
+    return { success: true, payments: data || [] };
+  } catch (error) {
+    console.error('Error in getUserSwimmingMonthlyPayments:', error);
+    return { success: false, payments: [], error: error.message };
+  }
+};
+
+/**
+ * Process swimming QR scan with registration check
+ */
+export const processSwimmingQRScan = async (qrCodeValue, user) => {
+  try {
+    // 1. Check if user has active swimming registration
+    const registrationStatus = await checkSwimmingRegistrationStatus(user.id);
+    if (!registrationStatus.isActive) {
+      return {
+        success: false,
+        message: registrationStatus.message || 'Swimming registration is not active. Please complete your monthly payment.',
+        requiresPayment: registrationStatus.isPaymentDue
+      };
+    }
+
+    // 2. Validate QR code exists and is active (swimming QR code)
+    const { data: qrCode, error: qrError } = await supabase
+      .from('swimming_qr_codes')
+      .select('*')
+      .eq('qr_code_value', qrCodeValue)
+      .eq('is_active', true)
+      .single();
+
+    if (qrError || !qrCode) {
+      return {
+        success: false,
+        message: 'Invalid or inactive swimming QR code'
+      };
+    }
+
+    // 3. Get currently active time slots
+    const today = new Date();
+    const sessionDate = getTodayDate(today);
+
+    const { success: slotsSuccess, timeSlots } = await getActiveTimeSlots(true);
+
+    if (!slotsSuccess || timeSlots.length === 0) {
+      return {
+        success: false,
+        message: 'No time slots are currently available'
+      };
+    }
+
+    // 4. Determine appropriate time slot
+    const slotDetermination = determineTimeSlot(timeSlots, today);
+
+    if (slotDetermination.error) {
+      return {
+        success: false,
+        message: slotDetermination.message
+      };
+    }
+
+    const { timeSlot, reason, message: slotMessage } = slotDetermination;
+
+    // 5. Validate user eligibility (gender/role)
+    const eligibility = validateUserEligibility(user, timeSlot);
+
+    if (!eligibility.isValid) {
+      return {
+        success: false,
+        message: eligibility.message
+      };
+    }
+
+    // 6. Check if user already checked in for this session
+    const { hasCheckedIn } = await hasUserCheckedIn(user.id, timeSlot.id, sessionDate);
+
+    if (hasCheckedIn) {
+      return {
+        success: false,
+        message: 'You have already checked in for this time slot today',
+        alreadyCheckedIn: true
+      };
+    }
+
+    // 7. Check capacity
+    const { count: currentCount } = await getAttendanceCount(timeSlot.id, sessionDate);
+
+    if (currentCount >= timeSlot.max_capacity) {
+      return {
+        success: false,
+        message: 'This time slot has reached maximum capacity',
+        capacityExceeded: true,
+        timeSlot: {
+          id: timeSlot.id,
+          startTime: timeSlot.start_time,
+          endTime: timeSlot.end_time,
+          currentCount,
+          maxCapacity: timeSlot.max_capacity
+        }
+      };
+    }
+
+    // 8. Create attendance record with registration_id
+    const { data: attendance, error: attendanceError } = await supabase
+      .from('swimming_attendance')
+      .insert([
+        {
+          time_slot_id: timeSlot.id,
+          user_id: user.id,
+          registration_id: registrationStatus.registration.id,
+          session_date: sessionDate,
+          check_in_time: new Date().toISOString(),
+          check_in_method: 'qr_scan'
+        }
+      ])
+      .select()
+      .single();
+
+    if (attendanceError) {
+      console.error('Error creating swimming attendance:', attendanceError);
+      return {
+        success: false,
+        message: 'Failed to record attendance. Please try again.'
+      };
+    }
+
+    // 9. Return success with details
+    return {
+      success: true,
+      message: 'Check-in successful',
+      attendance: {
+        id: attendance.id,
+        checkInTime: attendance.check_in_time,
+        sessionDate: attendance.session_date
+      },
+      timeSlot: {
+        id: timeSlot.id,
+        startTime: timeSlot.start_time,
+        endTime: timeSlot.end_time,
+        genderRestriction: timeSlot.gender_restriction,
+        trainerName: timeSlot.trainer?.name || null,
+        currentCount: currentCount + 1,
+        maxCapacity: timeSlot.max_capacity
+      },
+      slotDeterminationReason: reason,
+      slotMessage
+    };
+  } catch (error) {
+    console.error('Error in processSwimmingQRScan:', error);
+    return {
+      success: false,
+      message: 'An error occurred during check-in. Please try again.'
+    };
   }
 };
 

@@ -12,6 +12,7 @@ import badmintonRoutes from "./routes/badminton.js";
 import gymRoutes from "./routes/gym.js";
 import leagueRoutes from "./routes/leagues.js";
 import horseRidingRoutes from "./routes/horseRiding.js";
+import qrRoutes from "./routes/qr.js";
 import { initializeSocketServer } from "./socket/socketServer.js";
 
 const app = express();
@@ -28,8 +29,8 @@ const corsOptions = {
   origin: (origin, callback) => {
     // Allow requests with no origin (like mobile apps or curl requests)
     const allowedOrigins = [
-      process.env.FRONTEND_URL || "http://localhost:5173",
-      "http://localhost:5173",
+      process.env.FRONTEND_URL || "http://localhost:5174",
+      "http://localhost:5174",
       "http://127.0.0.1:5173",
       "https://sportivex.vercel.app",
       "https://sportivex-git-dev-ale-eys-projects.vercel.app"
@@ -76,6 +77,7 @@ app.use('/api/badminton', badmintonRoutes);
 app.use('/api/gym', gymRoutes);
 app.use('/api/leagues', leagueRoutes);
 app.use('/api/horse-riding', horseRidingRoutes);
+app.use('/api/qr', qrRoutes);
 
 // 404 handler
 app.use((_req, res) => {

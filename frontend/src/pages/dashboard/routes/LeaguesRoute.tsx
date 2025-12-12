@@ -49,21 +49,35 @@ const LeaguesRoute: React.FC = () => {
 
   useEffect(() => {
     // Transform API leagues to LeagueItem format
+    // Use backend status directly - no hardcoded mapping
     const transformed = leagues.map((league) => {
       const startDate = new Date(league.start_date);
-      const today = new Date();
-      const registrationDeadline = new Date(league.registration_deadline);
       
-      let status: "Registered" | "Training" | "Upcoming" | "Registration Open" = "Upcoming";
+      // Map backend status directly to display status (capitalize and format)
+      let displayStatus: "Registered" | "Training" | "Upcoming" | "Registration Open" | "Ongoing" | "Finished" | "In Progress";
       
-      if (league.status === 'in_progress') {
-        status = "Training";
-      } else if (league.status === 'completed') {
-        status = "Training"; // Show as training for completed leagues
-      } else if (league.registration_enabled && today <= registrationDeadline) {
-        status = "Registration Open";
-      } else if (league.status === 'registration_open') {
-        status = "Registration Open";
+      // Use backend status directly - convert to display format
+      switch (league.status) {
+        case 'cancelled':
+          displayStatus = "Finished";
+          break;
+        case 'completed':
+          displayStatus = "Finished";
+          break;
+        case 'in_progress':
+          // Show "In Progress" to match backend status
+          displayStatus = "In Progress";
+          break;
+        case 'registration_open':
+          displayStatus = "Registration Open";
+          break;
+        case 'upcoming':
+          displayStatus = "Upcoming";
+          break;
+        default:
+          // Fallback: default to "Upcoming" for unknown statuses
+          displayStatus = "Upcoming";
+          break;
       }
 
       return {
@@ -71,7 +85,7 @@ const LeaguesRoute: React.FC = () => {
         name: league.name,
         date: startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
         participants: 0, // Will be updated if we have registration count
-        status,
+        status: displayStatus,
         prize: league.prize || "TBD",
         myRank: null,
         league: league, // Store full league object for registration

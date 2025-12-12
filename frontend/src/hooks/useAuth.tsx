@@ -196,6 +196,13 @@ export const useGetProfile = () => {
   const [user, setUser] = useState<User | null>(null);
 
   const getProfile = useCallback(async () => {
+    // Check if token exists before making the API call
+    const token = localStorage.getItem('authToken');
+    if (!token) {
+      console.log('No token found, skipping profile fetch');
+      return;
+    }
+
     setIsLoading(true);
     setError(null);
     try {
@@ -205,13 +212,21 @@ export const useGetProfile = () => {
       }
     } catch (error) {
       if (error instanceof AxiosError) {
+        const status = error.response?.status;
         const errorMessage =
           error.response?.data?.error ||
           error.response?.data?.message ||
           error.message ||
           "Failed to fetch profile";
-        setError(errorMessage);
-        toast.error(errorMessage, { id: "getProfileError" });
+        
+        // Only show error toast if it's not a 401 (auth errors are handled by interceptor)
+        if (status !== 401) {
+          setError(errorMessage);
+          toast.error(errorMessage, { id: "getProfileError" });
+        } else {
+          // 401 errors are handled by axios interceptor
+          setError(errorMessage);
+        }
       }
     } finally {
       setIsLoading(false);

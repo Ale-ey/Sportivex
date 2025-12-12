@@ -27,10 +27,10 @@ const SportsRoute: React.FC = () => {
     //   name: "Basketball",
     //   image: webp.basketball,
     // },
-    {
-      name: "Bowling",
-      image: webp.bowling,
-    },
+    // {
+    //   name: "Bowling",
+    //   image: webp.bowling,
+    // },
   ];
   return <SportsTab sports={sports} />;
 };

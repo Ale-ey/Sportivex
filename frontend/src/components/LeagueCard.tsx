@@ -11,7 +11,7 @@ export interface LeagueCardProps {
   name: string;
   date: string;
   participants: number;
-  status: "Registered" | "Training" | "Upcoming" | "Registration Open";
+  status: "Registered" | "Training" | "Upcoming" | "Registration Open" | "Ongoing" | "Finished" | "In Progress";
   prize: string;
   myRank?: number | null;
   league?: League;
@@ -81,6 +81,12 @@ const LeagueCard: React.FC<LeagueCardProps> = ({
         return "bg-amber-100 text-amber-700 border-amber-200";
       case "Registration Open":
         return "bg-slate-100 text-slate-700 border-slate-200";
+      case "Ongoing":
+        return "bg-blue-100 text-blue-700 border-blue-200";
+      case "In Progress":
+        return "bg-blue-100 text-blue-700 border-blue-200";
+      case "Finished":
+        return "bg-gray-100 text-gray-700 border-gray-200";
       default:
         return "bg-slate-100 text-slate-700 border-slate-200";
     }
