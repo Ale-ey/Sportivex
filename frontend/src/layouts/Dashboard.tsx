@@ -11,7 +11,7 @@ const Dashboard: React.FC = () => {
   useEffect(() => {
     const token = localStorage.getItem('authToken');
     if (token) {
-      getProfile();
+    getProfile();
     }
   }, [getProfile]);
   

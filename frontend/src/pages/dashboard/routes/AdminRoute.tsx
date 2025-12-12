@@ -37,6 +37,7 @@ import {
   ToggleLeft,
   ToggleRight,
   Activity,
+  Dumbbell,
 } from 'lucide-react';
 import { adminService, type LeagueRegistration } from '@/services/adminService';
 import { type TimeSlot } from '@/services/swimmingService';
@@ -101,7 +102,10 @@ const AdminRoute: React.FC = () => {
     qrCodeValue: '',
     locationName: '',
     description: '',
+    qrType: 'swimming' as 'gym' | 'swimming',
   });
+  const [gymQRCodes, setGymQRCodes] = useState<any[]>([]);
+  const [loadingGymQRCodes, setLoadingGymQRCodes] = useState(false);
 
   // Delete confirmation dialogs
   const [deleteSlotId, setDeleteSlotId] = useState<string | null>(null);
@@ -683,25 +687,44 @@ const AdminRoute: React.FC = () => {
 
   const fetchQRCodes = async () => {
     setLoadingQRCodes(true);
+    setLoadingGymQRCodes(true);
     try {
-      const response = await adminService.getQRCodes();
-      if (response.success) {
-        setQrCodes(response.data.qrCodes);
+      const [swimmingResponse, gymResponse] = await Promise.all([
+        adminService.getQRCodes(),
+        adminService.getGymQRCodes(),
+      ]);
+      if (swimmingResponse.success) {
+        setQrCodes(swimmingResponse.data.qrCodes);
+      }
+      if (gymResponse.success) {
+        setGymQRCodes(gymResponse.data.qrCodes);
       }
     } catch (error) {
       toast.error('Failed to fetch QR codes');
     } finally {
       setLoadingQRCodes(false);
+      setLoadingGymQRCodes(false);
     }
   };
 
   const handleCreateQRCode = async () => {
     try {
-      const response = await adminService.createQRCode(qrForm);
+      let response;
+      if (qrForm.qrType === 'gym') {
+        response = await adminService.createGymQRCode({
+          description: qrForm.description,
+          location: qrForm.locationName,
+        });
+      } else {
+        response = await adminService.createQRCode({
+          locationName: qrForm.locationName,
+          description: qrForm.description,
+        });
+      }
       if (response.success) {
         toast.success('QR code created successfully');
         setShowQRDialog(false);
-        setQrForm({ qrCodeValue: '', locationName: '', description: '' });
+        setQrForm({ qrCodeValue: '', locationName: '', description: '', qrType: 'swimming' });
         fetchQRCodes();
       }
     } catch (error: any) {
@@ -711,6 +734,18 @@ const AdminRoute: React.FC = () => {
 
   const handleDeleteQRCode = async (id: string) => {
     setDeleteQRCodeId(id);
+  };
+
+  const handleDeleteGymQRCode = async (id: string) => {
+    try {
+      const response = await adminService.deleteGymQRCode(id);
+      if (response.success) {
+        toast.success('Gym QR code deleted successfully');
+        fetchQRCodes();
+      }
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Failed to delete gym QR code');
+    }
   };
 
   const confirmDeleteQRCode = async () => {
@@ -1429,7 +1464,8 @@ const AdminRoute: React.FC = () => {
                     <div className="space-y-2">
                       <div className="mb-4 p-3 bg-muted rounded-md">
                         <p className="text-sm font-medium">
-                          Total Registrations: <span className="text-primary">{horseRidingRegistrations.length}</span>
+                          Total Registrations: <span className="text-primary">{horseRidingRegistrations.filter((r: any) => r.payment_status === 'succeeded' && (r.status === 'paid' || r.status === 'enrolled')).length}</span>
+                          {' '}(Showing paid and registered only)
                         </p>
                       </div>
                       <div className="border rounded-lg overflow-hidden">
@@ -1446,7 +1482,9 @@ const AdminRoute: React.FC = () => {
                             </tr>
                           </thead>
                           <tbody className="divide-y">
-                            {horseRidingRegistrations.map((registration: any) => (
+                            {horseRidingRegistrations
+                              .filter((r: any) => r.payment_status === 'succeeded' && (r.status === 'paid' || r.status === 'enrolled'))
+                              .map((registration: any) => (
                               <tr key={registration.id} className="hover:bg-muted/50">
                                 <td className="px-4 py-3 text-sm">
                                   <div className="flex items-center gap-2">
@@ -1522,11 +1560,11 @@ const AdminRoute: React.FC = () => {
             </Button>
           </div>
 
-          {loadingQRCodes ? (
+          {loadingQRCodes || loadingGymQRCodes ? (
             <div className="flex items-center justify-center h-64">
               <Loader2 className="w-8 h-8 animate-spin" />
             </div>
-          ) : qrCodes.length === 0 ? (
+          ) : qrCodes.length === 0 && gymQRCodes.length === 0 ? (
             <Card className="border border-[#E2F5FB]">
               <CardContent className="p-8 text-center">
                 <QrCode className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
@@ -1540,8 +1578,16 @@ const AdminRoute: React.FC = () => {
               </CardContent>
             </Card>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {qrCodes.map((qr) => {
+            <div className="space-y-6">
+              {/* Swimming QR Codes */}
+              {qrCodes.length > 0 && (
+                <div>
+                  <h4 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                    <Waves className="w-5 h-5" />
+                    Swimming QR Codes
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {qrCodes.map((qr) => {
                 const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(qr.qr_code_value)}`;
                 
                 return (
@@ -1621,8 +1667,105 @@ const AdminRoute: React.FC = () => {
                       </div>
                     </CardContent>
                   </Card>
-                );
-              })}
+                    );
+                  })}
+                  </div>
+                </div>
+              )}
+
+              {/* Gym QR Codes */}
+              {gymQRCodes.length > 0 && (
+                <div>
+                  <h4 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                    <Dumbbell className="w-5 h-5" />
+                    Gym QR Codes
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {gymQRCodes.map((qr) => {
+                      const qrCodeUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(qr.qr_code_value)}`;
+                      
+                      return (
+                        <Card key={qr.id} className="border border-[#E2F5FB]">
+                          <CardHeader>
+                            <div className="flex items-start justify-between">
+                              <CardTitle className="text-lg">{qr.location || 'Gym QR Code'}</CardTitle>
+                              <Badge variant={qr.is_active ? 'default' : 'secondary'}>
+                                {qr.is_active ? 'Active' : 'Inactive'}
+                              </Badge>
+                            </div>
+                          </CardHeader>
+                          <CardContent>
+                            <div className="space-y-4">
+                              {/* QR Code Display */}
+                              <div className="flex flex-col items-center p-4 bg-white rounded-lg border-2 border-dashed border-[#E2F5FB]">
+                                <img
+                                  src={qrCodeUrl}
+                                  alt={`QR Code for ${qr.location || 'Gym'}`}
+                                  className="w-full max-w-[250px] h-auto rounded-lg"
+                                />
+                                <p className="text-xs text-muted-foreground mt-2 text-center">
+                                  Scan this QR code for attendance
+                                </p>
+                              </div>
+
+                              {/* QR Code Details */}
+                              <div className="space-y-2">
+                                <div className="flex items-center justify-between">
+                                  <span className="text-sm text-muted-foreground">QR Code Value</span>
+                                  <code className="text-xs bg-muted px-2 py-1 rounded break-all">
+                                    {qr.qr_code_value}
+                                  </code>
+                                </div>
+                                {qr.description && (
+                                  <div>
+                                    <span className="text-sm text-muted-foreground">Description:</span>
+                                    <p className="text-sm mt-1">{qr.description}</p>
+                                  </div>
+                                )}
+                                {qr.created_at && (
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-sm text-muted-foreground">Created</span>
+                                    <span className="text-xs text-muted-foreground">
+                                      {new Date(qr.created_at).toLocaleDateString()}
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
+
+                              {/* Actions */}
+                              <div className="flex gap-2 pt-2">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => {
+                                    const link = document.createElement('a');
+                                    link.href = qrCodeUrl;
+                                    link.download = `${qr.location || 'Gym'}_QR_Code.png`;
+                                    link.click();
+                                  }}
+                                  className="flex-1"
+                                >
+                                  <QrCode className="w-4 h-4 mr-1" />
+                                  Download
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="destructive"
+                                  onClick={() => handleDeleteGymQRCode(qr.id)}
+                                  className="flex-1"
+                                >
+                                  <Trash2 className="w-4 h-4 mr-1" />
+                                  Delete
+                                </Button>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
@@ -1635,19 +1778,22 @@ const AdminRoute: React.FC = () => {
               </DialogHeader>
               <div className="space-y-4 mt-4">
                 <div>
-                  <Label>QR Code Value *</Label>
-                  <Input
-                    value={qrForm.qrCodeValue}
-                    onChange={(e) => setQrForm({ ...qrForm, qrCodeValue: e.target.value })}
-                    placeholder="Unique QR code value"
-                  />
+                  <Label>QR Code Type *</Label>
+                  <select
+                    value={qrForm.qrType}
+                    onChange={(e) => setQrForm({ ...qrForm, qrType: e.target.value as 'gym' | 'swimming' })}
+                    className="w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[#0077B6]"
+                  >
+                    <option value="swimming">Swimming</option>
+                    <option value="gym">Gym</option>
+                  </select>
                 </div>
                 <div>
                   <Label>Location Name *</Label>
                   <Input
                     value={qrForm.locationName}
                     onChange={(e) => setQrForm({ ...qrForm, locationName: e.target.value })}
-                    placeholder="e.g., Swimming Pool Reception"
+                    placeholder={qrForm.qrType === 'gym' ? 'e.g., Gym Entrance' : 'e.g., Swimming Pool Reception'}
                   />
                 </div>
                 <div>
@@ -1667,7 +1813,7 @@ const AdminRoute: React.FC = () => {
                     variant="outline"
                     onClick={() => {
                       setShowQRDialog(false);
-                      setQrForm({ qrCodeValue: '', locationName: '', description: '' });
+                      setQrForm({ qrCodeValue: '', locationName: '', description: '', qrType: 'swimming' });
                     }}
                     className="flex-1"
                   >

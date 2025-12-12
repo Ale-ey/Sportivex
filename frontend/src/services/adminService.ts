@@ -150,7 +150,7 @@ export interface QRCodesResponse {
 }
 
 export interface CreateQRCodeRequest {
-  qrCodeValue: string;
+  qrCodeValue?: string; // Optional - backend generates it if not provided
   locationName: string;
   description?: string;
 }

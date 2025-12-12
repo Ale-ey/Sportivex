@@ -547,38 +547,42 @@ const GymRoute: React.FC = () => {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-2 border-b">
+      <div className="flex gap-2 border-b overflow-x-auto">
         <Button
           variant={activeTab === 'exercises' ? 'default' : 'ghost'}
           onClick={() => setActiveTab('exercises')}
-          className="rounded-b-none"
+          className="rounded-b-none whitespace-nowrap"
         >
           <Dumbbell className="w-4 h-4 mr-2" />
-          Exercises
+          <span className="hidden sm:inline">Exercises</span>
+          <span className="sm:hidden">Ex</span>
         </Button>
         <Button
           variant={activeTab === 'workout' ? 'default' : 'ghost'}
           onClick={() => setActiveTab('workout')}
-          className="rounded-b-none"
+          className="rounded-b-none whitespace-nowrap"
         >
           <Play className="w-4 h-4 mr-2" />
-          Workout
+          <span className="hidden sm:inline">Workout</span>
+          <span className="sm:hidden">W</span>
         </Button>
         <Button
           variant={activeTab === 'progress' ? 'default' : 'ghost'}
           onClick={() => setActiveTab('progress')}
-          className="rounded-b-none"
+          className="rounded-b-none whitespace-nowrap"
         >
           <BarChart3 className="w-4 h-4 mr-2" />
-          Progress
+          <span className="hidden sm:inline">Progress</span>
+          <span className="sm:hidden">P</span>
         </Button>
         <Button
           variant={activeTab === 'goals' ? 'default' : 'ghost'}
           onClick={() => setActiveTab('goals')}
-          className="rounded-b-none"
+          className="rounded-b-none whitespace-nowrap"
         >
           <Target className="w-4 h-4 mr-2" />
-          Goals
+          <span className="hidden sm:inline">Goals</span>
+          <span className="sm:hidden">G</span>
         </Button>
       </div>
 
