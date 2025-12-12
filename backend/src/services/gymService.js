@@ -380,13 +380,25 @@ export const getUserGoals = async (userId) => {
  */
 export const saveUserGoal = async (userId, goalData) => {
   try {
-    const { id, ...goalFields } = goalData;
+    const { id, user_id, ...goalFields } = goalData; // Remove user_id from goalFields if present
+
+    // Prepare clean goal data
+    const cleanGoalData = {
+      goal_type: goalFields.goal_type,
+      target_value: parseFloat(goalFields.target_value) || 0,
+      current_value: goalFields.current_value !== undefined ? parseFloat(goalFields.current_value) || 0 : 0,
+      unit: goalFields.unit || null,
+      start_date: goalFields.start_date,
+      end_date: goalFields.end_date && goalFields.end_date !== '' ? goalFields.end_date : null,
+      is_active: goalFields.is_active !== undefined ? goalFields.is_active : true,
+      description: goalFields.description || null,
+    };
 
     if (id) {
       // Update existing goal
       const { data, error } = await supabase
         .from('user_goals')
-        .update(goalFields)
+        .update(cleanGoalData)
         .eq('id', id)
         .eq('user_id', userId)
         .select()
@@ -404,7 +416,7 @@ export const saveUserGoal = async (userId, goalData) => {
         .from('user_goals')
         .insert([
           {
-            ...goalFields,
+            ...cleanGoalData,
             user_id: userId
           }
         ])
@@ -413,6 +425,7 @@ export const saveUserGoal = async (userId, goalData) => {
 
       if (error) {
         console.error('Error creating goal:', error);
+        console.error('Goal data attempted:', { ...cleanGoalData, user_id: userId });
         return { success: false, goal: null, error: error.message };
       }
 
@@ -488,6 +501,394 @@ export const getUserStats = async (userId) => {
   } catch (error) {
     console.error('Error in getUserStats:', error);
     return { success: false, stats: null, error: error.message };
+  }
+};
+
+// ==================== GYM REGISTRATION ====================
+
+/**
+ * Get user's gym registration
+ */
+export const getUserGymRegistration = async (userId) => {
+  try {
+    const { data, error } = await supabase
+      .from('gym_registrations')
+      .select('*')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    if (error) {
+      console.error('Error getting user gym registration:', error);
+      return { success: false, registration: null, error: error.message };
+    }
+
+    return { success: true, registration: data };
+  } catch (error) {
+    console.error('Error in getUserGymRegistration:', error);
+    return { success: false, registration: null, error: error.message };
+  }
+};
+
+/**
+ * Check if user has active gym registration (paid and not expired)
+ */
+export const checkGymRegistrationStatus = async (userId) => {
+  try {
+    const { success, registration } = await getUserGymRegistration(userId);
+
+    if (!success || !registration) {
+      return {
+        success: false,
+        isRegistered: false,
+        isActive: false,
+        message: 'No gym registration found. Please register first.',
+        registration: null
+      };
+    }
+
+    // Check if registration is active and payment is up to date
+    const today = new Date();
+    const todayStr = today.toISOString().split('T')[0];
+    const isPaymentDue = registration.payment_due || 
+      (registration.next_payment_date && registration.next_payment_date <= todayStr);
+
+    const isActive = registration.status === 'active' && 
+                     registration.payment_status === 'succeeded' &&
+                     !isPaymentDue;
+
+    return {
+      success: true,
+      isRegistered: true,
+      isActive,
+      isPaymentDue,
+      message: isActive 
+        ? 'Gym registration is active' 
+        : isPaymentDue 
+          ? 'Monthly payment is due. Please pay to continue using gym facilities.'
+          : 'Gym registration is not active',
+      registration
+    };
+  } catch (error) {
+    console.error('Error in checkGymRegistrationStatus:', error);
+    return {
+      success: false,
+      isRegistered: false,
+      isActive: false,
+      message: 'Error checking registration status',
+      registration: null
+    };
+  }
+};
+
+/**
+ * Calculate next payment date (8th of next month)
+ */
+const calculateNextGymPaymentDate = () => {
+  const now = new Date();
+  const currentMonth = now.getMonth();
+  const currentYear = now.getFullYear();
+  
+  // If today is before the 8th, payment is due on the 8th of current month
+  // Otherwise, payment is due on the 8th of next month
+  if (now.getDate() < 8) {
+    return new Date(currentYear, currentMonth, 8);
+  } else {
+    // Next month, 8th day
+    const nextMonth = currentMonth === 11 ? 0 : currentMonth + 1;
+    const nextYear = currentMonth === 11 ? currentYear + 1 : currentYear;
+    return new Date(nextYear, nextMonth, 8);
+  }
+};
+
+/**
+ * Create gym registration (pending payment)
+ */
+export const createGymRegistration = async (registrationData) => {
+  try {
+    // Check if user already has a registration
+    const existing = await getUserGymRegistration(registrationData.user_id);
+    if (existing.success && existing.registration) {
+      return { success: false, registration: null, error: 'User already has a gym registration' };
+    }
+
+    // Set up monthly payment tracking
+    const nextPaymentDate = calculateNextGymPaymentDate();
+    const registrationWithMonthly = {
+      ...registrationData,
+      monthly_fee: 2000.00, // Default monthly fee
+      next_payment_date: nextPaymentDate.toISOString().split('T')[0], // YYYY-MM-DD format
+      payment_due: false, // Will be checked later
+    };
+
+    const { data, error } = await supabase
+      .from('gym_registrations')
+      .insert([registrationWithMonthly])
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error creating gym registration:', error);
+      return { success: false, registration: null, error: error.message };
+    }
+
+    return { success: true, registration: data };
+  } catch (error) {
+    console.error('Error in createGymRegistration:', error);
+    return { success: false, registration: null, error: error.message };
+  }
+};
+
+/**
+ * Update gym registration
+ */
+export const updateGymRegistration = async (registrationId, updateData) => {
+  try {
+    const { data, error } = await supabase
+      .from('gym_registrations')
+      .update(updateData)
+      .eq('id', registrationId)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error updating gym registration:', error);
+      return { success: false, registration: null, error: error.message };
+    }
+
+    return { success: true, registration: data };
+  } catch (error) {
+    console.error('Error in updateGymRegistration:', error);
+    return { success: false, registration: null, error: error.message };
+  }
+};
+
+/**
+ * Check and update payment due status for all gym registrations
+ */
+export const checkGymPaymentDueStatus = async () => {
+  try {
+    const today = new Date();
+    const todayStr = today.toISOString().split('T')[0]; // YYYY-MM-DD
+
+    // Get all active registrations
+    const { data: registrations, error } = await supabase
+      .from('gym_registrations')
+      .select('id, next_payment_date, payment_due, status')
+      .in('status', ['active']);
+
+    if (error) {
+      console.error('Error checking gym payment due status:', error);
+      return { success: false, error: error.message };
+    }
+
+    // Update payment_due for registrations where next_payment_date has passed
+    const overdueRegistrations = registrations.filter(
+      (reg) => reg.next_payment_date && reg.next_payment_date <= todayStr && !reg.payment_due
+    );
+
+    if (overdueRegistrations.length > 0) {
+      const ids = overdueRegistrations.map((reg) => reg.id);
+      const { error: updateError } = await supabase
+        .from('gym_registrations')
+        .update({ payment_due: true })
+        .in('id', ids);
+
+      if (updateError) {
+        console.error('Error updating gym payment due status:', updateError);
+        return { success: false, error: updateError.message };
+      }
+    }
+
+    return { success: true, overdueCount: overdueRegistrations.length };
+  } catch (error) {
+    console.error('Error in checkGymPaymentDueStatus:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+/**
+ * Create monthly payment record
+ */
+export const createGymMonthlyPayment = async (paymentData) => {
+  try {
+    const { data, error } = await supabase
+      .from('gym_monthly_payments')
+      .insert([paymentData])
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error creating gym monthly payment:', error);
+      return { success: false, payment: null, error: error.message };
+    }
+
+    return { success: true, payment: data };
+  } catch (error) {
+    console.error('Error in createGymMonthlyPayment:', error);
+    return { success: false, payment: null, error: error.message };
+  }
+};
+
+/**
+ * Update monthly payment status
+ */
+export const updateGymMonthlyPayment = async (paymentId, paymentData) => {
+  try {
+    const { data, error } = await supabase
+      .from('gym_monthly_payments')
+      .update(paymentData)
+      .eq('id', paymentId)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error updating gym monthly payment:', error);
+      return { success: false, payment: null, error: error.message };
+    }
+
+    return { success: true, payment: data };
+  } catch (error) {
+    console.error('Error in updateGymMonthlyPayment:', error);
+    return { success: false, payment: null, error: error.message };
+  }
+};
+
+/**
+ * Get user's monthly payment history
+ */
+export const getUserGymMonthlyPayments = async (userId, limit = 12) => {
+  try {
+    const { data, error } = await supabase
+      .from('gym_monthly_payments')
+      .select('*')
+      .eq('user_id', userId)
+      .order('payment_month', { ascending: false })
+      .limit(limit);
+
+    if (error) {
+      console.error('Error getting gym monthly payments:', error);
+      return { success: false, payments: [], error: error.message };
+    }
+
+    return { success: true, payments: data || [] };
+  } catch (error) {
+    console.error('Error in getUserGymMonthlyPayments:', error);
+    return { success: false, payments: [], error: error.message };
+  }
+};
+
+/**
+ * Process gym QR code scan for attendance
+ */
+export const processGymQRScan = async (qrCodeValue, user) => {
+  try {
+    // 1. Check if user has active gym registration
+    const registrationStatus = await checkGymRegistrationStatus(user.id);
+    if (!registrationStatus.isActive) {
+      return {
+        success: false,
+        message: registrationStatus.message || 'Gym registration is not active. Please complete your monthly payment.',
+        requiresPayment: registrationStatus.isPaymentDue
+      };
+    }
+
+    // 2. Validate QR code exists and is active
+    const { data: qrCode, error: qrError } = await supabase
+      .from('gym_qr_codes')
+      .select('*')
+      .eq('qr_code_value', qrCodeValue)
+      .eq('is_active', true)
+      .single();
+
+    if (qrError || !qrCode) {
+      return {
+        success: false,
+        message: 'Invalid or inactive QR code'
+      };
+    }
+
+    // 3. Check if user already checked in today
+    const today = new Date();
+    const sessionDate = today.toISOString().split('T')[0]; // YYYY-MM-DD
+
+    const { data: existingAttendance } = await supabase
+      .from('gym_attendance')
+      .select('*')
+      .eq('user_id', user.id)
+      .eq('session_date', sessionDate)
+      .maybeSingle();
+
+    if (existingAttendance) {
+      return {
+        success: false,
+        message: 'You have already checked in today',
+        alreadyCheckedIn: true
+      };
+    }
+
+    // 4. Create attendance record
+    const { data: attendance, error: attendanceError } = await supabase
+      .from('gym_attendance')
+      .insert([
+        {
+          user_id: user.id,
+          registration_id: registrationStatus.registration.id,
+          session_date: sessionDate,
+          check_in_time: new Date().toISOString(),
+          check_in_method: 'qr_scan'
+        }
+      ])
+      .select()
+      .single();
+
+    if (attendanceError) {
+      console.error('Error creating gym attendance:', attendanceError);
+      return {
+        success: false,
+        message: 'Failed to record attendance. Please try again.'
+      };
+    }
+
+    // 5. Return success with details
+    return {
+      success: true,
+      message: 'Check-in successful',
+      attendance: {
+        id: attendance.id,
+        checkInTime: attendance.check_in_time,
+        sessionDate: attendance.session_date
+      }
+    };
+  } catch (error) {
+    console.error('Error in processGymQRScan:', error);
+    return {
+      success: false,
+      message: 'An error occurred during check-in. Please try again.'
+    };
+  }
+};
+
+/**
+ * Get user's gym attendance history
+ */
+export const getUserGymAttendance = async (userId, limit = 30) => {
+  try {
+    const { data, error } = await supabase
+      .from('gym_attendance')
+      .select('*')
+      .eq('user_id', userId)
+      .order('check_in_time', { ascending: false })
+      .limit(limit);
+
+    if (error) {
+      console.error('Error getting gym attendance:', error);
+      return { success: false, attendance: [], error: error.message };
+    }
+
+    return { success: true, attendance: data || [] };
+  } catch (error) {
+    console.error('Error in getUserGymAttendance:', error);
+    return { success: false, attendance: [], error: error.message };
   }
 };
 

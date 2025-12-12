@@ -7,9 +7,12 @@ import { useGetProfile } from "../hooks/useAuth";
 const Dashboard: React.FC = () => {
   const { getProfile, user } = useGetProfile();
   
-  // Fetch profile on mount to ensure role is available
+  // Fetch profile on mount to ensure role is available (only if token exists)
   useEffect(() => {
-    getProfile();
+    const token = localStorage.getItem('authToken');
+    if (token) {
+      getProfile();
+    }
   }, [getProfile]);
   
   const items = useMemo(

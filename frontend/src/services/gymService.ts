@@ -100,6 +100,61 @@ export interface UserStats {
   todayExercises: number;
 }
 
+export interface GymRegistration {
+  id: string;
+  user_id: string;
+  stripe_payment_intent_id?: string;
+  stripe_session_id?: string;
+  amount_paid: number;
+  payment_status: 'pending' | 'processing' | 'succeeded' | 'failed' | 'canceled' | 'refunded';
+  registration_fee: number;
+  monthly_fee: number;
+  status: 'pending' | 'active' | 'suspended' | 'cancelled' | 'expired';
+  registered_at: string;
+  activated_at?: string;
+  expires_at?: string;
+  next_payment_date?: string;
+  last_payment_date?: string;
+  payment_due: boolean;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface GymMonthlyPayment {
+  id: string;
+  registration_id: string;
+  user_id: string;
+  amount: number;
+  payment_month: string;
+  payment_status: 'pending' | 'processing' | 'succeeded' | 'failed' | 'canceled' | 'refunded';
+  stripe_session_id?: string;
+  stripe_payment_intent_id?: string;
+  paid_at?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface GymAttendance {
+  id: string;
+  user_id: string;
+  registration_id: string;
+  check_in_time: string;
+  check_in_method: 'qr_scan' | 'manual' | 'app';
+  session_date: string;
+  notes?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
+export interface GymRegistrationStatus {
+  success: boolean;
+  isRegistered: boolean;
+  isActive: boolean;
+  isPaymentDue?: boolean;
+  message: string;
+  registration: GymRegistration | null;
+}
+
 // ==================== API RESPONSES ====================
 
 export interface ExercisesResponse {
@@ -282,6 +337,178 @@ class GymService {
       );
       return response.data;
     }
+  }
+
+  // ==================== GYM REGISTRATION ====================
+
+  /**
+   * Get user's gym registration
+   */
+  async getRegistration(): Promise<{ success: boolean; data: { registration: GymRegistration | null } }> {
+    const response = await axiosInstance.get<{ success: boolean; data: { registration: GymRegistration | null } }>(
+      `${this.baseUrl}/registration`
+    );
+    return response.data;
+  }
+
+  /**
+   * Check gym registration status
+   */
+  async checkRegistrationStatus(): Promise<{ success: boolean; data: GymRegistrationStatus }> {
+    const response = await axiosInstance.get<{ success: boolean; data: GymRegistrationStatus }>(
+      `${this.baseUrl}/registration/status`
+    );
+    return response.data;
+  }
+
+  /**
+   * Create gym registration
+   */
+  async createRegistration(registrationFee?: number): Promise<{
+    success: boolean;
+    message: string;
+    data: {
+      registration: GymRegistration;
+      requiresPayment: boolean;
+      checkoutUrl?: string;
+      sessionId?: string;
+    };
+  }> {
+    const response = await axiosInstance.post<{
+      success: boolean;
+      message: string;
+      data: {
+        registration: GymRegistration;
+        requiresPayment: boolean;
+        checkoutUrl?: string;
+        sessionId?: string;
+      };
+    }>(`${this.baseUrl}/registration`, {
+      registration_fee: registrationFee
+    });
+    return response.data;
+  }
+
+  /**
+   * Verify registration payment
+   */
+  async verifyRegistrationPayment(registrationId: string, sessionId: string): Promise<{
+    success: boolean;
+    message: string;
+    data?: { registration: GymRegistration };
+  }> {
+    const response = await axiosInstance.post<{
+      success: boolean;
+      message: string;
+      data?: { registration: GymRegistration };
+    }>(`${this.baseUrl}/registration/verify-payment`, {
+      registrationId,
+      sessionId
+    });
+    return response.data;
+  }
+
+  /**
+   * Create monthly payment
+   */
+  async createMonthlyPayment(registrationId: string): Promise<{
+    success: boolean;
+    message: string;
+    data: {
+      payment: GymMonthlyPayment;
+      checkoutUrl: string;
+      sessionId: string;
+    };
+  }> {
+    const response = await axiosInstance.post<{
+      success: boolean;
+      message: string;
+      data: {
+        payment: GymMonthlyPayment;
+        checkoutUrl: string;
+        sessionId: string;
+      };
+    }>(`${this.baseUrl}/registration/monthly-payment`, {
+      registrationId
+    });
+    return response.data;
+  }
+
+  /**
+   * Verify monthly payment
+   */
+  async verifyMonthlyPayment(paymentId: string, sessionId: string): Promise<{
+    success: boolean;
+    message: string;
+  }> {
+    const response = await axiosInstance.post<{
+      success: boolean;
+      message: string;
+    }>(`${this.baseUrl}/registration/monthly-payment/verify`, {
+      paymentId,
+      sessionId
+    });
+    return response.data;
+  }
+
+  /**
+   * Get monthly payment history
+   */
+  async getMonthlyPayments(limit: number = 12): Promise<{
+    success: boolean;
+    data: {
+      payments: GymMonthlyPayment[];
+      count: number;
+    };
+  }> {
+    const response = await axiosInstance.get<{
+      success: boolean;
+      data: {
+        payments: GymMonthlyPayment[];
+        count: number;
+      };
+    }>(`${this.baseUrl}/registration/monthly-payments?limit=${limit}`);
+    return response.data;
+  }
+
+  /**
+   * Process gym QR code scan for attendance
+   */
+  async scanQRCode(qrCodeValue: string): Promise<{
+    success: boolean;
+    message: string;
+    data?: { attendance: GymAttendance };
+    requiresPayment?: boolean;
+  }> {
+    const response = await axiosInstance.post<{
+      success: boolean;
+      message: string;
+      data?: { attendance: GymAttendance };
+      requiresPayment?: boolean;
+    }>(`${this.baseUrl}/attendance/scan-qr`, {
+      qrCodeValue
+    });
+    return response.data;
+  }
+
+  /**
+   * Get gym attendance history
+   */
+  async getAttendance(limit: number = 30): Promise<{
+    success: boolean;
+    data: {
+      attendance: GymAttendance[];
+      count: number;
+    };
+  }> {
+    const response = await axiosInstance.get<{
+      success: boolean;
+      data: {
+        attendance: GymAttendance[];
+        count: number;
+      };
+    }>(`${this.baseUrl}/attendance?limit=${limit}`);
+    return response.data;
   }
 }
 

@@ -10,7 +10,6 @@ import {
   Trophy,
   Bike,
   Footprints,
-  CircleDot,
   Users,
 } from "lucide-react";
 
@@ -176,22 +175,22 @@ const SportsNavigation: React.FC = () => {
         "Race Training",
       ],
     },
-    {
-      title: "Bowling",
-      description:
-        "Professional bowling lanes with league play and tournament management",
-      icon: CircleDot,
-      link: "/bowling",
-      color: "bg-gradient-to-br from-amber-400 to-amber-600",
-      imageUrl: "/bowling.jpg",
-      features: [
-        "Lane Booking",
-        "League Play",
-        "Tournament Events",
-        "Equipment Rental",
-        "Coaching",
-      ],
-    },
+    // {
+    //   title: "Bowling",
+    //   description:
+    //     "Professional bowling lanes with league play and tournament management",
+    //   icon: CircleDot,
+    //   link: "/bowling",
+    //   color: "bg-gradient-to-br from-amber-400 to-amber-600",
+    //   imageUrl: "/bowling.jpg",
+    //   features: [
+    //     "Lane Booking",
+    //     "League Play",
+    //     "Tournament Events",
+    //     "Equipment Rental",
+    //     "Coaching",
+    //   ],
+    // },
   ];
 
   return (

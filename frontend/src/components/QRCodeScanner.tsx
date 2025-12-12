@@ -1,8 +1,8 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
-import { QrCode, Camera, CheckCircle2, AlertCircle, Loader2 } from 'lucide-react';
-import { swimmingService } from '@/services/swimmingService';
+import { QrCode, Camera, CheckCircle2, AlertCircle, Loader2, Dumbbell, Waves } from 'lucide-react';
+import axiosInstance from '@/lib/axiosInstance';
 import toast from 'react-hot-toast';
 
 const QRCodeScanner: React.FC = () => {
@@ -12,6 +12,7 @@ const QRCodeScanner: React.FC = () => {
     message: string;
     attendance?: any;
     timeSlot?: any;
+    qrType?: 'gym' | 'swimming';
   } | null>(null);
   const [loading, setLoading] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -68,31 +69,50 @@ const QRCodeScanner: React.FC = () => {
     setLoading(true);
     setResult(null);
     try {
-      const response = await swimmingService.scanQRCode(code);
-      if (response.success) {
+      // Use unified QR scanner endpoint
+      const response = await axiosInstance.post('/qr/scan', {
+        qrCodeValue: code
+      });
+
+      if (response.data.success) {
+        const qrType = response.data.qrType || 'unknown';
+        const typeLabel = qrType === 'gym' ? 'Gym' : qrType === 'swimming' ? 'Swimming' : '';
+        
         setResult({
           success: true,
-          message: response.message || 'Check-in successful!',
-          attendance: response.attendance,
-          timeSlot: response.timeSlot,
+          message: response.data.message || `${typeLabel} check-in successful!`,
+          attendance: response.data.attendance || response.data.data?.attendance,
+          timeSlot: response.data.timeSlot,
+          qrType: qrType as 'gym' | 'swimming'
         });
-        toast.success(response.message || 'Check-in successful!');
+        toast.success(response.data.message || `${typeLabel} check-in successful!`);
         setQrCodeValue(''); // Clear input after successful scan
       } else {
         setResult({
           success: false,
-          message: response.message || 'Check-in failed',
+          message: response.data.message || 'Check-in failed',
+          qrType: response.data.qrType as 'gym' | 'swimming' | undefined
         });
-        toast.error(response.message || 'Check-in failed');
+        
+        // Don't show toast for registration errors (402) - handled in UI
+        if (response.status !== 402) {
+          toast.error(response.data.message || 'Check-in failed');
+        }
       }
     } catch (error: any) {
       const errorMessage =
         error.response?.data?.message || error.message || 'Failed to scan QR code';
+      
+      // Don't show toast for registration errors (402) - handled in UI
+      if (error.response?.status !== 402) {
+        toast.error(errorMessage);
+      }
+      
       setResult({
         success: false,
         message: errorMessage,
+        qrType: error.response?.data?.qrType as 'gym' | 'swimming' | undefined
       });
-      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -189,7 +209,11 @@ const QRCodeScanner: React.FC = () => {
                 <AlertCircle className="w-6 h-6 flex-shrink-0" />
               )}
               <div className="flex-1">
-                <p className="font-semibold">{result.message}</p>
+                <div className="flex items-center gap-2 mb-1">
+                  {result.qrType === 'gym' && <Dumbbell className="w-4 h-4" />}
+                  {result.qrType === 'swimming' && <Waves className="w-4 h-4" />}
+                  <p className="font-semibold">{result.message}</p>
+                </div>
                 {result.success && result.timeSlot && (
                   <div className="mt-2 text-sm text-muted-foreground">
                     <p>
@@ -201,6 +225,11 @@ const QRCodeScanner: React.FC = () => {
                     {result.attendance && (
                       <p>Checked in at: {new Date(result.attendance.checkInTime).toLocaleString()}</p>
                     )}
+                  </div>
+                )}
+                {!result.success && result.qrType && (
+                  <div className="mt-2 text-sm text-muted-foreground">
+                    <p>QR Type: {result.qrType === 'gym' ? 'Gym' : 'Swimming'}</p>
                   </div>
                 )}
               </div>

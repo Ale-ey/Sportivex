@@ -185,6 +185,174 @@ export const createMonthlyPaymentCheckoutSession = async (amount, userId, regist
 };
 
 /**
+ * Create a checkout session for gym registration
+ */
+export const createGymRegistrationCheckoutSession = async (amount, userId, registrationId, successUrl, cancelUrl) => {
+  if (!stripe) {
+    return { success: false, error: 'Stripe is not configured. Please set STRIPE_SECRET_KEY in your .env file with a valid key (sk_test_... or sk_live_...)' };
+  }
+  try {
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      line_items: [
+        {
+          price_data: {
+            currency: 'pkr',
+            product_data: {
+              name: 'Gym Registration',
+              description: 'Registration fee for gym access',
+            },
+            unit_amount: Math.round(amount * 100), // Convert to cents
+          },
+          quantity: 1,
+        },
+      ],
+      mode: 'payment',
+      success_url: successUrl,
+      cancel_url: cancelUrl,
+      metadata: {
+        userId,
+        registrationId,
+        type: 'gym_registration',
+      },
+      client_reference_id: registrationId,
+    });
+
+    return { success: true, session };
+  } catch (error) {
+    console.error('Error creating gym registration checkout session:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+/**
+ * Create a checkout session for gym monthly payment
+ */
+export const createGymMonthlyPaymentCheckoutSession = async (amount, userId, registrationId, paymentMonth, successUrl, cancelUrl) => {
+  if (!stripe) {
+    return { success: false, error: 'Stripe is not configured. Please set STRIPE_SECRET_KEY in your .env file with a valid key (sk_test_... or sk_live_...)' };
+  }
+  try {
+    const monthName = new Date(paymentMonth).toLocaleString('default', { month: 'long', year: 'numeric' });
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      line_items: [
+        {
+          price_data: {
+            currency: 'pkr',
+            product_data: {
+              name: 'Gym Monthly Fee',
+              description: `Monthly subscription fee for ${monthName}`,
+            },
+            unit_amount: Math.round(amount * 100), // Convert to cents
+          },
+          quantity: 1,
+        },
+      ],
+      mode: 'payment',
+      success_url: successUrl,
+      cancel_url: cancelUrl,
+      metadata: {
+        userId,
+        registrationId,
+        type: 'gym_monthly_payment',
+        paymentMonth,
+      },
+      client_reference_id: registrationId,
+    });
+
+    return { success: true, session };
+  } catch (error) {
+    console.error('Error creating gym monthly payment checkout session:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+/**
+ * Create a checkout session for swimming registration
+ */
+export const createSwimmingRegistrationCheckoutSession = async (amount, userId, registrationId, successUrl, cancelUrl) => {
+  if (!stripe) {
+    return { success: false, error: 'Stripe is not configured. Please set STRIPE_SECRET_KEY in your .env file with a valid key (sk_test_... or sk_live_...)' };
+  }
+  try {
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      line_items: [
+        {
+          price_data: {
+            currency: 'pkr',
+            product_data: {
+              name: 'Swimming Registration',
+              description: 'Registration fee for swimming access',
+            },
+            unit_amount: Math.round(amount * 100), // Convert to cents
+          },
+          quantity: 1,
+        },
+      ],
+      mode: 'payment',
+      success_url: successUrl,
+      cancel_url: cancelUrl,
+      metadata: {
+        userId,
+        registrationId,
+        type: 'swimming_registration',
+      },
+      client_reference_id: registrationId,
+    });
+
+    return { success: true, session };
+  } catch (error) {
+    console.error('Error creating swimming registration checkout session:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+/**
+ * Create a checkout session for swimming monthly payment
+ */
+export const createSwimmingMonthlyPaymentCheckoutSession = async (amount, userId, registrationId, paymentMonth, successUrl, cancelUrl) => {
+  if (!stripe) {
+    return { success: false, error: 'Stripe is not configured. Please set STRIPE_SECRET_KEY in your .env file with a valid key (sk_test_... or sk_live_...)' };
+  }
+  try {
+    const monthName = new Date(paymentMonth).toLocaleString('default', { month: 'long', year: 'numeric' });
+    const session = await stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      line_items: [
+        {
+          price_data: {
+            currency: 'pkr',
+            product_data: {
+              name: 'Swimming Monthly Fee',
+              description: `Monthly subscription fee for ${monthName}`,
+            },
+            unit_amount: Math.round(amount * 100), // Convert to cents
+          },
+          quantity: 1,
+        },
+      ],
+      mode: 'payment',
+      success_url: successUrl,
+      cancel_url: cancelUrl,
+      metadata: {
+        userId,
+        registrationId,
+        type: 'swimming_monthly_payment',
+        paymentMonth,
+      },
+      client_reference_id: registrationId,
+    });
+
+    return { success: true, session };
+  } catch (error) {
+    console.error('Error creating swimming monthly payment checkout session:', error);
+    return { success: false, error: error.message };
+  }
+};
+
+/**
  * Create a payment intent for equipment purchase
  */
 export const createEquipmentPaymentIntent = async (amount, userId, purchaseId, equipmentName, metadata = {}) => {

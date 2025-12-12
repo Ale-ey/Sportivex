@@ -260,10 +260,10 @@ export const adminService = {
     return response.data;
   },
 
-  // ==================== QR CODES ====================
+  // ==================== QR CODES (SWIMMING) ====================
   
   /**
-   * Get all QR codes
+   * Get all swimming QR codes
    */
   getQRCodes: async (): Promise<QRCodesResponse> => {
     const response = await axiosInstance.get('/swimming/qr-codes');
@@ -271,7 +271,7 @@ export const adminService = {
   },
 
   /**
-   * Create QR code
+   * Create swimming QR code
    */
   createQRCode: async (data: CreateQRCodeRequest): Promise<QRCodeResponse> => {
     const response = await axiosInstance.post('/swimming/qr-codes', data);
@@ -279,7 +279,7 @@ export const adminService = {
   },
 
   /**
-   * Update QR code
+   * Update swimming QR code
    */
   updateQRCode: async (id: string, data: Partial<CreateQRCodeRequest>): Promise<QRCodeResponse> => {
     const response = await axiosInstance.put(`/swimming/qr-codes/${id}`, data);
@@ -287,10 +287,44 @@ export const adminService = {
   },
 
   /**
-   * Delete QR code
+   * Delete swimming QR code
    */
   deleteQRCode: async (id: string): Promise<{ success: boolean; message?: string }> => {
     const response = await axiosInstance.delete(`/swimming/qr-codes/${id}`);
+    return response.data;
+  },
+
+  // ==================== QR CODES (GYM) ====================
+  
+  /**
+   * Get all gym QR codes
+   */
+  getGymQRCodes: async (): Promise<QRCodesResponse> => {
+    const response = await axiosInstance.get('/gym/qr-codes');
+    return response.data;
+  },
+
+  /**
+   * Create gym QR code
+   */
+  createGymQRCode: async (data: { description?: string; location?: string }): Promise<QRCodeResponse> => {
+    const response = await axiosInstance.post('/gym/qr-codes', data);
+    return response.data;
+  },
+
+  /**
+   * Update gym QR code
+   */
+  updateGymQRCode: async (id: string, data: { description?: string; location?: string; isActive?: boolean }): Promise<QRCodeResponse> => {
+    const response = await axiosInstance.put(`/gym/qr-codes/${id}`, data);
+    return response.data;
+  },
+
+  /**
+   * Delete gym QR code
+   */
+  deleteGymQRCode: async (id: string): Promise<{ success: boolean; message?: string }> => {
+    const response = await axiosInstance.delete(`/gym/qr-codes/${id}`);
     return response.data;
   },
 };
