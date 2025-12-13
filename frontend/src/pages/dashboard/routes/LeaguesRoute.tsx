@@ -84,7 +84,7 @@ const LeaguesRoute: React.FC = () => {
         id: league.id,
         name: league.name,
         date: startDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-        participants: 0, // Will be updated if we have registration count
+        participants: league.participant_count || 0, // Use participant_count from backend
         status: displayStatus,
         prize: league.prize || "TBD",
         myRank: null,

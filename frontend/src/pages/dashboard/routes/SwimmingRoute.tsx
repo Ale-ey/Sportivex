@@ -95,29 +95,47 @@ const SwimmingRoute: React.FC = () => {
     const sessionId = searchParams.get('session_id');
 
     if (payment === 'success') {
-      if (registrationId && sessionId) {
-        // Verify registration payment
-        swimmingService
-          .verifyRegistrationPayment({ registrationId, sessionId })
-          .then((response) => {
+      if (registrationId) {
+        // Verify registration payment (sessionId is optional - backend will use stored one if not provided)
+        const verifyPayment = async (retryCount = 0) => {
+          try {
+            const response = await swimmingService.verifyRegistrationPayment({ 
+              registrationId, 
+              sessionId: sessionId || undefined // Pass sessionId if available, backend will use stored one
+            });
+            
             if (response.success) {
               toast.success('Registration payment verified successfully!');
               // Refresh registration status
-              swimmingService.checkRegistrationStatus().then((statusResponse) => {
-                if (statusResponse.success) {
-                  setRegistrationStatus(statusResponse.data);
-                }
-              });
+              const statusResponse = await swimmingService.checkRegistrationStatus();
+              if (statusResponse.success) {
+                setRegistrationStatus(statusResponse.data);
+              }
+              setSearchParams({});
             } else {
-              toast.error(response.message || 'Failed to verify payment');
+              // If payment not completed, retry once after 2 seconds (Stripe might need time to process)
+              if (retryCount === 0 && response.message?.includes('not completed')) {
+                console.log('Payment verification failed, retrying in 2 seconds...');
+                setTimeout(() => verifyPayment(1), 2000);
+              } else {
+                toast.error(response.message || 'Failed to verify payment. Please refresh the page or contact support.');
+                setSearchParams({});
+              }
             }
-            setSearchParams({});
-          })
-          .catch((error: any) => {
+          } catch (error: any) {
             const errorMessage = error.response?.data?.message || error.message || 'Failed to verify payment';
-            toast.error(errorMessage);
-            setSearchParams({});
-          });
+            // Retry once on network errors
+            if (retryCount === 0 && (errorMessage.includes('network') || errorMessage.includes('timeout'))) {
+              console.log('Payment verification error, retrying in 2 seconds...');
+              setTimeout(() => verifyPayment(1), 2000);
+            } else {
+              toast.error(errorMessage);
+              setSearchParams({});
+            }
+          }
+        };
+        
+        verifyPayment();
       } else if (paymentId && sessionId) {
         // Verify monthly payment
         swimmingService

@@ -1220,6 +1220,7 @@ export const createSwimmingRegistrationController = async (req, res) => {
     }
 
     const baseUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+    // Stripe service will automatically add {CHECKOUT_SESSION_ID} placeholder
     const successUrl = `${baseUrl}/dashboard/swimming?payment=success&registrationId=${registrationResult.registration.id}`;
     const cancelUrl = `${baseUrl}/dashboard/swimming?payment=cancelled`;
 
@@ -1270,10 +1271,10 @@ export const verifySwimmingRegistrationPayment = async (req, res) => {
     const { registrationId, sessionId } = req.body;
     const userId = req.user.id;
 
-    if (!registrationId || !sessionId) {
+    if (!registrationId) {
       return res.status(400).json({
         success: false,
-        message: 'registrationId and sessionId are required'
+        message: 'registrationId is required'
       });
     }
 
@@ -1291,7 +1292,35 @@ export const verifySwimmingRegistrationPayment = async (req, res) => {
       });
     }
 
-    const stripeResult = await stripeService.verifyCheckoutSession(sessionId);
+    // Check if already paid
+    if (registration.payment_status === 'succeeded' && registration.status === 'active') {
+      console.log('Swimming Registration Payment - Registration already paid and active');
+      return res.status(200).json({
+        success: true,
+        message: 'Payment already verified',
+        data: {
+          registration: registration
+        }
+      });
+    }
+
+    // Use sessionId from request, or fallback to stored stripe_session_id
+    const sessionIdToUse = sessionId || registration.stripe_session_id;
+    
+    if (!sessionIdToUse) {
+      return res.status(400).json({
+        success: false,
+        message: 'Session ID is required. Please provide sessionId or ensure registration has stripe_session_id.'
+      });
+    }
+
+    console.log('Swimming Registration Payment - Verifying session:', {
+      sessionIdFromRequest: sessionId,
+      sessionIdFromDB: registration.stripe_session_id,
+      sessionIdToUse: sessionIdToUse
+    });
+
+    const stripeResult = await stripeService.verifyCheckoutSession(sessionIdToUse);
     if (!stripeResult.success) {
       return res.status(400).json({
         success: false,
@@ -1309,25 +1338,50 @@ export const verifySwimmingRegistrationPayment = async (req, res) => {
       amount_total: session.amount_total
     });
 
-    const isPaymentComplete = session.status === 'complete' && 
-                             (session.payment_status === 'paid' || session.payment_status === 'no_payment_required');
+    // Check payment status - multiple ways to verify payment is complete
+    const isPaymentComplete = 
+      (session.status === 'complete' && 
+       (session.payment_status === 'paid' || session.payment_status === 'no_payment_required')) ||
+      (session.payment_status === 'paid') ||
+      (session.status === 'complete' && session.payment_intent);
 
     console.log('Swimming Registration Payment - Payment complete check:', { 
       isPaymentComplete, 
       sessionStatus: session.status, 
-      paymentStatus: session.payment_status 
+      paymentStatus: session.payment_status,
+      hasPaymentIntent: !!session.payment_intent
     });
 
     if (isPaymentComplete) {
-      const updateResult = await updateSwimmingRegistration(registrationId, {
+      const updateData = {
         payment_status: 'succeeded',
         status: 'active',
-        amount_paid: registration.registration_fee,
+        amount_paid: registration.registration_fee || 0,
         stripe_payment_intent_id: session.payment_intent || null,
         activated_at: new Date().toISOString(),
+      };
+
+      console.log('Swimming Registration Payment - Updating registration with data:', {
+        registrationId,
+        updateData
       });
 
-      console.log('Swimming Registration Payment - Registration updated successfully:', updateResult.registration?.id);
+      const updateResult = await updateSwimmingRegistration(registrationId, updateData);
+
+      if (!updateResult.success) {
+        console.error('Swimming Registration Payment - Failed to update registration:', updateResult.error);
+        return res.status(500).json({
+          success: false,
+          message: 'Payment verified but failed to update registration',
+          error: updateResult.error
+        });
+      }
+
+      console.log('Swimming Registration Payment - Registration updated successfully:', {
+        registrationId: updateResult.registration?.id,
+        paymentStatus: updateResult.registration?.payment_status,
+        status: updateResult.registration?.status
+      });
 
       return res.status(200).json({
         success: true,
@@ -1341,16 +1395,24 @@ export const verifySwimmingRegistrationPayment = async (req, res) => {
     console.warn('Swimming Registration Payment - Payment not completed:', {
       sessionStatus: session.status,
       paymentStatus: session.payment_status,
-      sessionId: session.id
+      sessionId: session.id,
+      registrationId: registration.id,
+      currentPaymentStatus: registration.payment_status,
+      currentStatus: registration.status
     });
 
     res.status(200).json({
       success: false,
-      message: `Payment not completed. Session status: ${session.status}, Payment status: ${session.payment_status}`,
+      message: `Payment not completed. Session status: ${session.status}, Payment status: ${session.payment_status}. Please try again or contact support.`,
       data: {
         sessionStatus: session.status,
         paymentStatus: session.payment_status,
-        sessionId: session.id
+        sessionId: session.id,
+        registration: {
+          id: registration.id,
+          payment_status: registration.payment_status,
+          status: registration.status
+        }
       }
     });
   } catch (error) {

@@ -11,13 +11,89 @@ import { getTodayDate } from '../utils/timeSlotDetermination.js';
 const ai = new GoogleGenAI({});
 
 /**
- * Fetch swimming time slots with availability information
+ * Filter time slots based on user gender and role
  */
-const fetchSwimmingTimeSlots = async () => {
+const filterTimeSlotsByUser = (slots, userGender, userRole) => {
+  if (!slots || slots.length === 0) {
+    return [];
+  }
+
+  if (!userGender || !userRole) {
+    // If no user info, only show mixed slots
+    return slots.filter(slot => slot.genderRestriction === 'mixed');
+  }
+
+  const userGenderLower = userGender.toLowerCase();
+  const userRoleLower = userRole.toLowerCase();
+
+  // Determine allowed gender restrictions based on user gender
+  let allowedGenderRestrictions = [];
+  if (userGenderLower === 'male') {
+    allowedGenderRestrictions = ['male', 'mixed'];
+  } else if (userGenderLower === 'female') {
+    allowedGenderRestrictions = ['female', 'mixed'];
+  } else {
+    allowedGenderRestrictions = ['mixed'];
+  }
+
+  // Filter by role - UG students cannot access faculty_pg slots
+  if (userRoleLower === 'ug') {
+    // UG students: male see [male, mixed], female see [female, mixed]
+    // Remove faculty_pg from allowed restrictions for UG students
+    const filtered = allowedGenderRestrictions.filter(r => r !== 'faculty_pg');
+    return slots.filter(slot => filtered.includes(slot.genderRestriction));
+  } else if (userRoleLower === 'pg' || userRoleLower === 'faculty' || userRoleLower === 'alumni') {
+    // PG, Faculty, Alumni: can see [male/female/mixed, faculty_pg]
+    if (!allowedGenderRestrictions.includes('faculty_pg')) {
+      allowedGenderRestrictions.push('faculty_pg');
+    }
+    return slots.filter(slot => allowedGenderRestrictions.includes(slot.genderRestriction));
+  } else {
+    // Unknown role - only mixed slots
+    return slots.filter(slot => slot.genderRestriction === 'mixed');
+  }
+};
+
+/**
+ * Get the next available time slot (first slot with available spots that hasn't passed)
+ */
+const getNextAvailableSlot = (slots) => {
+  const now = new Date();
+  const currentTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}`;
+
+  // Filter slots that:
+  // 1. Haven't ended yet (endTime > currentTime)
+  // 2. Have available spots (availableSpots > 0)
+  // 3. Are active
+  const availableSlots = slots.filter(slot => {
+    const hasEnded = currentTime > slot.endTime;
+    const hasSpots = slot.availableSpots > 0;
+    const isActive = slot.isActive !== false;
+    return !hasEnded && hasSpots && isActive;
+  });
+
+  // Sort by start time and return the first one (next available)
+  if (availableSlots.length === 0) {
+    return null;
+  }
+
+  availableSlots.sort((a, b) => {
+    if (a.startTime < b.startTime) return -1;
+    if (a.startTime > b.startTime) return 1;
+    return 0;
+  });
+
+  return availableSlots[0];
+};
+
+/**
+ * Fetch swimming time slots with availability information (filtered by user and showing only next available)
+ */
+const fetchSwimmingTimeSlots = async (userGender = null, userRole = null) => {
   try {
     const { success, timeSlots } = await getActiveTimeSlots(true);
     if (!success || !timeSlots || timeSlots.length === 0) {
-      return [];
+      return null;
     }
 
     const today = getTodayDate();
@@ -39,10 +115,14 @@ const fetchSwimmingTimeSlots = async () => {
       })
     );
 
-    return slotsWithAvailability;
+    // Filter by user gender and role
+    const filteredSlots = filterTimeSlotsByUser(slotsWithAvailability, userGender, userRole);
+
+    // Return only the next available slot
+    return getNextAvailableSlot(filteredSlots);
   } catch (error) {
     console.error("Error fetching swimming time slots:", error);
-    return [];
+    return null;
   }
 };
 
@@ -144,17 +224,20 @@ const fetchHorseRidingRules = async () => {
 };
 
 /**
- * Build context string from database data
+ * Build context string from database data (filtered by user)
  */
-const buildContext = async () => {
+const buildContext = async (user = null) => {
+  const userGender = user?.gender || null;
+  const userRole = user?.role || null;
+
   const [
-    swimmingSlots,
+    swimmingSlot,
     horseRidingSlots,
     equipment,
     swimmingRules,
     horseRidingRules
   ] = await Promise.all([
-    fetchSwimmingTimeSlots(),
+    fetchSwimmingTimeSlots(userGender, userRole),
     fetchHorseRidingTimeSlots(),
     fetchHorseRidingEquipment(),
     fetchSwimmingRules(),
@@ -163,22 +246,24 @@ const buildContext = async () => {
 
   let context = "You are a helpful assistant for Sportivex, a sports facility management system. ";
   context += "You have access to real-time information about swimming and horse riding facilities.\n\n";
+  context += "⚠️ CRITICAL INSTRUCTION: You MUST ONLY use the information provided in the database context below. ";
+  context += "DO NOT use any general knowledge, external information, or your training data. ";
+  context += "If the information is not in the database context, you must clearly state that the information is not available in the system. ";
+  context += "NEVER provide general market prices, general product information, or any information not explicitly listed below.\n\n";
 
-  // Swimming time slots context
-  context += "=== SWIMMING TIME SLOTS ===\n";
-  if (swimmingSlots.length === 0) {
-    context += "No active swimming time slots are currently available.\n\n";
+  // Swimming time slots context (only next available slot, filtered by user)
+  context += "=== NEXT AVAILABLE SWIMMING TIME SLOT ===\n";
+  if (!swimmingSlot) {
+    context += "No available swimming time slots at the moment that match your eligibility.\n\n";
   } else {
-    context += `There are ${swimmingSlots.length} active swimming time slot(s):\n`;
-    swimmingSlots.forEach((slot, index) => {
-      context += `${index + 1}. Time: ${slot.startTime} - ${slot.endTime}\n`;
-      context += `   Gender Restriction: ${slot.genderRestriction}\n`;
-      context += `   Capacity: ${slot.currentCount}/${slot.maxCapacity} (${slot.availableSpots} spots available)\n`;
-      if (slot.trainer) {
-        context += `   Trainer: ${slot.trainer}\n`;
-      }
-      context += "\n";
-    });
+    context += "Next Available Time Slot:\n";
+    context += `Time: ${swimmingSlot.startTime} - ${swimmingSlot.endTime}\n`;
+    context += `Gender Restriction: ${swimmingSlot.genderRestriction}\n`;
+    context += `Capacity: ${swimmingSlot.currentCount}/${swimmingSlot.maxCapacity} (${swimmingSlot.availableSpots} spots available)\n`;
+    if (swimmingSlot.trainer) {
+      context += `Trainer: ${swimmingSlot.trainer}\n`;
+    }
+    context += "\n";
   }
 
   // Horse riding time slots context
@@ -242,12 +327,16 @@ const buildContext = async () => {
     });
   }
 
-  context += "\n=== INSTRUCTIONS ===\n";
-  context += "Answer user questions based on the information provided above. ";
-  context += "Be helpful, accurate, and concise. ";
-  context += "If you don't have information about something, say so clearly. ";
-  context += "When mentioning prices, always specify the currency (PKR). ";
-  context += "When mentioning time slots, include availability information if available.\n";
+  context += "\n=== STRICT INSTRUCTIONS ===\n";
+  context += "1. ONLY use information from the database context provided above. DO NOT use general knowledge.\n";
+  context += "2. If information is not in the database, respond with: 'I don't have that information in the system database. Please contact the facility for more details.'\n";
+  context += "3. For equipment prices, ONLY mention prices that are explicitly listed in the 'HORSE RIDING EQUIPMENT & PRICES' section above.\n";
+  context += "4. When mentioning prices, always specify the currency (PKR) as shown in the database.\n";
+  context += "5. IMPORTANT: The swimming time slot shown is the NEXT AVAILABLE slot that matches the user's eligibility (gender and role). Only show this one slot, not all available slots.\n";
+  context += "6. The time slot shown is already filtered based on the user's gender and role - UG students cannot see faculty_pg slots, and users only see slots matching their gender restrictions.\n";
+  context += "7. Be accurate, concise, and helpful, but ONLY based on the provided database information.\n";
+  context += "8. If asked about equipment, products, or prices not listed above, state that the information is not available in the system.\n";
+  context += "9. DO NOT provide general market information, general product descriptions, or any information not explicitly in the database context.\n";
 
   return context;
 };
@@ -257,9 +346,10 @@ const buildContext = async () => {
  * 
  * @param {string} userQuery - The user's question
  * @param {string} model - The model to use (default: "gemini-2.5-flash")
+ * @param {Object} user - User object with gender and role (optional)
  * @returns {Promise<{success: boolean, text?: string, error?: string}>}
  */
-export const generateIntelligentResponse = async (userQuery, model = "gemini-2.5-flash") => {
+export const generateIntelligentResponse = async (userQuery, model = "gemini-2.5-flash", user = null) => {
   try {
     if (!userQuery || typeof userQuery !== "string" || userQuery.trim().length === 0) {
       return {
@@ -268,8 +358,8 @@ export const generateIntelligentResponse = async (userQuery, model = "gemini-2.5
       };
     }
 
-    // Build context from database
-    const context = await buildContext();
+    // Build context from database (filtered by user)
+    const context = await buildContext(user);
     
     // Create the full prompt with context
     const fullPrompt = `${context}\n\nUser Question: ${userQuery.trim()}\n\nAssistant Response:`;
@@ -345,9 +435,10 @@ export const generateContent = async (prompt, model = "gemini-2.5-flash") => {
  * 
  * @param {Array<{role: string, content: string}>} messages - Array of conversation messages
  * @param {string} model - The model to use (default: "gemini-2.5-flash")
+ * @param {Object} user - User object with gender and role (optional)
  * @returns {Promise<{success: boolean, text?: string, error?: string}>}
  */
-export const generateContentWithHistory = async (messages, model = "gemini-2.5-flash") => {
+export const generateContentWithHistory = async (messages, model = "gemini-2.5-flash", user = null) => {
   try {
     if (!messages || !Array.isArray(messages) || messages.length === 0) {
       return {
@@ -356,11 +447,35 @@ export const generateContentWithHistory = async (messages, model = "gemini-2.5-f
       };
     }
 
+    // Build database context to include with the conversation (filtered by user)
+    const context = await buildContext(user);
+    
     // Format messages for Gemini API
-    const contents = messages.map(msg => ({
-      role: msg.role || "user",
-      parts: [{ text: msg.content }]
-    }));
+    // Gemini API expects roles: "user" or "model" (not "assistant")
+    const formattedMessages = messages.map((msg, index) => {
+      let role = msg.role || "user";
+      // Map "assistant" to "model" for Gemini API compatibility
+      if (role === "assistant") {
+        role = "model";
+      }
+      // Ensure only valid roles are used
+      if (role !== "user" && role !== "model") {
+        role = "user";
+      }
+      
+      // Prepend context to the first user message only
+      let content = msg.content;
+      if (index === 0 && role === "user") {
+        content = context + "\n\nUser Question: " + content;
+      }
+      
+      return {
+        role: role,
+        parts: [{ text: content }]
+      };
+    });
+
+    const contents = formattedMessages;
 
     const response = await ai.models.generateContent({
       model: model,

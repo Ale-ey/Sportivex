@@ -8,6 +8,7 @@ import { generateContent, generateContentWithHistory, generateIntelligentRespons
 export const chat = async (req, res) => {
   try {
     const { prompt, model, useContext = true } = req.body;
+    const user = req.user; // Get authenticated user
 
     if (!prompt) {
       return res.status(400).json({
@@ -18,7 +19,7 @@ export const chat = async (req, res) => {
 
     // Use intelligent response with database context by default
     const result = useContext 
-      ? await generateIntelligentResponse(prompt, model)
+      ? await generateIntelligentResponse(prompt, model, user)
       : await generateContent(prompt, model);
 
     if (!result.success) {
@@ -75,7 +76,8 @@ export const chatWithHistory = async (req, res) => {
       });
     }
 
-    const result = await generateContentWithHistory(messages, model);
+    const user = req.user; // Get authenticated user
+    const result = await generateContentWithHistory(messages, model, user);
 
     if (!result.success) {
       return res.status(500).json({

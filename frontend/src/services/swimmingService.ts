@@ -334,10 +334,11 @@ export const swimmingService = {
 
   /**
    * Verify swimming registration payment
+   * sessionId is optional - backend will use stored stripe_session_id if not provided
    */
   verifyRegistrationPayment: async (data: {
     registrationId: string;
-    sessionId: string;
+    sessionId?: string;
   }): Promise<{
     success: boolean;
     message?: string;

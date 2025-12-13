@@ -130,7 +130,7 @@ const LeagueCard: React.FC<LeagueCardProps> = ({
             {league?.registration_fee !== undefined && league.registration_fee > 0 && (
               <>
                 <p className="text-lg font-semibold text-[#0077B6] mt-2">
-                  ${league.registration_fee.toFixed(2)}
+                  PKR {league.registration_fee.toFixed(2)}
                 </p>
                 <p className="text-xs text-slate-500">Registration Fee</p>
               </>

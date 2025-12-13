@@ -1149,7 +1149,7 @@ const AdminRoute: React.FC = () => {
                         <span className="text-sm text-muted-foreground">Registration Fee:</span>
                         <span className="font-semibold text-blue-600">
                           {league.registration_fee !== undefined && league.registration_fee > 0
-                            ? `$${league.registration_fee.toFixed(2)}`
+                            ? `PKR ${league.registration_fee.toFixed(2)}`
                             : 'Free'}
                         </span>
                       </div>
