@@ -18,7 +18,7 @@ const QRScanner: React.FC<QRScannerProps> = ({ onScan, isScanning = false }) => 
 
   const stopCamera = useCallback(async () => {
     try {
-      if (scannerRef.current && scannerRef.current.isScanning()) {
+      if (scannerRef.current && scannerRef.current.isScanning) {
         await scannerRef.current.stop();
         await scannerRef.current.clear();
       }

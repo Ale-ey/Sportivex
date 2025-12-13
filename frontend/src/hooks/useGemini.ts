@@ -4,8 +4,6 @@ import { AxiosError } from 'axios';
 import {
   geminiService,
   type ChatMessage,
-  type ChatResponse,
-  type ChatWithHistoryResponse,
 } from '@/services/geminiService';
 
 /**

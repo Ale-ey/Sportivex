@@ -102,7 +102,7 @@ const QRCodeScanner: React.FC = () => {
 
   const stopCamera = async () => {
     try {
-      if (scannerRef.current && scannerRef.current.isScanning()) {
+      if (scannerRef.current && scannerRef.current.isScanning) {
         await scannerRef.current.stop();
         await scannerRef.current.clear();
       }
