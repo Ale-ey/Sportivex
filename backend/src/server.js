@@ -13,6 +13,7 @@ import gymRoutes from "./routes/gym.js";
 import leagueRoutes from "./routes/leagues.js";
 import horseRidingRoutes from "./routes/horseRiding.js";
 import qrRoutes from "./routes/qr.js";
+import geminiRoutes from "./routes/gemini.js";
 import { initializeSocketServer } from "./socket/socketServer.js";
 
 const app = express();
@@ -78,6 +79,7 @@ app.use('/api/gym', gymRoutes);
 app.use('/api/leagues', leagueRoutes);
 app.use('/api/horse-riding', horseRidingRoutes);
 app.use('/api/qr', qrRoutes);
+app.use('/api/gemini', geminiRoutes);
 
 // 404 handler
 app.use((_req, res) => {
@@ -123,6 +125,7 @@ httpServer.listen(PORT, () => {
   console.log(`Badminton endpoints: http://localhost:${PORT}/api/badminton`);
   console.log(`Gym endpoints: http://localhost:${PORT}/api/gym`);
   console.log(`Horse Riding endpoints: http://localhost:${PORT}/api/horse-riding`);
+  console.log(`Gemini endpoints: http://localhost:${PORT}/api/gemini`);
   console.log(`WebSocket server: ws://localhost:${PORT}`);
   
   console.log('\n🎉 Server startup completed!');

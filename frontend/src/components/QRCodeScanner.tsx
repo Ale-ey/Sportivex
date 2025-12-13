@@ -4,6 +4,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { QrCode, Camera, CheckCircle2, AlertCircle, Loader2, Dumbbell, Waves } from 'lucide-react';
 import axiosInstance from '@/lib/axiosInstance';
 import toast from 'react-hot-toast';
+import { Html5Qrcode } from 'html5-qrcode';
 
 const QRCodeScanner: React.FC = () => {
   const [scanning, setScanning] = useState(false);
@@ -15,45 +16,110 @@ const QRCodeScanner: React.FC = () => {
     qrType?: 'gym' | 'swimming';
   } | null>(null);
   const [loading, setLoading] = useState(false);
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const streamRef = useRef<MediaStream | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const scannerRef = useRef<Html5Qrcode | null>(null);
+  const scannerElementRef = useRef<HTMLDivElement>(null);
   const [qrCodeValue, setQrCodeValue] = useState('');
 
   useEffect(() => {
     return () => {
-      // Cleanup: stop camera when component unmounts
-      if (streamRef.current) {
-        streamRef.current.getTracks().forEach((track) => track.stop());
-      }
+      // Cleanup: stop scanner when component unmounts
+      stopCamera();
     };
   }, []);
 
   const startCamera = async () => {
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: 'environment' }, // Use back camera on mobile
-      });
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        streamRef.current = stream;
-        setScanning(true);
-        setResult(null);
+      setError(null);
+      setResult(null);
+
+      // Check if running on HTTPS or localhost (required for camera access)
+      const isSecure = window.location.protocol === 'https:' || window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+      if (!isSecure) {
+        setError('Camera access requires HTTPS. Please use a secure connection.');
+        toast.error('Camera access requires HTTPS connection');
+        return;
       }
-    } catch (error) {
-      console.error('Error accessing camera:', error);
-      toast.error('Failed to access camera. Please check permissions.');
+
+      // Check if mediaDevices is available
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        setError('Camera not supported on this device or browser.');
+        toast.error('Camera not supported');
+        return;
+      }
+
+      const scannerId = 'qr-scanner-main';
+      if (!scannerElementRef.current) {
+        setError('Scanner element not found');
+        return;
+      }
+
+      // Create Html5Qrcode instance
+      const html5QrCode = new Html5Qrcode(scannerId);
+      scannerRef.current = html5QrCode;
+
+      // Start scanning with back camera preference for mobile
+      await html5QrCode.start(
+        { facingMode: 'environment' }, // Use back camera on mobile
+        {
+          fps: 10, // Frames per second
+          qrbox: { width: 250, height: 250 }, // Scanning area
+          aspectRatio: 1.0,
+        },
+        (decodedText) => {
+          // QR code detected
+          handleQRCodeDetected(decodedText);
+        },
+        (errorMessage) => {
+          // Ignore scanning errors (just means no QR code detected yet)
+          // Only log if it's not a common "not found" error
+          if (!errorMessage.includes('No QR code found')) {
+            // Silent - this is normal during scanning
+          }
+        }
+      );
+
+      setScanning(true);
+    } catch (error: any) {
+      console.error('Error starting camera:', error);
+      let errorMessage = 'Failed to access camera. ';
+      
+      if (error.name === 'NotAllowedError' || error.name === 'PermissionDeniedError') {
+        errorMessage += 'Please allow camera access in your browser settings.';
+      } else if (error.name === 'NotFoundError' || error.name === 'DevicesNotFoundError') {
+        errorMessage += 'No camera found on this device.';
+      } else if (error.name === 'NotReadableError' || error.name === 'TrackStartError') {
+        errorMessage += 'Camera is already in use by another application.';
+      } else {
+        errorMessage += error.message || 'Please check permissions.';
+      }
+      
+      setError(errorMessage);
+      toast.error(errorMessage);
+      setScanning(false);
     }
   };
 
-  const stopCamera = () => {
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach((track) => track.stop());
-      streamRef.current = null;
+  const stopCamera = async () => {
+    try {
+      if (scannerRef.current && scannerRef.current.isScanning) {
+        await scannerRef.current.stop();
+        await scannerRef.current.clear();
+      }
+      scannerRef.current = null;
+      setScanning(false);
+      setError(null);
+    } catch (error) {
+      console.error('Error stopping camera:', error);
     }
-    if (videoRef.current) {
-      videoRef.current.srcObject = null;
-    }
-    setScanning(false);
+  };
+
+  const handleQRCodeDetected = async (decodedText: string) => {
+    // Stop scanning once QR code is detected
+    await stopCamera();
+    
+    // Scan the QR code
+    await scanQRCode(decodedText);
   };
 
   const handleManualScan = async () => {
@@ -124,33 +190,27 @@ const QRCodeScanner: React.FC = () => {
       {scanning && (
         <Card>
           <CardContent className="p-4">
-            <div className="relative">
-              <video
-                ref={videoRef}
-                autoPlay
-                playsInline
-                className="w-full rounded-lg"
-                style={{ maxHeight: '400px', objectFit: 'cover' }}
+            <div className="relative rounded-lg overflow-hidden bg-black" style={{ maxHeight: '400px', minHeight: '300px' }}>
+              <div
+                id="qr-scanner-main"
+                ref={scannerElementRef}
+                className="w-full"
+                style={{ minHeight: '300px' }}
               />
-              <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                <div className="border-2 border-[#0077B6] rounded-lg w-64 h-64" />
-              </div>
             </div>
+            {error && (
+              <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                <p className="text-sm text-red-600">{error}</p>
+              </div>
+            )}
             <div className="mt-4 flex gap-2">
               <Button onClick={stopCamera} variant="outline" className="flex-1">
                 Stop Camera
               </Button>
-              <Button
-                onClick={() => {
-                  // In a real implementation, you would use a QR code scanning library
-                  // like html5-qrcode or jsQR here
-                  toast('QR scanning from camera requires a QR code library. Use manual entry for now.');
-                }}
-                className="flex-1"
-              >
-                Scan QR Code
-              </Button>
             </div>
+            <p className="text-sm text-center text-muted-foreground mt-2">
+              Point your camera at the QR code to scan automatically
+            </p>
           </CardContent>
         </Card>
       )}

@@ -132,3 +132,40 @@ body::-webkit-scrollbar {
     @apply bg-background text-foreground;
   }
 }
+
+/* Hide scrollbar for chat messages container */
+.hide-scrollbar {
+  scrollbar-width: none; /* Firefox */
+  -ms-overflow-style: none; /* IE/Edge */
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none; /* Chrome, Safari, Opera */
+}
+
+/* QR Scanner styles for mobile */
+#qr-scanner-main,
+#qr-scanner-dialog {
+  width: 100% !important;
+}
+
+#qr-scanner-main video,
+#qr-scanner-dialog video {
+  width: 100% !important;
+  height: auto !important;
+  object-fit: cover !important;
+}
+
+/* Ensure QR scanner works on mobile devices */
+@media (max-width: 768px) {
+  #qr-scanner-main,
+  #qr-scanner-dialog {
+    min-height: 300px !important;
+  }
+  
+  #qr-scanner-main video,
+  #qr-scanner-dialog video {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+}
