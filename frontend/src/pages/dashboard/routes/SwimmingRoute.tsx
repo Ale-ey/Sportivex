@@ -9,7 +9,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import QRScanner from '@/components/QRScanner';
+import UnifiedQRScanner from '@/components/UnifiedQRScanner';
 import { useSwimming } from '@/hooks/useSwimming';
 import { swimmingService } from '@/services/swimmingService';
 import toast from 'react-hot-toast';
@@ -554,7 +554,7 @@ const SwimmingRoute: React.FC = () => {
       {/* QR Scanner Card - Only show if registered */}
       {!isRegistrationLocked && (
         <div className="animate-in slide-in-from-top duration-500">
-          <QRScanner onScan={handleQRScan} isScanning={scanning} />
+          <UnifiedQRScanner onScan={handleQRScan} isScanning={scanning} modal={true} />
         </div>
       )}
 
