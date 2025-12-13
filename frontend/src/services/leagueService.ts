@@ -16,6 +16,7 @@ export interface League {
   created_by?: string;
   created_at?: string;
   updated_at?: string;
+  participant_count?: number; // Number of registered participants
 }
 
 export interface LeagueRegistration {

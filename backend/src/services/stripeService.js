@@ -276,6 +276,11 @@ export const createSwimmingRegistrationCheckoutSession = async (amount, userId, 
     return { success: false, error: 'Stripe is not configured. Please set STRIPE_SECRET_KEY in your .env file with a valid key (sk_test_... or sk_live_...)' };
   }
   try {
+    // Ensure success URL includes session_id parameter for Stripe to append
+    const successUrlWithSession = successUrl.includes('?') 
+      ? `${successUrl}&session_id={CHECKOUT_SESSION_ID}`
+      : `${successUrl}?session_id={CHECKOUT_SESSION_ID}`;
+
     const session = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       line_items: [
@@ -292,7 +297,7 @@ export const createSwimmingRegistrationCheckoutSession = async (amount, userId, 
         },
       ],
       mode: 'payment',
-      success_url: successUrl,
+      success_url: successUrlWithSession,
       cancel_url: cancelUrl,
       metadata: {
         userId,

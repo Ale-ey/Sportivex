@@ -151,7 +151,7 @@ const updateAllLeaguesStatus = async () => {
 };
 
 /**
- * Get all leagues (with auto-updated statuses)
+ * Get all leagues (with auto-updated statuses and participant counts)
  */
 export const getLeagues = async () => {
   try {
@@ -172,7 +172,24 @@ export const getLeagues = async () => {
       return { success: false, leagues: [], error: error.message };
     }
 
-    return { success: true, leagues: data || [] };
+    // Get participant counts for each league
+    const leaguesWithCounts = await Promise.all(
+      (data || []).map(async (league) => {
+        // Count confirmed and registered participants
+        const { count } = await supabase
+          .from('league_registrations')
+          .select('*', { count: 'exact', head: true })
+          .eq('league_id', league.id)
+          .in('status', ['registered', 'confirmed']);
+
+        return {
+          ...league,
+          participant_count: count || 0
+        };
+      })
+    );
+
+    return { success: true, leagues: leaguesWithCounts };
   } catch (error) {
     console.error('Error in getLeagues:', error);
     return { success: false, leagues: [] };
@@ -180,7 +197,7 @@ export const getLeagues = async () => {
 };
 
 /**
- * Get league by ID (with auto-updated status)
+ * Get league by ID (with auto-updated status and participant count)
  */
 export const getLeagueById = async (id) => {
   try {
@@ -199,7 +216,19 @@ export const getLeagueById = async (id) => {
       return { success: false, league: null, error: error.message };
     }
 
-    return { success: true, league: data };
+    // Get participant count
+    const { count } = await supabase
+      .from('league_registrations')
+      .select('*', { count: 'exact', head: true })
+      .eq('league_id', id)
+      .in('status', ['registered', 'confirmed']);
+
+    const leagueWithCount = {
+      ...data,
+      participant_count: count || 0
+    };
+
+    return { success: true, league: leagueWithCount };
   } catch (error) {
     console.error('Error in getLeagueById:', error);
     return { success: false, league: null };

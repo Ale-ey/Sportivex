@@ -9,7 +9,7 @@ import {
   CardTitle,
 } from "../../../components/ui/card";
 import { Activity, Target, Trophy, Play } from "lucide-react";
-import QRCodeScanner from "../../../components/QRCodeScanner";
+import UnifiedQRScanner from "../../../components/UnifiedQRScanner";
 
 export interface StatItem {
   title: string;
@@ -150,7 +150,7 @@ const HomeTab: React.FC<HomeTabProps> = ({
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <QRCodeScanner />
+          <UnifiedQRScanner autoSubmit={true} />
         </CardContent>
       </Card>
 

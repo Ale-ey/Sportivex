@@ -50,7 +50,7 @@ import toast from 'react-hot-toast';
 
 const AdminRoute: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'slots' | 'courts' | 'leagues' | 'qr-scanner' | 'horse-riding'>('slots');
-  const [horseRidingSubTab, setHorseRidingSubTab] = useState<'slots' | 'rules' | 'equipment'>('slots');
+  const [horseRidingSubTab, setHorseRidingSubTab] = useState<'slots' | 'rules' | 'equipment' | 'registrations'>('slots');
   
   // Swimming Slots - Using Zustand store via hook
   const {
@@ -122,7 +122,6 @@ const AdminRoute: React.FC = () => {
   const [loadingRegistrations, setLoadingRegistrations] = useState(false);
 
   // Horse Riding Registrations State
-  const [showHorseRidingRegistrationsDialog, setShowHorseRidingRegistrationsDialog] = useState(false);
   const [horseRidingRegistrations, setHorseRidingRegistrations] = useState<any[]>([]);
   const [loadingHorseRidingRegistrations, setLoadingHorseRidingRegistrations] = useState(false);
 
@@ -203,6 +202,13 @@ const AdminRoute: React.FC = () => {
       fetchHorseRidingEquipment(),
     ]);
   };
+
+  // Fetch registrations when registrations tab is active
+  useEffect(() => {
+    if (activeTab === 'horse-riding' && horseRidingSubTab === 'registrations') {
+      fetchHorseRidingRegistrations();
+    }
+  }, [activeTab, horseRidingSubTab]);
 
   // ==================== SWIMMING SLOTS ====================
 
@@ -420,8 +426,7 @@ const AdminRoute: React.FC = () => {
     }
   };
 
-  const handleViewHorseRidingRegistrations = async () => {
-    setShowHorseRidingRegistrationsDialog(true);
+  const fetchHorseRidingRegistrations = async () => {
     setLoadingHorseRidingRegistrations(true);
     try {
       const response = await horseRidingService.getAllRegistrations();
@@ -1144,7 +1149,7 @@ const AdminRoute: React.FC = () => {
                         <span className="text-sm text-muted-foreground">Registration Fee:</span>
                         <span className="font-semibold text-blue-600">
                           {league.registration_fee !== undefined && league.registration_fee > 0
-                            ? `$${league.registration_fee.toFixed(2)}`
+                            ? `PKR ${league.registration_fee.toFixed(2)}`
                             : 'Free'}
                         </span>
                       </div>
@@ -1440,112 +1445,6 @@ const AdminRoute: React.FC = () => {
             </DialogContent>
           </Dialog>
 
-          {/* Horse Riding Registrations Dialog */}
-          <Dialog open={showHorseRidingRegistrationsDialog} onOpenChange={setShowHorseRidingRegistrationsDialog}>
-            <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>Horse Riding Registrations</DialogTitle>
-                <DialogDescription>
-                  View all registrations with user profile details
-                </DialogDescription>
-              </DialogHeader>
-              {loadingHorseRidingRegistrations ? (
-                <div className="flex items-center justify-center h-64">
-                  <Loader2 className="w-8 h-8 animate-spin" />
-                </div>
-              ) : (
-                <div className="mt-4">
-                  {horseRidingRegistrations.length === 0 ? (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <Users className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                      <p>No registrations yet</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      <div className="mb-4 p-3 bg-muted rounded-md">
-                        <p className="text-sm font-medium">
-                          Total Registrations: <span className="text-primary">{horseRidingRegistrations.filter((r: any) => r.payment_status === 'succeeded' && (r.status === 'paid' || r.status === 'enrolled')).length}</span>
-                          {' '}(Showing paid and registered only)
-                        </p>
-                      </div>
-                      <div className="border rounded-lg overflow-hidden">
-                        <table className="w-full">
-                          <thead className="bg-muted">
-                            <tr>
-                              <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">User</th>
-                              <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Email</th>
-                              <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">CMS ID</th>
-                              <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Phone</th>
-                              <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Status</th>
-                              <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Payment</th>
-                              <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Registered</th>
-                            </tr>
-                          </thead>
-                          <tbody className="divide-y">
-                            {horseRidingRegistrations
-                              .filter((r: any) => r.payment_status === 'succeeded' && (r.status === 'paid' || r.status === 'enrolled'))
-                              .map((registration: any) => (
-                              <tr key={registration.id} className="hover:bg-muted/50">
-                                <td className="px-4 py-3 text-sm">
-                                  <div className="flex items-center gap-2">
-                                    {registration.user?.profile_picture_url && (
-                                      <img
-                                        src={registration.user.profile_picture_url}
-                                        alt={registration.user.name}
-                                        className="w-8 h-8 rounded-full"
-                                      />
-                                    )}
-                                    <div>
-                                      <span className="font-medium">{registration.user?.name || 'Unknown'}</span>
-                                      {registration.user?.gender && (
-                                        <span className="text-xs text-muted-foreground block">{registration.user.gender}</span>
-                                      )}
-                                    </div>
-                                  </div>
-                                </td>
-                                <td className="px-4 py-3 text-sm text-muted-foreground">{registration.user?.email || 'N/A'}</td>
-                                <td className="px-4 py-3 text-sm text-muted-foreground">{registration.user?.cms_id || 'N/A'}</td>
-                                <td className="px-4 py-3 text-sm text-muted-foreground">{registration.user?.phone || 'N/A'}</td>
-                                <td className="px-4 py-3">
-                                  <Badge
-                                    variant={
-                                      registration.status === 'paid' || registration.status === 'enrolled'
-                                        ? 'default'
-                                        : registration.status === 'pending'
-                                        ? 'secondary'
-                                        : 'destructive'
-                                    }
-                                  >
-                                    {registration.status}
-                                  </Badge>
-                                </td>
-                                <td className="px-4 py-3">
-                                  <Badge
-                                    variant={
-                                      registration.payment_status === 'succeeded'
-                                        ? 'default'
-                                        : registration.payment_status === 'pending'
-                                        ? 'secondary'
-                                        : 'destructive'
-                                    }
-                                  >
-                                    {registration.payment_status}
-                                  </Badge>
-                                </td>
-                                <td className="px-4 py-3 text-sm text-muted-foreground">
-                                  {new Date(registration.registered_at).toLocaleString()}
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                        </table>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-            </DialogContent>
-          </Dialog>
         </div>
       )}
 
@@ -1831,10 +1730,6 @@ const AdminRoute: React.FC = () => {
         <div className="space-y-6">
           <div className="flex justify-between items-center">
             <h3 className="text-2xl font-semibold">Horse Riding Management</h3>
-            <Button onClick={handleViewHorseRidingRegistrations} variant="outline">
-              <Users className="w-4 h-4 mr-2" />
-              View All Registrations
-            </Button>
           </div>
           {/* Sub-tabs for Horse Riding */}
           <div className="flex gap-2 border-b">
@@ -1858,6 +1753,14 @@ const AdminRoute: React.FC = () => {
               onClick={() => setHorseRidingSubTab('equipment')}
             >
               Equipment
+            </Button>
+            <Button
+              variant={horseRidingSubTab === 'registrations' ? 'default' : 'ghost'}
+              className="rounded-b-none"
+              onClick={() => setHorseRidingSubTab('registrations')}
+            >
+              <Users className="w-4 h-4 mr-2" />
+              Registrations
             </Button>
           </div>
 
@@ -2065,6 +1968,117 @@ const AdminRoute: React.FC = () => {
               </div>
             )}
           </div>
+          )}
+
+          {/* Registrations Section */}
+          {horseRidingSubTab === 'registrations' && (
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <h3 className="text-xl font-semibold">Horse Riding Registrations</h3>
+              </div>
+
+              {loadingHorseRidingRegistrations ? (
+                <div className="flex items-center justify-center h-64">
+                  <Loader2 className="w-8 h-8 animate-spin" />
+                </div>
+              ) : (
+                <div className="mt-4">
+                  {horseRidingRegistrations.length === 0 ? (
+                    <Card className="border border-[#E2F5FB]">
+                      <CardContent className="p-8 text-center">
+                        <Users className="w-16 h-16 mx-auto mb-4 text-muted-foreground opacity-50" />
+                        <p className="text-muted-foreground">No registrations yet</p>
+                      </CardContent>
+                    </Card>
+                  ) : (
+                    <div className="space-y-2">
+                      <div className="mb-4 p-3 bg-muted rounded-md">
+                        <p className="text-sm font-medium">
+                          Total Registrations: <span className="text-primary">{horseRidingRegistrations.filter((r: any) => r.payment_status === 'succeeded' && (r.status === 'paid' || r.status === 'enrolled')).length}</span>
+                          {' '}(Showing paid and registered only)
+                        </p>
+                      </div>
+                      <Card className="border border-[#E2F5FB]">
+                        <CardContent className="p-0">
+                          <div className="overflow-x-auto">
+                            <table className="w-full">
+                              <thead className="bg-muted">
+                                <tr>
+                                  <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">User</th>
+                                  <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Email</th>
+                                  <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">CMS ID</th>
+                                  <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Phone</th>
+                                  <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Status</th>
+                                  <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Payment</th>
+                                  <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase">Registered</th>
+                                </tr>
+                              </thead>
+                              <tbody className="divide-y">
+                                {horseRidingRegistrations
+                                  .filter((r: any) => r.payment_status === 'succeeded' && (r.status === 'paid' || r.status === 'enrolled'))
+                                  .map((registration: any) => (
+                                    <tr key={registration.id} className="hover:bg-muted/50">
+                                      <td className="px-4 py-3 text-sm">
+                                        <div className="flex items-center gap-2">
+                                          {registration.user?.profile_picture_url && (
+                                            <img
+                                              src={registration.user.profile_picture_url}
+                                              alt={registration.user.name}
+                                              className="w-8 h-8 rounded-full"
+                                            />
+                                          )}
+                                          <div>
+                                            <span className="font-medium">{registration.user?.name || 'Unknown'}</span>
+                                            {registration.user?.gender && (
+                                              <span className="text-xs text-muted-foreground block">{registration.user.gender}</span>
+                                            )}
+                                          </div>
+                                        </div>
+                                      </td>
+                                      <td className="px-4 py-3 text-sm text-muted-foreground">{registration.user?.email || 'N/A'}</td>
+                                      <td className="px-4 py-3 text-sm text-muted-foreground">{registration.user?.cms_id || 'N/A'}</td>
+                                      <td className="px-4 py-3 text-sm text-muted-foreground">{registration.user?.phone || 'N/A'}</td>
+                                      <td className="px-4 py-3">
+                                        <Badge
+                                          variant={
+                                            registration.status === 'paid' || registration.status === 'enrolled'
+                                              ? 'default'
+                                              : registration.status === 'pending'
+                                              ? 'secondary'
+                                              : 'destructive'
+                                          }
+                                        >
+                                          {registration.status}
+                                        </Badge>
+                                      </td>
+                                      <td className="px-4 py-3">
+                                        <Badge
+                                          variant={
+                                            registration.payment_status === 'succeeded'
+                                              ? 'default'
+                                              : registration.payment_status === 'pending'
+                                              ? 'secondary'
+                                              : 'destructive'
+                                          }
+                                        >
+                                          {registration.payment_status}
+                                        </Badge>
+                                      </td>
+                                      <td className="px-4 py-3 text-sm text-muted-foreground">
+                                        {new Date(registration.registered_at).toLocaleString()}
+                                      </td>
+                                    </tr>
+                                  ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
           )}
         </div>
       )}
