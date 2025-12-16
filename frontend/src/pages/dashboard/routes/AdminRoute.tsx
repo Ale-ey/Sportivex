@@ -46,10 +46,11 @@ import type { League, CreateLeagueRequest } from '@/services/adminService';
 import { useAdminSwimming } from '@/hooks/useAdminSwimming';
 import { useAdminHorseRiding } from '@/hooks/useHorseRiding';
 import { horseRidingService } from '@/services/horseRidingService';
+import axiosInstance from '@/lib/axiosInstance';
 import toast from 'react-hot-toast';
 
 const AdminRoute: React.FC = () => {
-  const [activeTab, setActiveTab] = useState<'slots' | 'courts' | 'leagues' | 'qr-scanner' | 'horse-riding'>('slots');
+  const [activeTab, setActiveTab] = useState<'slots' | 'courts' | 'leagues' | 'qr-scanner' | 'horse-riding' | 'gym'>('slots');
   const [horseRidingSubTab, setHorseRidingSubTab] = useState<'slots' | 'rules' | 'equipment' | 'registrations'>('slots');
   
   // Swimming Slots - Using Zustand store via hook
@@ -126,6 +127,10 @@ const AdminRoute: React.FC = () => {
   const [horseRidingRegistrations, setHorseRidingRegistrations] = useState<any[]>([]);
   const [loadingHorseRidingRegistrations, setLoadingHorseRidingRegistrations] = useState(false);
 
+  // Gym Attendance State
+  const [gymAttendance, setGymAttendance] = useState<any[]>([]);
+  const [loadingGymAttendance, setLoadingGymAttendance] = useState(false);
+
   // Horse Riding - Using Zustand store via hook
   const {
     timeSlots: horseRidingSlots,
@@ -181,6 +186,41 @@ const AdminRoute: React.FC = () => {
     is_available: true,
   });
 
+  const fetchHorseRidingData = async () => {
+    await Promise.all([
+      fetchHorseRidingSlots(),
+      fetchHorseRidingRules(),
+      fetchHorseRidingEquipment(),
+    ]);
+  };
+
+  const fetchGymAttendance = async (showAll = false) => {
+    try {
+      setLoadingGymAttendance(true);
+      const url = showAll 
+        ? '/gym/attendance/all?limit=100&showAll=true'
+        : '/gym/attendance/all?limit=100';
+      const response = await axiosInstance.get(url);
+      if (response.data.success) {
+        const attendance = response.data.data.attendance || [];
+        console.log('Gym attendance fetched:', attendance.length, 'records');
+        setGymAttendance(attendance);
+        if (attendance.length === 0 && !showAll) {
+          console.log('No records for today, you can check all records');
+        }
+      } else {
+        toast.error('Failed to fetch gym attendance');
+      }
+    } catch (error: any) {
+      console.error('Error fetching gym attendance:', error);
+      if (error.response?.status !== 403 && error.response?.status !== 401) {
+        toast.error('Error fetching gym attendance');
+      }
+    } finally {
+      setLoadingGymAttendance(false);
+    }
+  };
+
   // Fetch data on mount and tab change
   useEffect(() => {
     if (activeTab === 'slots') {
@@ -193,16 +233,15 @@ const AdminRoute: React.FC = () => {
       fetchQRCodes();
     } else if (activeTab === 'horse-riding') {
       fetchHorseRidingData();
+    } else if (activeTab === 'gym') {
+      fetchGymAttendance();
+      // Set up polling every 5 seconds for real-time updates
+      const interval = setInterval(() => {
+        fetchGymAttendance();
+      }, 5000);
+      return () => clearInterval(interval);
     }
   }, [activeTab, fetchTimeSlots]);
-
-  const fetchHorseRidingData = async () => {
-    await Promise.all([
-      fetchHorseRidingSlots(),
-      fetchHorseRidingRules(),
-      fetchHorseRidingEquipment(),
-    ]);
-  };
 
   // Fetch registrations when registrations tab is active
   useEffect(() => {
@@ -724,20 +763,47 @@ const AdminRoute: React.FC = () => {
 
   const handleCreateQRCode = async () => {
     try {
+      // Validate location name
+      if (!qrForm.locationName || qrForm.locationName.trim() === '') {
+        toast.error('Location name is required');
+        return;
+      }
+
+      // Auto-detect and validate QR type based on location name
+      const lowerLocation = qrForm.locationName.toLowerCase();
+      let finalType = qrForm.qrType;
+      
+      if (lowerLocation.includes('gym') && !lowerLocation.includes('swimming')) {
+        finalType = 'gym';
+      } else if (lowerLocation.includes('swimming pool reception') || lowerLocation.includes('swimming')) {
+        finalType = 'swimming';
+      }
+
+      // Warn if type doesn't match location
+      if (finalType === 'gym' && qrForm.qrType === 'swimming') {
+        toast.error('Location "Gym" should use Gym QR code type. Auto-correcting...');
+      } else if (finalType === 'swimming' && qrForm.qrType === 'gym') {
+        toast.error('Location "Swimming Pool Reception" should use Swimming QR code type. Auto-correcting...');
+      }
+
       let response;
-      if (qrForm.qrType === 'gym') {
+      if (finalType === 'gym') {
+        console.log('Creating GYM QR code with location:', qrForm.locationName);
         response = await adminService.createGymQRCode({
           description: qrForm.description,
           location: qrForm.locationName,
         });
+        toast.success('Gym QR code created successfully! This will scan for gym attendance.');
       } else {
+        console.log('Creating SWIMMING QR code with location:', qrForm.locationName);
         response = await adminService.createQRCode({
           locationName: qrForm.locationName,
           description: qrForm.description,
         });
+        toast.success('Swimming QR code created successfully! This will scan for swimming attendance.');
       }
+      
       if (response.success) {
-        toast.success('QR code created successfully');
         setShowQRDialog(false);
         setQrForm({ qrCodeValue: '', locationName: '', description: '', qrType: 'swimming' });
         fetchQRCodes();
@@ -827,6 +893,14 @@ const AdminRoute: React.FC = () => {
         >
           <Activity className="w-4 h-4 mr-2" />
           Horse Riding
+        </Button>
+        <Button
+          variant={activeTab === 'gym' ? 'default' : 'ghost'}
+          onClick={() => setActiveTab('gym')}
+          className="rounded-b-none"
+        >
+          <Dumbbell className="w-4 h-4 mr-2" />
+          Gym
         </Button>
       </div>
 
@@ -1731,9 +1805,27 @@ const AdminRoute: React.FC = () => {
                   <Label>Location Name *</Label>
                   <Input
                     value={qrForm.locationName}
-                    onChange={(e) => setQrForm({ ...qrForm, locationName: e.target.value })}
-                    placeholder={qrForm.qrType === 'gym' ? 'e.g., Gym Entrance' : 'e.g., Swimming Pool Reception'}
+                    onChange={(e) => {
+                      const locationName = e.target.value;
+                      // Auto-detect QR type based on location name
+                      let detectedType = qrForm.qrType;
+                      const lowerLocation = locationName.toLowerCase();
+                      if (lowerLocation.includes('gym') && !lowerLocation.includes('swimming')) {
+                        detectedType = 'gym';
+                      } else if (lowerLocation.includes('swimming pool reception') || lowerLocation.includes('swimming')) {
+                        detectedType = 'swimming';
+                      }
+                      setQrForm({ ...qrForm, locationName, qrType: detectedType });
+                    }}
+                    placeholder={qrForm.qrType === 'gym' ? 'e.g., Gym' : 'e.g., Swimming Pool Reception'}
                   />
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {qrForm.locationName.toLowerCase().includes('gym') && !qrForm.locationName.toLowerCase().includes('swimming') 
+                      ? '✓ Will create Gym QR code' 
+                      : qrForm.locationName.toLowerCase().includes('swimming pool reception') || qrForm.locationName.toLowerCase().includes('swimming')
+                      ? '✓ Will create Swimming QR code'
+                      : 'Tip: Use "Gym" for gym attendance, "Swimming Pool Reception" for swimming attendance'}
+                  </p>
                 </div>
                 <div>
                   <Label>Description</Label>
@@ -2568,6 +2660,98 @@ const AdminRoute: React.FC = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Gym Tab */}
+      {activeTab === 'gym' && (
+        <div className="space-y-4">
+          <div className="flex justify-between items-center">
+            <div>
+              <h3 className="text-2xl font-semibold text-[#023E8A]">Gym Entry Log</h3>
+              <p className="text-sm text-muted-foreground mt-1">
+                Real-time view of gym entries for today
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => fetchGymAttendance(true)}
+                disabled={loadingGymAttendance}
+              >
+                Show All Records
+              </Button>
+              <Badge variant="outline" className="text-sm">
+                {gymAttendance.length} {gymAttendance.length === 1 ? 'entry' : 'entries'}
+              </Badge>
+            </div>
+          </div>
+
+          {loadingGymAttendance ? (
+            <Card>
+              <CardContent className="p-8 text-center">
+                <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2" />
+                <p className="text-muted-foreground">Loading gym attendance...</p>
+              </CardContent>
+            </Card>
+          ) : gymAttendance.length === 0 ? (
+            <Card>
+              <CardContent className="p-8 text-center">
+                <Dumbbell className="w-12 h-12 mx-auto mb-4 text-muted-foreground" />
+                <p className="text-muted-foreground">No gym entries for today</p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="space-y-2">
+              {gymAttendance.map((entry) => {
+                const checkInTime = new Date(entry.check_in_time);
+                const timeString = checkInTime.toLocaleTimeString('en-US', {
+                  hour: '2-digit',
+                  minute: '2-digit',
+                  second: '2-digit',
+                  hour12: true
+                });
+                const user = entry.user || {};
+                
+                return (
+                  <Card key={entry.id} className="border border-[#E2F5FB]">
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-4">
+                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-semibold">
+                            {user.name?.charAt(0)?.toUpperCase() || 'U'}
+                          </div>
+                          <div>
+                            <p className="font-semibold text-[#023E8A]">
+                              {user.name || 'Unknown User'}
+                            </p>
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                              <span>CMS ID: {user.cms_id || 'N/A'}</span>
+                              {user.role && (
+                                <>
+                                  <span>•</span>
+                                  <Badge variant="outline" className="text-xs">
+                                    {user.role.toUpperCase()}
+                                  </Badge>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-semibold text-[#023E8A]">{timeString}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {entry.check_in_method === 'qr_scan' ? 'QR Scan' : 'Manual'}
+                          </p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 };

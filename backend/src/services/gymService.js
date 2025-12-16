@@ -780,8 +780,28 @@ export const getUserGymMonthlyPayments = async (userId, limit = 12) => {
 /**
  * Process gym QR code scan for attendance
  */
+/**
+ * Process gym QR code scan
+ * This function handles gym attendance when a gym QR code is scanned.
+ * It inserts records into the 'gym_attendance' table (NOT swimming_attendance).
+ * 
+ * Flow:
+ * 1. Validates user has active gym registration
+ * 2. Validates QR code exists in 'gym_qr_codes' table
+ * 3. Checks if user already checked in today
+ * 4. Creates attendance record in 'gym_attendance' table
+ * 
+ * @param {string} qrCodeValue - The QR code value from gym_qr_codes table
+ * @param {object} user - The authenticated user object
+ * @returns {Promise<object>} Success/failure result with message
+ */
 export const processGymQRScan = async (qrCodeValue, user) => {
   try {
+    console.log('=== GYM QR SCAN PROCESSING ===');
+    console.log('QR Code:', qrCodeValue);
+    console.log('User:', user.id, user.email);
+    console.log('Target table: gym_attendance');
+    
     // 1. Check if user has active gym registration
     const registrationStatus = await checkGymRegistrationStatus(user.id);
     if (!registrationStatus.isActive) {
@@ -826,9 +846,16 @@ export const processGymQRScan = async (qrCodeValue, user) => {
       };
     }
 
-    // 4. Create attendance record
+    // 4. Create attendance record in gym_attendance table (NOT swimming_attendance)
+    console.log('→ Inserting into gym_attendance table (NOT swimming_attendance):', {
+      user_id: user.id,
+      registration_id: registrationStatus.registration.id,
+      session_date: sessionDate,
+      table: 'gym_attendance'
+    });
+
     const { data: attendance, error: attendanceError } = await supabase
-      .from('gym_attendance')
+      .from('gym_attendance') // ✓ Correct table for gym attendance
       .insert([
         {
           user_id: user.id,
@@ -842,12 +869,18 @@ export const processGymQRScan = async (qrCodeValue, user) => {
       .single();
 
     if (attendanceError) {
-      console.error('Error creating gym attendance:', attendanceError);
+      console.error('✗ ERROR: Failed to insert into gym_attendance table:', attendanceError);
+      console.error('Error details:', JSON.stringify(attendanceError, null, 2));
       return {
         success: false,
-        message: 'Failed to record attendance. Please try again.'
+        message: 'Failed to record attendance. Please try again.',
+        error: attendanceError.message
       };
     }
+
+    console.log('✓ SUCCESS: Gym attendance record created in gym_attendance table');
+    console.log('Record ID:', attendance.id);
+    console.log('=== GYM QR SCAN COMPLETE ===');
 
     // 5. Return success with details
     return {
@@ -888,6 +921,77 @@ export const getUserGymAttendance = async (userId, limit = 30) => {
     return { success: true, attendance: data || [] };
   } catch (error) {
     console.error('Error in getUserGymAttendance:', error);
+    return { success: false, attendance: [], error: error.message };
+  }
+};
+
+/**
+ * Get all gym attendance for today (admin only)
+ */
+export const getAllGymAttendanceToday = async (limit = 100, showAll = false) => {
+  try {
+    const today = new Date();
+    const sessionDate = today.toISOString().split('T')[0]; // YYYY-MM-DD
+
+    console.log('Fetching gym attendance for date:', sessionDate, 'showAll:', showAll);
+
+    // First, get all attendance records
+    let attendanceQuery = supabase
+      .from('gym_attendance')
+      .select('*');
+
+    // If showAll is false, only get today's records
+    if (!showAll) {
+      attendanceQuery = attendanceQuery.eq('session_date', sessionDate);
+    }
+
+    const { data: attendanceData, error: attendanceError } = await attendanceQuery
+      .order('check_in_time', { ascending: false })
+      .limit(limit);
+
+    if (attendanceError) {
+      console.error('Error getting gym attendance:', attendanceError);
+      return { success: false, attendance: [], error: attendanceError.message };
+    }
+
+    if (!attendanceData || attendanceData.length === 0) {
+      console.log(`No gym attendance records found for ${showAll ? 'all time' : sessionDate}`);
+      return { success: true, attendance: [] };
+    }
+
+    // Get unique user IDs
+    const userIds = [...new Set(attendanceData.map(entry => entry.user_id))];
+
+    // Fetch user data
+    const { data: users, error: usersError } = await supabase
+      .from('users_metadata')
+      .select('id, name, email, cms_id, gender, role, profile_picture_url')
+      .in('id', userIds);
+
+    if (usersError) {
+      console.error('Error fetching users:', usersError);
+      // Return attendance without user data
+      return { success: true, attendance: attendanceData };
+    }
+
+    // Create user map
+    const userMap = {};
+    if (users) {
+      users.forEach(user => {
+        userMap[user.id] = user;
+      });
+    }
+
+    // Combine attendance with user data
+    const attendanceWithUsers = attendanceData.map(entry => ({
+      ...entry,
+      user: userMap[entry.user_id] || null
+    }));
+
+    console.log(`Found ${attendanceWithUsers.length} gym attendance records for ${showAll ? 'all time' : sessionDate}`);
+    return { success: true, attendance: attendanceWithUsers };
+  } catch (error) {
+    console.error('Error in getAllGymAttendanceToday:', error);
     return { success: false, attendance: [], error: error.message };
   }
 };
