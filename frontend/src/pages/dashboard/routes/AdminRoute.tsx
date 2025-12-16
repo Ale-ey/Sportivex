@@ -67,6 +67,7 @@ const AdminRoute: React.FC = () => {
   const [slotForm, setSlotForm] = useState({
     startTime: '',
     endTime: '',
+    roleRestriction: '' as '' | 'ug' | 'pg' | 'alumni' | 'faculty',
     genderRestriction: 'mixed' as 'male' | 'female' | 'faculty_pg' | 'mixed',
     trainerId: '',
     maxCapacity: 20,
@@ -270,6 +271,7 @@ const AdminRoute: React.FC = () => {
     setSlotForm({
       startTime: '',
       endTime: '',
+      roleRestriction: '',
       genderRestriction: 'mixed',
       trainerId: '',
       maxCapacity: 20,
@@ -279,9 +281,17 @@ const AdminRoute: React.FC = () => {
 
   const openEditSlot = (slot: TimeSlot) => {
     setEditingSlot(slot);
+    // Map gender_restriction back to role_restriction
+    let roleRestriction: '' | 'ug' | 'pg' | 'alumni' | 'faculty' = '';
+    if (slot.gender_restriction === 'faculty_pg') {
+      roleRestriction = 'pg'; // Default to PG for faculty_pg slots
+    } else if (slot.gender_restriction === 'mixed' || slot.gender_restriction === 'male' || slot.gender_restriction === 'female') {
+      roleRestriction = 'ug'; // Default to UG for other restrictions
+    }
     setSlotForm({
       startTime: slot.start_time,
       endTime: slot.end_time,
+      roleRestriction,
       genderRestriction: slot.gender_restriction as any,
       trainerId: slot.trainer_id || '',
       maxCapacity: slot.max_capacity,
@@ -931,6 +941,33 @@ const AdminRoute: React.FC = () => {
                   </div>
                 </div>
                 <div>
+                  <Label>Role Restriction</Label>
+                  <select
+                    value={slotForm.roleRestriction || ''}
+                    onChange={(e) => {
+                      const roleRestriction = e.target.value;
+                      // Map role restriction to gender restriction
+                      let genderRestriction: 'male' | 'female' | 'faculty_pg' | 'mixed' = 'mixed';
+                      if (roleRestriction === 'ug') {
+                        genderRestriction = 'mixed'; // UG students can access mixed slots
+                      } else if (roleRestriction === 'pg' || roleRestriction === 'alumni' || roleRestriction === 'faculty') {
+                        genderRestriction = 'faculty_pg'; // PG, Alumni, Faculty can access faculty_pg slots
+                      }
+                      setSlotForm({ ...slotForm, roleRestriction: roleRestriction as any, genderRestriction });
+                    }}
+                    className="w-full px-3 py-2 border rounded-md"
+                  >
+                    <option value="">Select role restriction</option>
+                    <option value="ug">UG Student</option>
+                    <option value="pg">PG Student</option>
+                    <option value="alumni">Alumni</option>
+                    <option value="faculty">Faculty</option>
+                  </select>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Select which role can access this time slot
+                  </p>
+                </div>
+                <div>
                   <Label>Gender Restriction</Label>
                   <select
                     value={slotForm.genderRestriction}
@@ -942,6 +979,9 @@ const AdminRoute: React.FC = () => {
                     <option value="female">Female</option>
                     <option value="faculty_pg">Faculty/PG</option>
                   </select>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Additional gender-based restriction (works with role restriction)
+                  </p>
                 </div>
                 <div>
                   <Label>Max Capacity</Label>

@@ -75,9 +75,10 @@ export const validateUserEligibility = (user, timeSlot) => {
     };
   }
 
-  // Faculty/PG slots
+  // Faculty/PG slots - accessible by PG, Faculty, and Alumni
   if (genderRestriction === 'faculty_pg') {
-    if (user.role === 'faculty' || user.role === 'postgraduate') {
+    const userRole = user.role?.toLowerCase();
+    if (userRole === 'faculty' || userRole === 'pg' || userRole === 'alumni') {
       return {
         isValid: true,
         message: 'User is eligible for faculty/PG time slot'
@@ -85,11 +86,11 @@ export const validateUserEligibility = (user, timeSlot) => {
     }
     return {
       isValid: false,
-      message: 'This time slot is restricted to faculty and postgraduate students only'
+      message: 'This time slot is restricted to faculty, postgraduate students, and alumni only'
     };
   }
 
-  // Gender-specific slots
+  // Gender-specific slots (male or female)
   if (!user.gender) {
     return {
       isValid: false,
@@ -97,7 +98,11 @@ export const validateUserEligibility = (user, timeSlot) => {
     };
   }
 
-  if (user.gender !== genderRestriction) {
+  // Case-insensitive comparison
+  const userGender = user.gender.toLowerCase();
+  const slotGender = genderRestriction.toLowerCase();
+
+  if (userGender !== slotGender) {
     return {
       isValid: false,
       message: `This time slot is restricted to ${genderRestriction} swimmers only`
