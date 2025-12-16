@@ -1,0 +1,366 @@
+{
+	"info": {
+		"_postman_id": "gym-collection-id",
+		"name": "Sportivex Gym",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Auth",
+			"item": [
+				{
+					"name": "Login (Get Token)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"var jsonData = pm.response.json();",
+									"if (jsonData.success) {",
+									"    pm.environment.set(\"token\", jsonData.data.token);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"admin@nust.edu.pk\",\n    \"password\": \"password123\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/login",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"login"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Gym",
+			"item": [
+				{
+					"name": "Scan QR (Check In/Out)",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"qrCode\": \"GYM_ENTRY_EXIT\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/gym/scan-qr",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"gym",
+								"scan-qr"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Categories",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/gym/categories",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"gym",
+								"categories"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Exercises",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/gym/exercises",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"gym",
+								"exercises"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Exercises (Legs)",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/gym/exercises?category=legs",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"gym",
+								"exercises"
+							],
+							"query": [
+								{
+									"key": "category",
+									"value": "legs"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Machines",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/gym/machines",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"gym",
+								"machines"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Rules",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/gym/rules",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"gym",
+								"rules"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Get Realtime Count",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"url": {
+							"raw": "{{baseUrl}}/api/gym/count",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"gym",
+								"count"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Admin",
+			"item": [
+				{
+					"name": "Add Exercise",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Squats\",\n    \"description\": \"Basic leg exercise\",\n    \"category\": \"legs\",\n    \"area_affected\": \"Quadriceps, Glutes, Hamstrings\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/gym/exercises",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"gym",
+								"exercises"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Add Machine",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"name\": \"Treadmill\",\n    \"description\": \"Cardio machine\",\n    \"area_affected\": \"Legs, Cardio\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/gym/machines",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"gym",
+								"machines"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Add Rule",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Authorization",
+								"value": "Bearer {{token}}",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\": \"Wear proper shoes\",\n    \"content\": \"No sandals allowed in the gym area\",\n    \"category\": \"Safety\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/gym/rules",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"gym",
+								"rules"
+							]
+						}
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "baseUrl",
+			"value": "http://localhost:3000",
+			"type": "string"
+		}
+	]
+}
+

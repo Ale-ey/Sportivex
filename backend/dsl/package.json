@@ -1,0 +1,30 @@
+{
+  "name": "sportivex-routes-dsl",
+  "version": "1.0.0",
+  "description": "Domain-Specific Language for Express.js routes",
+  "type": "module",
+  "main": "RouteCodeGenerator.js",
+  "scripts": {
+    "generate-parser": "antlr4 -Dlanguage=JavaScript -visitor -o generated RoutesDSL.g4",
+    "generate:auth": "node RouteCodeGenerator.js auth.routes ../src/routes/auth.generated.js",
+    "generate:swimming": "node RouteCodeGenerator.js swimming.routes ../src/routes/swimming.generated.js",
+    "generate:all": "npm run generate:auth && npm run generate:swimming",
+    "build": "npm run generate-parser && npm run generate:all",
+    "clean": "rm -rf generated",
+    "rebuild": "npm run clean && npm run build"
+  },
+  "keywords": [
+    "dsl",
+    "antlr",
+    "express",
+    "routes",
+    "code-generation"
+  ],
+  "dependencies": {
+    "antlr4": "^4.13.1"
+  },
+  "devDependencies": {},
+  "author": "Sportivex Team",
+  "license": "MIT"
+}
+

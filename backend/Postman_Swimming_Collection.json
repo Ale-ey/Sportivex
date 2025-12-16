@@ -1,0 +1,962 @@
+{
+	"info": {
+		"_postman_id": "sportivex-swimming-collection",
+		"name": "Sportivex Swimming Module API",
+		"description": "Swimming module endpoints for Sportivex backend - Time slots, Attendance, Waitlist, Rules, and QR Codes",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Rules & Regulations",
+			"item": [
+				{
+					"name": "Get All Rules",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjlkZTZkYjI1LTFhYWItNDdmMi1hMTllLWQ1ZmY5YTc4NTEyZiIsImVtYWlsIjoiam9obi5kb2VAbnVzdC5lZHUucGsiLCJyb2xlIjoidWciLCJjbXNJZCI6MTIzNDU2LCJpYXQiOjE3NjMyMDIxMTksImV4cCI6MTc2MzIwNTcxOX0.Z0FsoOMXWm9iwk0vlk2F1Uaelpgz3QEDjW7mPOfcwbA",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/swimming/rules",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"swimming",
+								"rules"
+							]
+						},
+						"description": "Get all active rules and regulations. Accessible to all authenticated users."
+					},
+					"response": []
+				},
+				{
+					"name": "Create Rule (Admin Only)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjlkZTZkYjI1LTFhYWItNDdmMi1hMTllLWQ1ZmY5YTc4NTEyZiIsImVtYWlsIjoiam9obi5kb2VAbnVzdC5lZHUucGsiLCJyb2xlIjoidWciLCJjbXNJZCI6MTIzNDU2LCJpYXQiOjE3NjMyMDIxMTksImV4cCI6MTc2MzIwNTcxOX0.Z0FsoOMXWm9iwk0vlk2F1Uaelpgz3QEDjW7mPOfcwbA",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\": \"Pool Safety Guidelines\",\n    \"content\": \"Always shower before entering the pool. No running on the pool deck. Follow lifeguard instructions at all times.\",\n    \"category\": \"Safety\",\n    \"displayOrder\": 1\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/swimming/rules",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"swimming",
+								"rules"
+							]
+						},
+						"description": "Create a new rule. Admin only.\n\n**Required Fields:**\n- `title`: Rule title (string)\n- `content`: Rule content/description (string)\n\n**Optional Fields:**\n- `category`: Category name (string)\n- `displayOrder`: Display order number (integer, defaults to 0)"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Rule (Admin Only)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjlkZTZkYjI1LTFhYWItNDdmMi1hMTllLWQ1ZmY5YTc4NTEyZiIsImVtYWlsIjoiam9obi5kb2VAbnVzdC5lZHUucGsiLCJyb2xlIjoidWciLCJjbXNJZCI6MTIzNDU2LCJpYXQiOjE3NjMyMDIxMTksImV4cCI6MTc2MzIwNTcxOX0.Z0FsoOMXWm9iwk0vlk2F1Uaelpgz3QEDjW7mPOfcwbA",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\": \"Updated Pool Safety Guidelines\",\n    \"content\": \"Updated content here\",\n    \"category\": \"Safety & Health\",\n    \"displayOrder\": 2,\n    \"isActive\": true\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/swimming/rules/:id",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"swimming",
+								"rules",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1",
+									"description": "Rule ID"
+								}
+							]
+						},
+						"description": "Update an existing rule. Admin only.\n\n**Path Parameter:**\n- `id`: Rule ID\n\n**Body Fields (all optional):**\n- `title`: Rule title\n- `content`: Rule content\n- `category`: Category name\n- `displayOrder`: Display order number\n- `isActive`: Boolean to activate/deactivate rule"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Rule (Admin Only)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjlkZTZkYjI1LTFhYWItNDdmMi1hMTllLWQ1ZmY5YTc4NTEyZiIsImVtYWlsIjoiam9obi5kb2VAbnVzdC5lZHUucGsiLCJyb2xlIjoidWciLCJjbXNJZCI6MTIzNDU2LCJpYXQiOjE3NjMyMDIxMTksImV4cCI6MTc2MzIwNTcxOX0.Z0FsoOMXWm9iwk0vlk2F1Uaelpgz3QEDjW7mPOfcwbA",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/swimming/rules/:id",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"swimming",
+								"rules",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1",
+									"description": "Rule ID"
+								}
+							]
+						},
+						"description": "Delete a rule. Admin only.\n\n**Path Parameter:**\n- `id`: Rule ID"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Time Slots",
+			"item": [
+				{
+					"name": "Get All Time Slots",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjlkZTZkYjI1LTFhYWItNDdmMi1hMTllLWQ1ZmY5YTc4NTEyZiIsImVtYWlsIjoiam9obi5kb2VAbnVzdC5lZHUucGsiLCJyb2xlIjoidWciLCJjbXNJZCI6MTIzNDU2LCJpYXQiOjE3NjMyMDIxMTksImV4cCI6MTc2MzIwNTcxOX0.Z0FsoOMXWm9iwk0vlk2F1Uaelpgz3QEDjW7mPOfcwbA",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/swimming/time-slots?gender=male&active=true",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"swimming",
+								"time-slots"
+							],
+							"query": [
+								{
+									"key": "gender",
+									"value": "male",
+									"description": "Filter by gender: male, female, mixed",
+									"disabled": true
+								},
+								{
+									"key": "active",
+									"value": "true",
+									"description": "Filter by active status: true, false",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Get all time slots with optional filters. Accessible to all authenticated users.\n\n**Query Parameters (optional):**\n- `gender`: Filter by gender restriction (male, female, mixed)\n- `active`: Filter by active status (true, false)\n\n**Response:** Returns time slots with current attendance count and available spots."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Time Slot by ID",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjlkZTZkYjI1LTFhYWItNDdmMi1hMTllLWQ1ZmY5YTc4NTEyZiIsImVtYWlsIjoiam9obi5kb2VAbnVzdC5lZHUucGsiLCJyb2xlIjoidWciLCJjbXNJZCI6MTIzNDU2LCJpYXQiOjE3NjMyMDIxMTksImV4cCI6MTc2MzIwNTcxOX0.Z0FsoOMXWm9iwk0vlk2F1Uaelpgz3QEDjW7mPOfcwbA",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/swimming/time-slots/:id",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"swimming",
+								"time-slots",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1",
+									"description": "Time Slot ID"
+								}
+							]
+						},
+						"description": "Get a specific time slot by ID. Accessible to all authenticated users.\n\n**Path Parameter:**\n- `id`: Time Slot ID"
+					},
+					"response": []
+				},
+				{
+					"name": "Create Time Slot (Admin/Faculty)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjlkZTZkYjI1LTFhYWItNDdmMi1hMTllLWQ1ZmY5YTc4NTEyZiIsImVtYWlsIjoiam9obi5kb2VAbnVzdC5lZHUucGsiLCJyb2xlIjoidWciLCJjbXNJZCI6MTIzNDU2LCJpYXQiOjE3NjMyMDIxMTksImV4cCI6MTc2MzIwNTcxOX0.Z0FsoOMXWm9iwk0vlk2F1Uaelpgz3QEDjW7mPOfcwbA",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"startTime\": \"08:00\",\n    \"endTime\": \"09:30\",\n    \"genderRestriction\": \"male\",\n    \"trainerId\": \"9de6db25-1aab-47f2-a19e-d5ff9a78512f\",\n    \"maxCapacity\": 20\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/swimming/time-slots",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"swimming",
+								"time-slots"
+							]
+						},
+						"description": "Create a new time slot. Admin/Faculty only.\n\n**Required Fields:**\n- `startTime`: Start time in HH:mm format (e.g., \"08:00\")\n- `endTime`: End time in HH:mm format (e.g., \"09:30\")\n- `genderRestriction`: One of: \"male\", \"female\", \"mixed\"\n\n**Optional Fields:**\n- `trainerId`: UUID of the trainer (must exist in users_metadata)\n- `maxCapacity`: Maximum capacity (integer, defaults to 20)"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Time Slot (Admin Only)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjlkZTZkYjI1LTFhYWItNDdmMi1hMTllLWQ1ZmY5YTc4NTEyZiIsImVtYWlsIjoiam9obi5kb2VAbnVzdC5lZHUucGsiLCJyb2xlIjoidWciLCJjbXNJZCI6MTIzNDU2LCJpYXQiOjE3NjMyMDIxMTksImV4cCI6MTc2MzIwNTcxOX0.Z0FsoOMXWm9iwk0vlk2F1Uaelpgz3QEDjW7mPOfcwbA",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"startTime\": \"08:30\",\n    \"endTime\": \"10:00\",\n    \"genderRestriction\": \"mixed\",\n    \"trainerId\": \"9de6db25-1aab-47f2-a19e-d5ff9a78512f\",\n    \"maxCapacity\": 25,\n    \"isActive\": true\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/swimming/time-slots/:id",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"swimming",
+								"time-slots",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1",
+									"description": "Time Slot ID"
+								}
+							]
+						},
+						"description": "Update a time slot. Admin only.\n\n**Path Parameter:**\n- `id`: Time Slot ID\n\n**Body Fields (all optional):**\n- `startTime`: Start time in HH:mm format\n- `endTime`: End time in HH:mm format\n- `genderRestriction`: \"male\", \"female\", or \"mixed\"\n- `trainerId`: UUID of the trainer\n- `maxCapacity`: Maximum capacity (integer)\n- `isActive`: Boolean to activate/deactivate time slot"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Time Slot (Admin Only)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjlkZTZkYjI1LTFhYWItNDdmMi1hMTllLWQ1ZmY5YTc4NTEyZiIsImVtYWlsIjoiam9obi5kb2VAbnVzdC5lZHUucGsiLCJyb2xlIjoidWciLCJjbXNJZCI6MTIzNDU2LCJpYXQiOjE3NjMyMDIxMTksImV4cCI6MTc2MzIwNTcxOX0.Z0FsoOMXWm9iwk0vlk2F1Uaelpgz3QEDjW7mPOfcwbA",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/swimming/time-slots/:id",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"swimming",
+								"time-slots",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1",
+									"description": "Time Slot ID"
+								}
+							]
+						},
+						"description": "Delete a time slot. Admin only.\n\n**Path Parameter:**\n- `id`: Time Slot ID"
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Attendance",
+			"item": [
+				{
+					"name": "Scan QR Code (Check In)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjlkZTZkYjI1LTFhYWItNDdmMi1hMTllLWQ1ZmY5YTc4NTEyZiIsImVtYWlsIjoiam9obi5kb2VAbnVzdC5lZHUucGsiLCJyb2xlIjoidWciLCJjbXNJZCI6MTIzNDU2LCJpYXQiOjE3NjMyMDIxMTksImV4cCI6MTc2MzIwNTcxOX0.Z0FsoOMXWm9iwk0vlk2F1Uaelpgz3QEDjW7mPOfcwbA",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"qrCodeValue\": \"SWIMMING-1735202119123-abc123\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/swimming/attendance/scan-qr",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"swimming",
+								"attendance",
+								"scan-qr"
+							]
+						},
+						"description": "Scan QR code to check in. Accessible to all authenticated users.\n\n**Required Fields:**\n- `qrCodeValue`: QR code value string (format: SWIMMING-{timestamp}-{random})\n\n**Note:** The system automatically determines the appropriate time slot based on current time and user eligibility."
+					},
+					"response": []
+				},
+				{
+					"name": "Manual Check In (Admin Only)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjlkZTZkYjI1LTFhYWItNDdmMi1hMTllLWQ1ZmY5YTc4NTEyZiIsImVtYWlsIjoiam9obi5kb2VAbnVzdC5lZHUucGsiLCJyb2xlIjoidWciLCJjbXNJZCI6MTIzNDU2LCJpYXQiOjE3NjMyMDIxMTksImV4cCI6MTc2MzIwNTcxOX0.Z0FsoOMXWm9iwk0vlk2F1Uaelpgz3QEDjW7mPOfcwbA",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"userId\": \"9de6db25-1aab-47f2-a19e-d5ff9a78512f\",\n    \"timeSlotId\": 1,\n    \"sessionDate\": \"2024-01-15\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/swimming/attendance/check-in",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"swimming",
+								"attendance",
+								"check-in"
+							]
+						},
+						"description": "Manually check in a user. Admin only.\n\n**Required Fields:**\n- `userId`: UUID of the user to check in\n- `timeSlotId`: ID of the time slot\n- `sessionDate`: Date in YYYY-MM-DD format"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Attendance for Time Slot",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjlkZTZkYjI1LTFhYWItNDdmMi1hMTllLWQ1ZmY5YTc4NTEyZiIsImVtYWlsIjoiam9obi5kb2VAbnVzdC5lZHUucGsiLCJyb2xlIjoidWciLCJjbXNJZCI6MTIzNDU2LCJpYXQiOjE3NjMyMDIxMTksImV4cCI6MTc2MzIwNTcxOX0.Z0FsoOMXWm9iwk0vlk2F1Uaelpgz3QEDjW7mPOfcwbA",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/swimming/attendance/:timeSlotId?date=2024-01-15",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"swimming",
+								"attendance",
+								":timeSlotId"
+							],
+							"query": [
+								{
+									"key": "date",
+									"value": "2024-01-15",
+									"description": "Date in YYYY-MM-DD format (defaults to today)",
+									"disabled": true
+								}
+							],
+							"variable": [
+								{
+									"key": "timeSlotId",
+									"value": "1",
+									"description": "Time Slot ID"
+								}
+							]
+						},
+						"description": "Get attendance list for a specific time slot. Accessible to all authenticated users.\n\n**Path Parameter:**\n- `timeSlotId`: Time Slot ID\n\n**Query Parameter (optional):**\n- `date`: Date in YYYY-MM-DD format (defaults to today)"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Current Attendance Count",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjlkZTZkYjI1LTFhYWItNDdmMi1hMTllLWQ1ZmY5YTc4NTEyZiIsImVtYWlsIjoiam9obi5kb2VAbnVzdC5lZHUucGsiLCJyb2xlIjoidWciLCJjbXNJZCI6MTIzNDU2LCJpYXQiOjE3NjMyMDIxMTksImV4cCI6MTc2MzIwNTcxOX0.Z0FsoOMXWm9iwk0vlk2F1Uaelpgz3QEDjW7mPOfcwbA",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/swimming/attendance/current-count/:timeSlotId?date=2024-01-15",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"swimming",
+								"attendance",
+								"current-count",
+								":timeSlotId"
+							],
+							"query": [
+								{
+									"key": "date",
+									"value": "2024-01-15",
+									"description": "Date in YYYY-MM-DD format (defaults to today)",
+									"disabled": true
+								}
+							],
+							"variable": [
+								{
+									"key": "timeSlotId",
+									"value": "1",
+									"description": "Time Slot ID"
+								}
+							]
+						},
+						"description": "Get current attendance count for a time slot. Accessible to all authenticated users.\n\n**Path Parameter:**\n- `timeSlotId`: Time Slot ID\n\n**Query Parameter (optional):**\n- `date`: Date in YYYY-MM-DD format (defaults to today)\n\n**Response:** Returns current count, max capacity, and available spots."
+					},
+					"response": []
+				},
+				{
+					"name": "Get User Attendance History",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjlkZTZkYjI1LTFhYWItNDdmMi1hMTllLWQ1ZmY5YTc4NTEyZiIsImVtYWlsIjoiam9obi5kb2VAbnVzdC5lZHUucGsiLCJyb2xlIjoidWciLCJjbXNJZCI6MTIzNDU2LCJpYXQiOjE3NjMyMDIxMTksImV4cCI6MTc2MzIwNTcxOX0.Z0FsoOMXWm9iwk0vlk2F1Uaelpgz3QEDjW7mPOfcwbA",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/swimming/attendance/user/history?limit=50",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"swimming",
+								"attendance",
+								"user",
+								"history"
+							],
+							"query": [
+								{
+									"key": "limit",
+									"value": "50",
+									"description": "Maximum number of records to return (defaults to 50)",
+									"disabled": true
+								}
+							]
+						},
+						"description": "Get current user's attendance history. Accessible to all authenticated users.\n\n**Query Parameter (optional):**\n- `limit`: Maximum number of records to return (defaults to 50)\n\n**Note:** Returns attendance records for the authenticated user only."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "Waitlist",
+			"item": [
+				{
+					"name": "Join Waitlist",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjlkZTZkYjI1LTFhYWItNDdmMi1hMTllLWQ1ZmY5YTc4NTEyZiIsImVtYWlsIjoiam9obi5kb2VAbnVzdC5lZHUucGsiLCJyb2xlIjoidWciLCJjbXNJZCI6MTIzNDU2LCJpYXQiOjE3NjMyMDIxMTksImV4cCI6MTc2MzIwNTcxOX0.Z0FsoOMXWm9iwk0vlk2F1Uaelpgz3QEDjW7mPOfcwbA",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"timeSlotId\": 1,\n    \"sessionDate\": \"2024-01-15\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/swimming/waitlist/join",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"swimming",
+								"waitlist",
+								"join"
+							]
+						},
+						"description": "Join the waitlist for a time slot. Accessible to all authenticated users.\n\n**Required Fields:**\n- `timeSlotId`: ID of the time slot\n- `sessionDate`: Date in YYYY-MM-DD format\n\n**Note:** User will be automatically added to the waitlist with a position number."
+					},
+					"response": []
+				},
+				{
+					"name": "Leave Waitlist",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjlkZTZkYjI1LTFhYWItNDdmMi1hMTllLWQ1ZmY5YTc4NTEyZiIsImVtYWlsIjoiam9obi5kb2VAbnVzdC5lZHUucGsiLCJyb2xlIjoidWciLCJjbXNJZCI6MTIzNDU2LCJpYXQiOjE3NjMyMDIxMTksImV4cCI6MTc2MzIwNTcxOX0.Z0FsoOMXWm9iwk0vlk2F1Uaelpgz3QEDjW7mPOfcwbA",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"timeSlotId\": 1,\n    \"sessionDate\": \"2024-01-15\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/swimming/waitlist/leave",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"swimming",
+								"waitlist",
+								"leave"
+							]
+						},
+						"description": "Leave the waitlist for a time slot. Accessible to all authenticated users.\n\n**Required Fields:**\n- `timeSlotId`: ID of the time slot\n- `sessionDate`: Date in YYYY-MM-DD format\n\n**Note:** Waitlist positions will be automatically reordered after removal."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Waitlist for Time Slot",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjlkZTZkYjI1LTFhYWItNDdmMi1hMTllLWQ1ZmY5YTc4NTEyZiIsImVtYWlsIjoiam9obi5kb2VAbnVzdC5lZHUucGsiLCJyb2xlIjoidWciLCJjbXNJZCI6MTIzNDU2LCJpYXQiOjE3NjMyMDIxMTksImV4cCI6MTc2MzIwNTcxOX0.Z0FsoOMXWm9iwk0vlk2F1Uaelpgz3QEDjW7mPOfcwbA",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/swimming/waitlist/:timeSlotId?date=2024-01-15",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"swimming",
+								"waitlist",
+								":timeSlotId"
+							],
+							"query": [
+								{
+									"key": "date",
+									"value": "2024-01-15",
+									"description": "Date in YYYY-MM-DD format (defaults to today)",
+									"disabled": true
+								}
+							],
+							"variable": [
+								{
+									"key": "timeSlotId",
+									"value": "1",
+									"description": "Time Slot ID"
+								}
+							]
+						},
+						"description": "Get waitlist for a specific time slot. Accessible to all authenticated users.\n\n**Path Parameter:**\n- `timeSlotId`: Time Slot ID\n\n**Query Parameter (optional):**\n- `date`: Date in YYYY-MM-DD format (defaults to today)\n\n**Response:** Returns waitlist entries ordered by position."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "QR Codes",
+			"item": [
+				{
+					"name": "Get All QR Codes (Admin Only)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjlkZTZkYjI1LTFhYWItNDdmMi1hMTllLWQ1ZmY5YTc4NTEyZiIsImVtYWlsIjoiam9obi5kb2VAbnVzdC5lZHUucGsiLCJyb2xlIjoidWciLCJjbXNJZCI6MTIzNDU2LCJpYXQiOjE3NjMyMDIxMTksImV4cCI6MTc2MzIwNTcxOX0.Z0FsoOMXWm9iwk0vlk2F1Uaelpgz3QEDjW7mPOfcwbA",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/swimming/qr-codes",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"swimming",
+								"qr-codes"
+							]
+						},
+						"description": "Get all QR codes. Admin only."
+					},
+					"response": []
+				},
+				{
+					"name": "Create QR Code (Admin Only)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjlkZTZkYjI1LTFhYWItNDdmMi1hMTllLWQ1ZmY5YTc4NTEyZiIsImVtYWlsIjoiam9obi5kb2VAbnVzdC5lZHUucGsiLCJyb2xlIjoidWciLCJjbXNJZCI6MTIzNDU2LCJpYXQiOjE3NjMyMDIxMTksImV4cCI6MTc2MzIwNTcxOX0.Z0FsoOMXWm9iwk0vlk2F1Uaelpgz3QEDjW7mPOfcwbA",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"locationName\": \"Main Pool Entrance\",\n    \"description\": \"QR code located at the main pool entrance gate\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/swimming/qr-codes",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"swimming",
+								"qr-codes"
+							]
+						},
+						"description": "Create a new QR code. Admin only.\n\n**Required Fields:**\n- `locationName`: Name/location of the QR code\n\n**Optional Fields:**\n- `description`: Description of the QR code location\n\n**Note:** A unique QR code value will be automatically generated."
+					},
+					"response": []
+				},
+				{
+					"name": "Update QR Code (Admin Only)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjlkZTZkYjI1LTFhYWItNDdmMi1hMTllLWQ1ZmY5YTc4NTEyZiIsImVtYWlsIjoiam9obi5kb2VAbnVzdC5lZHUucGsiLCJyb2xlIjoidWciLCJjbXNJZCI6MTIzNDU2LCJpYXQiOjE3NjMyMDIxMTksImV4cCI6MTc2MzIwNTcxOX0.Z0FsoOMXWm9iwk0vlk2F1Uaelpgz3QEDjW7mPOfcwbA",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"locationName\": \"Updated Pool Entrance\",\n    \"description\": \"Updated description\",\n    \"isActive\": true\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{base_url}}/api/swimming/qr-codes/:id",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"swimming",
+								"qr-codes",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1",
+									"description": "QR Code ID"
+								}
+							]
+						},
+						"description": "Update a QR code. Admin only.\n\n**Path Parameter:**\n- `id`: QR Code ID\n\n**Body Fields (all optional):**\n- `locationName`: Name/location of the QR code\n- `description`: Description of the QR code location\n- `isActive`: Boolean to activate/deactivate QR code"
+					},
+					"response": []
+				},
+				{
+					"name": "Delete QR Code (Admin Only)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjlkZTZkYjI1LTFhYWItNDdmMi1hMTllLWQ1ZmY5YTc4NTEyZiIsImVtYWlsIjoiam9obi5kb2VAbnVzdC5lZHUucGsiLCJyb2xlIjoidWciLCJjbXNJZCI6MTIzNDU2LCJpYXQiOjE3NjMyMDIxMTksImV4cCI6MTc2MzIwNTcxOX0.Z0FsoOMXWm9iwk0vlk2F1Uaelpgz3QEDjW7mPOfcwbA",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/swimming/qr-codes/:id",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"api",
+								"swimming",
+								"qr-codes",
+								":id"
+							],
+							"variable": [
+								{
+									"key": "id",
+									"value": "1",
+									"description": "QR Code ID"
+								}
+							]
+						},
+						"description": "Delete a QR code. Admin only.\n\n**Path Parameter:**\n- `id`: QR Code ID"
+					},
+					"response": []
+				}
+			]
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:3000",
+			"type": "string"
+		}
+	]
+}
+
+
+
+
+
+
+

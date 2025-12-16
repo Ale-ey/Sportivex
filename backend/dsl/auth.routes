@@ -1,0 +1,20 @@
+// Authentication Routes DSL
+// Defines all authentication and user profile routes
+
+import express from 'express';
+import authController from '../controllers/authController.js';
+import { authenticateToken } from '../middlewares/auth.js';
+import { uploadProfilePicture } from '../middlewares/upload.js';
+
+/* PUBLIC ROUTES (no authentication required) */
+POST '/register' handle authController.register;
+POST '/login' handle authController.login;
+POST '/request-password-reset' handle authController.requestPasswordReset;
+POST '/reset-password' handle authController.resetPassword;
+
+/* PROTECTED ROUTES (authentication required) */
+GET '/profile' with authenticateToken handle authController.getProfile;
+PUT '/profile' with authenticateToken, uploadProfilePicture handle authController.updateProfile;
+POST '/change-password' with authenticateToken handle authController.changePassword;
+POST '/refresh-token' with authenticateToken handle authController.refreshToken;
+

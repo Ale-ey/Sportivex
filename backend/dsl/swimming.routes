@@ -1,0 +1,54 @@
+// Swimming Routes DSL Example
+// This is a more concise way to define routes
+
+import { Router } from 'express';
+import swimmingController from '../controllers/swimmingController.js';
+import { authenticateToken, requireRole } from '../middlewares/auth.js';
+import { Roles } from '../constants/roles.js';
+import { checkSwimmingRegistrationStatus } from '../services/swimmingService.js';
+
+const ADMIN_ONLY = [Roles.ADMIN];
+const ADMIN_OR_FACULTY = [Roles.ADMIN, Roles.FACULTY];
+
+/* PUBLIC ROUTES */
+GET '/rules' with authenticateToken handle swimmingController.getRules;
+
+/* TIME SLOTS ROUTES */
+GET '/time-slots' with authenticateToken handle swimmingController.getTimeSlots;
+GET '/time-slots/:id' with authenticateToken handle swimmingController.getTimeSlotById;
+POST '/time-slots' with authenticateToken, requireRole(ADMIN_OR_FACULTY) handle swimmingController.createTimeSlot;
+PUT '/time-slots/:id' with authenticateToken, requireRole(ADMIN_ONLY) handle swimmingController.updateTimeSlot;
+DELETE '/time-slots/:id' with authenticateToken, requireRole(ADMIN_ONLY) handle swimmingController.deleteTimeSlot;
+
+/* REGISTRATION ROUTES */
+GET '/registration' with authenticateToken handle swimmingController.getSwimmingRegistration;
+GET '/registration/status' with authenticateToken handle swimmingController.checkSwimmingRegistrationStatus;
+POST '/registration' with authenticateToken handle swimmingController.createSwimmingRegistration;
+POST '/registration/verify-payment' with authenticateToken handle swimmingController.verifySwimmingRegistrationPayment;
+POST '/registration/monthly-payment' with authenticateToken handle swimmingController.createSwimmingMonthlyPayment;
+POST '/registration/monthly-payment/verify' with authenticateToken handle swimmingController.verifySwimmingMonthlyPayment;
+GET '/registration/monthly-payments' with authenticateToken handle swimmingController.getSwimmingMonthlyPayments;
+
+/* ATTENDANCE ROUTES */
+POST '/attendance/scan-qr' with authenticateToken, requireSwimmingRegistration handle swimmingController.scanQRCode;
+POST '/attendance/check-in' with authenticateToken, requireRole(ADMIN_ONLY) handle swimmingController.manualCheckIn;
+GET '/attendance/:timeSlotId' with authenticateToken, requireSwimmingRegistration handle swimmingController.getAttendance;
+GET '/attendance/current-count/:timeSlotId' with authenticateToken handle swimmingController.getCurrentCount;
+GET '/attendance/user/history' with authenticateToken, requireSwimmingRegistration handle swimmingController.getUserHistory;
+
+/* WAITLIST ROUTES */
+POST '/waitlist/join' with authenticateToken handle swimmingController.joinWaitlist;
+DELETE '/waitlist/leave' with authenticateToken handle swimmingController.leaveWaitlist;
+GET '/waitlist/:timeSlotId' with authenticateToken handle swimmingController.getWaitlist;
+
+/* RULES ROUTES (Admin Only) */
+POST '/rules' with authenticateToken, requireRole(ADMIN_ONLY) handle swimmingController.createRule;
+PUT '/rules/:id' with authenticateToken, requireRole(ADMIN_ONLY) handle swimmingController.updateRule;
+DELETE '/rules/:id' with authenticateToken, requireRole(ADMIN_ONLY) handle swimmingController.deleteRule;
+
+/* QR CODE ROUTES (Admin Only) */
+GET '/qr-codes' with authenticateToken, requireRole(ADMIN_ONLY) handle swimmingController.getQRCodes;
+POST '/qr-codes' with authenticateToken, requireRole(ADMIN_ONLY) handle swimmingController.createQRCode;
+PUT '/qr-codes/:id' with authenticateToken, requireRole(ADMIN_ONLY) handle swimmingController.updateQRCode;
+DELETE '/qr-codes/:id' with authenticateToken, requireRole(ADMIN_ONLY) handle swimmingController.deleteQRCode;
+
