@@ -26,22 +26,13 @@ export const determineTimeSlot = (timeSlots, currentDateTime = new Date()) => {
   const currentTime = currentDateTime.getHours() * 60 + currentDateTime.getMinutes();
   const tenMinutesFromNow = currentTime + 10;
 
-  // Find the next slot that starts within 10 minutes
+  // First, find if we're currently in any active slot
   for (let i = 0; i < sortedSlots.length; i++) {
     const slot = sortedSlots[i];
     const slotStartTime = parseTime(slot.start_time);
     const slotEndTime = parseTime(slot.end_time);
 
-    // Check if we're within 10 minutes of the next slot starting
-    if (currentTime < slotStartTime && tenMinutesFromNow >= slotStartTime) {
-      return {
-        timeSlot: slot,
-        reason: 'within_10_minutes_of_next_slot',
-        message: `Check-in for upcoming slot starting at ${slot.start_time}`
-      };
-    }
-
-    // Check if we're currently in this time slot
+    // Check if we're currently in this time slot (most important check)
     if (currentTime >= slotStartTime && currentTime < slotEndTime) {
       return {
         timeSlot: slot,
@@ -49,40 +40,57 @@ export const determineTimeSlot = (timeSlots, currentDateTime = new Date()) => {
         message: `Check-in for current slot (${slot.start_time} - ${slot.end_time})`
       };
     }
-
-    // Check if this is the first slot and we're before it (but not within 10 minutes)
-    if (i === 0 && currentTime < slotStartTime) {
-      return {
-        timeSlot: slot,
-        reason: 'before_first_slot',
-        message: `Early check-in for first slot starting at ${slot.start_time}`
-      };
-    }
   }
 
-  // If we've passed all slots for the day
-  const lastSlot = sortedSlots[sortedSlots.length - 1];
-  const lastSlotEndTime = parseTime(lastSlot.end_time);
-  
-  if (currentTime >= lastSlotEndTime) {
+  // If not in any current slot, find the next upcoming slot
+  // Filter out slots that have already ended
+  const upcomingSlots = sortedSlots.filter(slot => {
+    const slotEndTime = parseTime(slot.end_time);
+    return currentTime < slotEndTime; // Only consider slots that haven't ended yet
+  });
+
+  if (upcomingSlots.length === 0) {
     return {
       error: true,
       message: 'All time slots for today have ended. Please check back tomorrow.'
     };
   }
 
-  // If we're between slots, assign to the next upcoming slot
-  for (let i = 0; i < sortedSlots.length; i++) {
-    const slot = sortedSlots[i];
+  // Find the next slot that starts soon or hasn't started yet
+  for (let i = 0; i < upcomingSlots.length; i++) {
+    const slot = upcomingSlots[i];
     const slotStartTime = parseTime(slot.start_time);
-    
+    const slotEndTime = parseTime(slot.end_time);
+
+    // If slot hasn't started yet, check if we're within 10 minutes
     if (currentTime < slotStartTime) {
-      return {
-        timeSlot: slot,
-        reason: 'next_upcoming_slot',
-        message: `Check-in for upcoming slot starting at ${slot.start_time}`
-      };
+      // Check if we're within 10 minutes of this slot starting
+      if (tenMinutesFromNow >= slotStartTime) {
+        return {
+          timeSlot: slot,
+          reason: 'within_10_minutes_of_next_slot',
+          message: `Check-in for upcoming slot starting at ${slot.start_time}`
+        };
+      }
+      // If not within 10 minutes, but it's the next upcoming slot, assign to it
+      // (for early check-ins)
+      if (i === 0 || (i > 0 && currentTime >= parseTime(upcomingSlots[i - 1].end_time))) {
+        return {
+          timeSlot: slot,
+          reason: 'next_upcoming_slot',
+          message: `Check-in for upcoming slot starting at ${slot.start_time}`
+        };
+      }
     }
+  }
+
+  // Fallback: return the first upcoming slot if we couldn't find a match
+  if (upcomingSlots.length > 0) {
+    return {
+      timeSlot: upcomingSlots[0],
+      reason: 'next_available_slot',
+      message: `Check-in for next available slot starting at ${upcomingSlots[0].start_time}`
+    };
   }
 
   return {

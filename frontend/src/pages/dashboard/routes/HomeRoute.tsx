@@ -7,6 +7,7 @@ import HomeTab, {
 import { Dumbbell, Heart, Clock, Award } from "lucide-react";
 import { useGym } from "@/hooks/useGym";
 import { useLeague } from "@/hooks/useLeague";
+import { gymService } from "@/services/gymService";
 
 const HomeRoute: React.FC = () => {
   const { stats, workoutHistory, fetchStats, fetchWorkoutHistory } = useGym();
@@ -27,6 +28,13 @@ const HomeRoute: React.FC = () => {
       // Silently handle gym registration errors (402) - these are expected if payment not done
       if (err.response?.status !== 402 && err.response?.data?.code !== 'GYM_REGISTRATION_REQUIRED') {
         console.error('Error fetching workout history:', err);
+      }
+    });
+    // Fetch gym attendance for recent activities
+    gymService.getAttendance(10).catch((err) => {
+      // Silently handle gym registration errors (402) - these are expected if payment not done
+      if (err.response?.status !== 402 && err.response?.data?.code !== 'GYM_REGISTRATION_REQUIRED') {
+        console.error('Error fetching gym attendance:', err);
       }
     });
     fetchLeagues().catch((err) => {
@@ -70,40 +78,80 @@ const HomeRoute: React.FC = () => {
   }, [stats]);
 
   useEffect(() => {
-    if (workoutHistory && workoutHistory.length > 0) {
-      const activities: ActivityItem[] = workoutHistory.slice(0, 3).map((workout) => {
-        const workoutDate = new Date(workout.workout_date || workout.start_time);
-        const now = new Date();
-        const diffTime = Math.abs(now.getTime() - workoutDate.getTime());
-        const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-        
-        let timeString = "";
-        if (diffDays === 0) {
-          timeString = `Today, ${workoutDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}`;
-        } else if (diffDays === 1) {
-          timeString = `Yesterday, ${workoutDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}`;
-        } else {
-          timeString = workoutDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+    const loadRecentActivities = async () => {
+      const activities: ActivityItem[] = [];
+      
+      // Add workout history
+      if (workoutHistory && workoutHistory.length > 0) {
+        const workoutActivities = workoutHistory.slice(0, 5).map((workout) => {
+          const workoutDate = new Date(workout.workout_date || workout.start_time);
+          const now = new Date();
+          const diffTime = Math.abs(now.getTime() - workoutDate.getTime());
+          const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+          
+          let timeString = "";
+          if (diffDays === 0) {
+            timeString = `Today, ${workoutDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}`;
+          } else if (diffDays === 1) {
+            timeString = `Yesterday, ${workoutDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}`;
+          } else {
+            timeString = workoutDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+          }
+
+          const durationMinutes = workout.total_duration_minutes || 0;
+          const hours = Math.floor(durationMinutes / 60);
+          const minutes = durationMinutes % 60;
+          const durationString = hours > 0 ? `${hours}h ${minutes}min` : `${minutes}min`;
+
+          return {
+            activity: "Gym Workout",
+            time: timeString,
+            duration: durationString,
+            calories: workout.total_calories || 0,
+            status: "completed",
+          };
+        });
+        activities.push(...workoutActivities);
+      }
+
+      // Add gym attendance
+      try {
+        const attendanceResponse = await gymService.getAttendance(10);
+        if (attendanceResponse.success && attendanceResponse.data.attendance) {
+          const attendanceActivities = attendanceResponse.data.attendance.slice(0, 5).map((attendance) => {
+            const checkInDate = new Date(attendance.check_in_time);
+            const now = new Date();
+            const diffTime = Math.abs(now.getTime() - checkInDate.getTime());
+            const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+            
+            let timeString = "";
+            if (diffDays === 0) {
+              timeString = `Today, ${checkInDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}`;
+            } else if (diffDays === 1) {
+              timeString = `Yesterday, ${checkInDate.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}`;
+            } else {
+              timeString = checkInDate.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+            }
+
+            return {
+              activity: "Gym Check-in",
+              time: timeString,
+              duration: "QR Scan",
+              calories: 0,
+              status: "completed",
+            };
+          });
+          activities.push(...attendanceActivities);
         }
+      } catch (err) {
+        // Silently handle errors - attendance is optional
+      }
 
-        const durationMinutes = workout.total_duration_minutes || 0;
-        const hours = Math.floor(durationMinutes / 60);
-        const minutes = durationMinutes % 60;
-        const durationString = hours > 0 ? `${hours}h ${minutes}min` : `${minutes}min`;
+      
+      setRecentActivities(activities.slice(0, 5));
+    };
 
-        return {
-          activity: "Gym Workout",
-          time: timeString,
-          duration: durationString,
-          calories: workout.total_calories || 0,
-          status: "completed",
-        };
-      });
-      setRecentActivities(activities);
-    } else {
-      // Show empty state or placeholder
-      setRecentActivities([]);
-    }
+    loadRecentActivities();
   }, [workoutHistory]);
 
   useEffect(() => {
