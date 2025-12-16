@@ -21,6 +21,7 @@ import {
   getGymMonthlyPaymentsController,
   processGymQRScanController,
   getGymAttendanceController,
+  getAllGymAttendanceTodayController,
   getGymQRCodesController,
   createGymQRCodeController,
   updateGymQRCodeController,
@@ -97,6 +98,9 @@ router.get('/stats', requireGymRegistration, getStatsController);
 router.get('/goals', requireGymRegistration, getGoalsController);
 router.post('/goals', requireGymRegistration, saveGoalController);
 router.put('/goals/:id', requireGymRegistration, saveGoalController);
+
+// Admin routes - Get all gym attendance for today
+router.get('/attendance/all', requireRole([Roles.ADMIN]), getAllGymAttendanceTodayController);
 
 // QR Code routes (admin only)
 router.get('/qr-codes', requireRole([Roles.ADMIN]), getGymQRCodesController);
