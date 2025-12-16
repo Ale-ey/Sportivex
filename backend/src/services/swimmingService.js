@@ -110,27 +110,30 @@ export const processQRScan = async (qrCodeValue, user) => {
       };
     }
 
-    // 3. Determine appropriate time slot
-    const slotDetermination = determineTimeSlot(timeSlots, today);
+    // 3. Filter time slots by user eligibility first (gender/role)
+    const eligibleSlots = timeSlots.filter(slot => {
+      const eligibility = validateUserEligibility(user, slot);
+      return eligibility.isValid;
+    });
+
+    if (eligibleSlots.length === 0) {
+      return {
+        success: false,
+        message: 'No time slots available for your role and gender. Please contact admin.'
+      };
+    }
+
+    // 4. Determine appropriate time slot from eligible slots only
+    const slotDetermination = determineTimeSlot(eligibleSlots, today);
 
     if (slotDetermination.error) {
       return {
         success: false,
-        message: slotDetermination.message
+        message: slotDetermination.message || 'No suitable time slot found for current time'
       };
     }
 
     const { timeSlot, reason, message: slotMessage } = slotDetermination;
-
-    // 4. Validate user eligibility (gender/role)
-    const eligibility = validateUserEligibility(user, timeSlot);
-
-    if (!eligibility.isValid) {
-      return {
-        success: false,
-        message: eligibility.message
-      };
-    }
 
     // 5. Check if user already checked in for this session
     const { hasCheckedIn } = await hasUserCheckedIn(user.id, timeSlot.id, sessionDate);
@@ -617,27 +620,40 @@ export const processSwimmingQRScan = async (qrCodeValue, user) => {
       };
     }
 
-    // 4. Determine appropriate time slot
-    const slotDetermination = determineTimeSlot(timeSlots, today);
+    // 4. Filter time slots by user eligibility first (gender/role)
+    const eligibleSlots = timeSlots.filter(slot => {
+      const eligibility = validateUserEligibility(user, slot);
+      if (!eligibility.isValid) {
+        console.log(`Slot ${slot.start_time}-${slot.end_time} (${slot.gender_restriction}) filtered out: ${eligibility.message}`);
+      }
+      return eligibility.isValid;
+    });
+
+    console.log(`User ${user.id} (role: ${user.role}, gender: ${user.gender}) - Eligible slots: ${eligibleSlots.length} out of ${timeSlots.length}`);
+    eligibleSlots.forEach(slot => {
+      console.log(`  - ${slot.start_time}-${slot.end_time} (${slot.gender_restriction})`);
+    });
+
+    if (eligibleSlots.length === 0) {
+      return {
+        success: false,
+        message: 'No time slots available for your role and gender. Please contact admin.'
+      };
+    }
+
+    // 5. Determine appropriate time slot from eligible slots only
+    const slotDetermination = determineTimeSlot(eligibleSlots, today);
+    
+    console.log(`Determined slot: ${slotDetermination.timeSlot?.start_time}-${slotDetermination.timeSlot?.end_time} (${slotDetermination.timeSlot?.gender_restriction}), reason: ${slotDetermination.reason}`);
 
     if (slotDetermination.error) {
       return {
         success: false,
-        message: slotDetermination.message
+        message: slotDetermination.message || 'No suitable time slot found for current time'
       };
     }
 
     const { timeSlot, reason, message: slotMessage } = slotDetermination;
-
-    // 5. Validate user eligibility (gender/role)
-    const eligibility = validateUserEligibility(user, timeSlot);
-
-    if (!eligibility.isValid) {
-      return {
-        success: false,
-        message: eligibility.message
-      };
-    }
 
     // 6. Check if user already checked in for this session
     const { hasCheckedIn } = await hasUserCheckedIn(user.id, timeSlot.id, sessionDate);
