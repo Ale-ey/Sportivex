@@ -19,7 +19,8 @@ import {
   updateGymMonthlyPayment,
   getUserGymMonthlyPayments,
   processGymQRScan,
-  getUserGymAttendance
+  getUserGymAttendance,
+  getAllGymAttendanceToday
 } from '../services/gymService.js';
 import * as stripeService from '../services/stripeService.js';
 
@@ -1060,6 +1061,40 @@ export const getGymAttendanceController = async (req, res) => {
   }
 };
 
+/**
+ * Get all gym attendance for today (admin only)
+ */
+export const getAllGymAttendanceTodayController = async (req, res) => {
+  try {
+    const { limit = 100, showAll = false } = req.query;
+    const showAllBool = showAll === 'true' || showAll === true;
+    
+    const result = await getAllGymAttendanceToday(parseInt(limit, 10), showAllBool);
+
+    if (!result.success) {
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to fetch gym attendance',
+        error: result.error
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      data: {
+        attendance: result.attendance,
+        count: result.attendance.length
+      }
+    });
+  } catch (error) {
+    console.error('Error in getAllGymAttendanceTodayController:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error'
+    });
+  }
+};
+
 // ==================== GYM QR CODES ====================
 
 /**
@@ -1104,8 +1139,15 @@ export const createGymQRCodeController = async (req, res) => {
     const { description, location } = req.body;
     const userId = req.user.id;
 
+    // Validate location name for gym QR codes
+    if (location && location.toLowerCase().includes('swimming')) {
+      console.warn('Warning: Gym QR code created with location containing "swimming":', location);
+    }
+
     // Generate unique QR code value
     const qrCodeValue = `GYM-${Date.now()}-${Math.random().toString(36).substring(7)}`;
+
+    console.log('Creating GYM QR code:', { location, description, qrCodeValue });
 
     const { data, error } = await supabase
       .from('gym_qr_codes')
@@ -1129,9 +1171,10 @@ export const createGymQRCodeController = async (req, res) => {
       });
     }
 
+    console.log('Gym QR code created successfully. This QR code will route to gym attendance.');
     res.status(201).json({
       success: true,
-      message: 'Gym QR code created successfully',
+      message: 'Gym QR code created successfully. This QR code will scan for gym attendance.',
       data: {
         qrCode: data
       }
@@ -1243,6 +1286,7 @@ export default {
   getGymMonthlyPaymentsController,
   processGymQRScanController,
   getGymAttendanceController,
+  getAllGymAttendanceTodayController,
   getGymQRCodesController,
   createGymQRCodeController,
   updateGymQRCodeController,

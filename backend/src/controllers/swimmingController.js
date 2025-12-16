@@ -994,8 +994,15 @@ export const createQRCode = async (req, res) => {
       });
     }
 
+    // Validate location name for swimming QR codes
+    if (locationName.toLowerCase().includes('gym') && !locationName.toLowerCase().includes('swimming')) {
+      console.warn('Warning: Swimming QR code created with location containing "gym":', locationName);
+    }
+
     // Generate unique QR code value
     const qrCodeValue = `SWIMMING-${Date.now()}-${Math.random().toString(36).substring(7)}`;
+
+    console.log('Creating SWIMMING QR code:', { locationName, description, qrCodeValue });
 
     const { data, error } = await supabase
       .from('swimming_qr_codes')
@@ -1011,16 +1018,17 @@ export const createQRCode = async (req, res) => {
       .single();
 
     if (error) {
-      console.error('Error creating QR code:', error);
+      console.error('Error creating swimming QR code:', error);
       return res.status(500).json({
         success: false,
         message: 'Failed to create QR code'
       });
     }
 
+    console.log('Swimming QR code created successfully. This QR code will route to swimming attendance.');
     res.status(201).json({
       success: true,
-      message: 'QR code created successfully',
+      message: 'Swimming QR code created successfully. This QR code will scan for swimming attendance.',
       data: {
         qrCode: data
       }
