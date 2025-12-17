@@ -3,6 +3,9 @@ import { supabaseAdmin as supabase } from '../config/supabase.js';
 /**
  * Calculate calories burned for an exercise
  * Formula: calories = (MET * 3.5 * weight_kg * duration_minutes) / 200
+ * 
+ * PRECONDITIONS: metValue, weightKg, and durationMinutes are numbers (can be null/undefined)
+ * POSTCONDITIONS: Returns 0 if any parameter is falsy, otherwise returns rounded integer calories calculated by formula
  */
 export const calculateCalories = (metValue, weightKg, durationMinutes) => {
   if (!metValue || !weightKg || !durationMinutes) {

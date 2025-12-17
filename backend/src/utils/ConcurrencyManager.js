@@ -216,6 +216,9 @@ const lockManager = new LockManager();
  * Execute operation with pessimistic locking
  * Acquires lock before operation, releases after
  * 
+ * PRECONDITIONS: resourceKey is a string, operation is an async function, timeout is a positive number
+ * POSTCONDITIONS: Returns {success: true, data: result, version} if lock acquired and operation succeeds, or {success: false, error, reason} if lock timeout or operation fails; lock is always released in finally block
+ * 
  * @param {string} resourceKey - Unique identifier for resource
  * @param {Function} operation - Async function to execute
  * @param {number} timeout - Lock timeout in milliseconds

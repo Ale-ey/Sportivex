@@ -24,6 +24,67 @@ import { getTodayDate } from '../utils/timeSlotDetermination.js';
 
 /**
  * Get all time slots with optional filters
+ * 
+ * SPECIFICATION:
+ * 
+ * PRECONDITIONS:
+ * - req.user must be set by authentication middleware (can be null for unauthenticated requests)
+ * - req.query may contain optional 'gender' and 'active' parameters
+ * - supabase connection must be available and configured
+ * - 'swimming_time_slots' table must exist in the database
+ * - 'users_metadata' table must exist for trainer information lookup
+ * - getAttendanceCount function must be available and functional
+ * - getTodayDate function must return a valid date string
+ * 
+ * POSTCONDITIONS:
+ * - If successful: Returns HTTP 200 with JSON response containing:
+ *   - success: true
+ *   - data.timeSlots: Array of time slot objects, each enriched with:
+ *     - All original time slot fields (id, start_time, end_time, gender_restriction, etc.)
+ *     - trainer: Object with {id, name, email} if trainer_id exists, null otherwise
+ *     - currentCount: Number of attendees for today's session
+ *     - availableSpots: Calculated as max_capacity - currentCount
+ *   - data.count: Number of time slots returned
+ * - Response headers include cache-control directives to prevent caching
+ * - Time slots are ordered by start_time in ascending order
+ * - If database error: Returns HTTP 500 with error details
+ * - If exception: Returns HTTP 500 with generic error message
+ * 
+ * DECLARATIVE SPECIFICATION:
+ * Returns a filtered and enriched list of swimming time slots based on the authenticated user's
+ * role, gender, and optional query parameters. Admin users see all slots (unless filtered by
+ * active status). Non-admin users see only slots matching their gender restrictions and role
+ * eligibility. Each returned slot includes trainer information (if assigned) and real-time
+ * attendance data for today's session.
+ * 
+ * OPERATIONAL SPECIFICATION:
+ * 1. Extract query parameters (gender, active) and authenticated user from request
+ * 2. Initialize Supabase query on 'swimming_time_slots' table
+ * 3. Determine user role and admin status:
+ *    a. If user is admin:
+ *       - Apply active filter only if 'active' query param is provided
+ *       - Skip gender/role filtering (admins see all slots)
+ *    b. If user is not admin:
+ *       - Apply active filter if 'active' query param is provided
+ *       - Build allowed gender restrictions based on user's gender:
+ *         * Male users: ['male', 'mixed']
+ *         * Female users: ['female', 'mixed']
+ *         * Other/No gender: ['mixed']
+ *       - Apply role-based filtering:
+ *         * UG students: Remove 'faculty_pg' from allowed restrictions
+ *         * PG/Faculty/Alumni: Add 'faculty_pg' to allowed restrictions
+ *         * Unknown role: Only 'mixed' slots
+ *       - Apply gender restriction filter to query
+ * 4. Execute query with ordering by start_time
+ * 5. Handle database errors: Return 500 status with error details
+ * 6. For each time slot in results:
+ *    a. If trainer_id exists, fetch trainer info from 'users_metadata'
+ *    b. Get current attendance count for today using getAttendanceCount
+ *    c. Calculate available spots (max_capacity - currentCount)
+ *    d. Enrich slot object with trainer, currentCount, and availableSpots
+ * 7. Set cache-control headers to prevent caching
+ * 8. Return HTTP 200 with enriched time slots array and count
+ * 9. If any exception occurs, catch and return HTTP 500 with generic error
  */
 export const getTimeSlots = async (req, res) => {
   try {
